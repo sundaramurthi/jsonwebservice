@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     Nov 2, 2008 8:58:07 PM                                                        
+
+     jsonwebservice    
+     JAX-WS JSON webservice
+                   
+     Sundar                                                                
+     ====================================================================== -->
+<project name="jsonwebservice" default="default" basedir=".">
+	<property name="jarname" value="jsonwebservice-ri"/>
+	<property name="version" value="0.1"/>
+	<property name="jsonjarname" value="jsonplugin"/>
+	<property name="src" value="${basedir}/src"/>
+	<property name="lib" value="${basedir}/lib"/>
+	<property name="buildroot" value="${basedir}/build"/>
+	
+	<classpath id="classpath">
+			<fileset dir="${lib}" includes="*.jar"></fileset>
+			<pathelement location="${buildroot}/classes"/>
+	</classpath>
+	
+    <description>
+            JAX-WS JSON webservice
+    </description>
+
+    <!-- ================================= 
+          target: default              
+         ================================= -->
+    <target name="default" depends="build" description="JAX-WS JSON webservice">
+        
+    </target>
+	
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: clean                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="clean">
+            <delete dir="${buildroot}"></delete>
+    </target>
+	
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: init                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="init">
+    </target>
+
+
+
+    <!-- - - - - - - - - - - - - - - - - - 
+          target: build                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="build">
+    	
+    	<jar destfile="${jarname}-${version}.jar" basedir="${buildroot}/classes"/>
+    </target>
+
+</project>
