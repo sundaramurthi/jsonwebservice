@@ -14,44 +14,86 @@
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
+	<property name="archive" value="${basedir}/archive"/>
 	
-	<classpath id="classpath">
-			<fileset dir="${lib}" includes="*.jar"></fileset>
-			<pathelement location="${buildroot}/classes"/>
-	</classpath>
-	
-    <description>
+	<property name="user.name" value="Sundaramurthi"/>
+
+	<path id ="classpath">
+		<fileset dir="${lib}" includes="*.jar"/>
+		<pathelement location="${buildroot}/jsonclasses"/>
+		<pathelement location="${buildroot}/classes"/>
+	</path>
+
+	<description>
             JAX-WS JSON webservice
     </description>
 
-    <!-- ================================= 
+	<!-- ================================= 
           target: default              
          ================================= -->
-    <target name="default" depends="build" description="JAX-WS JSON webservice">
-        
-    </target>
-	
+	<target name="default" depends="build" description="JAX-WS JSON webservice">
+
+	</target>
+
 	<!-- - - - - - - - - - - - - - - - - - 
           target: clean                      
          - - - - - - - - - - - - - - - - - -->
-    <target name="clean">
-            <delete dir="${buildroot}"></delete>
-    </target>
-	
+	<target name="clean">
+		<delete dir="${buildroot}">
+		</delete>
+	</target>
+
 	<!-- - - - - - - - - - - - - - - - - - 
           target: init                      
          - - - - - - - - - - - - - - - - - -->
-    <target name="init">
-    </target>
+	<target name="init">
+		<mkdir dir="${buildroot}"/>
+		<mkdir dir="${buildroot}/classes"/>
+		<mkdir dir="${buildroot}/jsonclasses"/>
+		<mkdir dir="${buildroot}/testApp"/>
+	</target>
 
-
-
-    <!-- - - - - - - - - - - - - - - - - - 
+	<!-- - - - - - - - - - - - - - - - - - 
           target: build                      
          - - - - - - - - - - - - - - - - - -->
-    <target name="build">
+	<target name="build" depends="clean,init">
+		<javac classpathref="classpath" srcdir="${jsonjarname}"
+			destdir="${buildroot}/jsonclasses" debug="off" source="1.5" 
+    		excludes="**/JSONInterceptor.java,**/JSONResult.java"/>
+
+		<jar destfile="${archive}/${jsonjarname}-${version}.jar" basedir="${buildroot}/jsonclasses" />
+
+		<javac classpathref="classpath" srcdir="${src}"
+        					destdir="${buildroot}/classes" debug="off" source="1.5"/>
+		<jar destfile="${archive}/${jarname}-${version}.jar">
+			<fileset dir="${buildroot}/classes"/>
+			<fileset dir="${basedir}/src"/>
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<!-- Information about the program itself -->
+				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
+				<attribute name="Implementation-Title" value="JSONWebservice"/>
+				<attribute name="Implementation-Version" value="0.1b"/>
+			</manifest>
+		</jar>
+	</target>
+	
+	
+	<!-- ================================= 
+          target: war              
+         ================================= -->
+    <target name="war" depends="build" description="create test war file">
+    	<javac classpathref="classpath" srcdir="${basedir}/testApp/WEB-INF/src"
+    				destdir="${buildroot}/testApp" debug="off" source="1.5"/>
     	
-    	<jar destfile="${jarname}-${version}.jar" basedir="${buildroot}/classes"/>
+        <war destfile="${archive}/album.war" webxml="${basedir}/testApp/WEB-INF/web.xml">
+        	<fileset dir="${basedir}/testApp" excludes="**/servlet-api.jar"/>
+        	<classes dir="${buildroot}/testApp"/>
+        	<lib dir="${archive}" >
+        	    <include name="*-${version}.jar"/>
+        	</lib>
+        </war>
     </target>
+
 
 </project>

@@ -1,0 +1,66 @@
+<html>
+	<head>
+		<title>JSON Album service</title>
+	</head>
+	<script type="text/javascript">
+		function ajaxFunction(url){
+			var xmlHttp;
+				try {  // Firefox, Opera 8.0+, Safari  
+					xmlHttp=new XMLHttpRequest();  
+				}catch (e)	  {  // Internet Explorer  
+					try  {    
+						xmlHttp=new ActiveXObject("Msxml2.XMLHTTP");    
+					} catch (e){ 
+						try{     
+							 xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");      
+						} catch (e) {
+							 alert("Your browser does not support AJAX!");
+							 return false;     
+						}
+				  }
+			  }
+	  		xmlHttp.onreadystatechange=function(){
+	    		if(xmlHttp.readyState==4){
+	    			callback(xmlHttp.responseText);
+	      		}
+	   		}
+
+		  	xmlHttp.open("POST",url,true);
+	  		xmlHttp.send("{'listAlbums':{}}");  
+	  	}
+
+	  	function callback(val){
+		  	document.getElementById("result").innerHTML = val;
+		  	alert(val);
+	  	}
+	</script>
+	<body>
+		<table>
+			<tr>
+				<td> End Point</td>
+				<td>http://localhost:8080/album/json/album</td>
+			</tr>
+			<tr>
+				<td>Methods</td>
+				<td>listAlbums,</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<td>
+					Input
+				</td>
+				<td>
+					{"listAlbums":{}}
+				</td>
+				<td>
+					<button onclick="ajaxFunction('http://localhost:8080/album/json/album')">Execute</button>
+				</td>
+				<td>
+					<div style="color: green;" id="result"></div>
+					
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
