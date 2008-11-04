@@ -24,6 +24,9 @@
 		<pathelement location="${buildroot}/classes"/>
 	</path>
 
+	<taskdef name="wsgen" classname="com.sun.tools.ws.ant.WsGen" classpathref="classpath"/>
+	<taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport" classpathref="classpath"/>
+	
 	<description>
             JAX-WS JSON webservice
     </description>
@@ -51,6 +54,7 @@
 		<mkdir dir="${buildroot}/classes"/>
 		<mkdir dir="${buildroot}/jsonclasses"/>
 		<mkdir dir="${buildroot}/testApp"/>
+		<mkdir dir="${buildroot}/testApp/WEB-INF/classes"/>
 	</target>
 
 	<!-- - - - - - - - - - - - - - - - - - 
@@ -83,12 +87,19 @@
           target: war              
          ================================= -->
     <target name="war" depends="build" description="create test war file">
+    	
+    	<wsimport wsdl="${basedir}/testApp/WEB-INF/wsdl/picasa.wsdl"
+    					  destdir="${buildroot}/testApp/WEB-INF/classes"
+    					  sourcedestdir="${basedir}/testApp/WEB-INF/src"
+    					  keep="true"
+    					  wsdllocation="http://picasa.com/wsdl">
+    	</wsimport>
+    	
     	<javac classpathref="classpath" srcdir="${basedir}/testApp/WEB-INF/src"
-    				destdir="${buildroot}/testApp" debug="off" source="1.5"/>
+    				destdir="${buildroot}/testApp/WEB-INF/classes" debug="off" source="1.5"/>
     	
         <war destfile="${archive}/album.war" webxml="${basedir}/testApp/WEB-INF/web.xml">
         	<fileset dir="${basedir}/testApp" excludes="**/servlet-api.jar"/>
-        	<classes dir="${buildroot}/testApp"/>
         	<lib dir="${archive}" >
         	    <include name="*-${version}.jar"/>
         	</lib>
