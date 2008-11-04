@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml-stylesheet type="text/xsl" href="nedstatservice.xslt"?>
+<definitions targetNamespace="http://album.com/dispatcher"
+	xmlns:tns="http://album.com/dispatcher" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="1.0"
+	xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+	<types>
+		<xsd:schema targetNamespace="http://album.com/dispatcher">
+			<xsd:complexType name="LoginParameter">
+				<xsd:sequence>
+					<xsd:element type="xsd:string" name="accountType"/>
+					<xsd:element type="xsd:string" name="Email"/>
+					<xsd:element type="xsd:string" name="Passwd"/>
+					<xsd:element type="xsd:string" name="service"/>
+					<xsd:element type="xsd:string" name="source"/>
+					<xsd:element type="xsd:string" name="logintoken"/>
+					<xsd:element type="xsd:string" name="logincaptcha"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			
+			<xsd:complexType name="LoginResponse">
+				<xsd:sequence>
+					<xsd:element type="xsd:string" name="Url"/>
+					<xsd:element type="xsd:string" name="Error"/>
+					<xsd:element type="xsd:string" name="CaptchaToken"/>
+					<xsd:element type="xsd:string" name="CaptchaUrl"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			
+			<xsd:complexType name="LoginFault">
+				<xsd:sequence>
+					<xsd:element type="xsd:string" name="errorCode"/>
+					<xsd:element type="xsd:string" name="description"/>
+				</xsd:sequence>
+			</xsd:complexType>
+		</xsd:schema>
+	</types>
+
+	<message name="clientLoginInput">
+		<part name="requestcontext" type="tns:LoginParameter"></part>
+	</message>
+
+	<message name="clientLoginOutput">
+		<part name="requestcontext" type="tns:LoginResponse"></part>
+	</message>
+	
+	<message name="clientLoginFault">
+		<part name="loginFault" element=""/>
+	</message>
+
+	<portType name="Album">
+		<operation name="clientLogin">
+			<input name="clientLoginInput" message="tns:clientLoginInput" />
+			<output name="clientLoginOutput" message="tns:clientLoginOutput" />
+			<fault name="loginFault" message="tns:clientLoginFault"/>
+		</operation>
+	</portType>
+
+	<binding name="AlbumService" type="tns:Album">
+		<soap:binding transport="http://schemas.xmlsoap.org/soap/http"	style="rpc" />
+		<operation name="clientLogin">
+			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><soap:body use="literal" namespace="fgfsd"/></input>
+		  	<output><soap:body use="literal" namespace="fgfsd"/></output>
+			<fault name="loginFault"> 
+		  		<soap:fault name="loginFault" use="literal"/>
+			</fault>
+		</operation>
+	</binding>
+
+	<service name="AlbumService">
+		<port name="AlbumServicePort" binding="tns:AlbumService">
+			<soap:address location="http://localhost/AlbumService" />
+		</port>
+	</service>
+
+</definitions>		
