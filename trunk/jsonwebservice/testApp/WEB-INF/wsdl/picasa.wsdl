@@ -2,52 +2,36 @@
 <?xml-stylesheet type="text/xsl" href="nedstatservice.xslt"?>
 <definitions targetNamespace="http://album.com/dispatcher"
 	xmlns:tns="http://album.com/dispatcher" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:atom="http://www.w3.org/2005/Atom"
 	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+	xmlns:json="http://code.google.com/json"
 	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="1.0"
 	xmlns="http://schemas.xmlsoap.org/wsdl/">
 
 	<types>
-		<xsd:schema targetNamespace="http://album.com/dispatcher">
-			<xsd:complexType name="LoginParameter">
-				<xsd:sequence>
-					<xsd:element type="xsd:string" name="accountType"/>
-					<xsd:element type="xsd:string" name="Email"/>
-					<xsd:element type="xsd:string" name="Passwd"/>
-					<xsd:element type="xsd:string" name="service"/>
-					<xsd:element type="xsd:string" name="source"/>
-					<xsd:element type="xsd:string" name="logintoken"/>
-					<xsd:element type="xsd:string" name="logincaptcha"/>
-				</xsd:sequence>
-			</xsd:complexType>
-			
-			<xsd:complexType name="LoginResponse">
-				<xsd:sequence>
-					<xsd:element type="xsd:string" name="Url"/>
-					<xsd:element type="xsd:string" name="Error"/>
-					<xsd:element type="xsd:string" name="CaptchaToken"/>
-					<xsd:element type="xsd:string" name="CaptchaUrl"/>
-				</xsd:sequence>
-			</xsd:complexType>
-			
-			<xsd:complexType name="LoginFault">
-				<xsd:sequence>
-					<xsd:element type="xsd:string" name="errorCode"/>
-					<xsd:element type="xsd:string" name="description"/>
-				</xsd:sequence>
-			</xsd:complexType>
+		<xsd:schema targetNamespace="http://www.w3.org/2001/XMLSchema">
+			 <xsd:import namespace="http://www.w3.org/2005/Atom" schemaLocation="picasa.xsd"/>
 		</xsd:schema>
 	</types>
 
 	<message name="clientLoginInput">
-		<part name="requestcontext" type="tns:LoginParameter"></part>
+		<part name="requestcontext" type="atom:LoginParameter"></part>
 	</message>
 
 	<message name="clientLoginOutput">
-		<part name="requestcontext" type="tns:LoginResponse"></part>
+		<part name="requestcontext" type="atom:LoginResponse"></part>
 	</message>
 	
 	<message name="clientLoginFault">
-		<part name="loginFault" element=""/>
+		<part name="loginFault" element="atom:fault"/>
+	</message>
+	
+	<message name="credientialInput">
+		<part name="crediential" type="atom:Crediential"></part>
+	</message>
+
+	<message name="albumListOutput">
+		<part name="requestcontext" type="atom:FeedType"></part>
 	</message>
 
 	<portType name="Album">
@@ -56,23 +40,37 @@
 			<output name="clientLoginOutput" message="tns:clientLoginOutput" />
 			<fault name="loginFault" message="tns:clientLoginFault"/>
 		</operation>
+		
+		<operation name="listAlbums">
+			<input name="crediential" message="tns:credientialInput" />
+			<output name="albumList" message="tns:albumListOutput" />
+		</operation>
 	</portType>
 
 	<binding name="AlbumService" type="tns:Album">
+		<!-- <json:binding transport="http://schemas.xmlsoap.org/soap/http"	style="rpc" />-->
 		<soap:binding transport="http://schemas.xmlsoap.org/soap/http"	style="rpc" />
 		<operation name="clientLogin">
 			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
 				style="rpc" />
-			<input><soap:body use="literal" namespace="fgfsd"/></input>
-		  	<output><soap:body use="literal" namespace="fgfsd"/></output>
+			<input><soap:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><soap:body use="literal" namespace="http://code.google.com/json"/></output>
 			<fault name="loginFault"> 
 		  		<soap:fault name="loginFault" use="literal"/>
 			</fault>
+		</operation>
+		
+		<operation name="listAlbums">
+			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><soap:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><soap:body use="literal" namespace="http://code.google.com/json"/></output>
 		</operation>
 	</binding>
 
 	<service name="AlbumService">
 		<port name="AlbumServicePort" binding="tns:AlbumService">
+			<!-- <json:address location="http://localhost/AlbumService" />-->
 			<soap:address location="http://localhost/AlbumService" />
 		</port>
 	</service>
