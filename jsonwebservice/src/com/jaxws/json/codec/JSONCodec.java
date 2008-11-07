@@ -32,9 +32,7 @@ import com.sun.xml.ws.api.server.EndpointAwareCodec;
 import com.sun.xml.ws.api.server.EndpointComponent;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.message.jaxb.JAXBMessage;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
-import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
  * @author Sundaramurthi
@@ -47,7 +45,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	
 	private final 	WSBinding 		binding;
 	private final 	SOAPVersion 	soapVersion;
-    private 		WSEndpoint 		endpoint;
+    private 		WSEndpoint<?> 		endpoint;
     private HttpMetadataPublisher 	metadataPublisher;
 
 	public JSONCodec(WSBinding binding) {
@@ -78,12 +76,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			
 			requestMethodJSON = JSONUtil.deserialize(new InputStreamReader(in));
 			if(requestMethodJSON != null && requestMethodJSON instanceof Map){
-				Map requestMethodJSONMap = (Map) requestMethodJSON;
+				Map<?,?> requestMethodJSONMap = (Map<?,?>) requestMethodJSON;
 				//TODO right now handle only last method, change this to handle multiple batch request
 				for(Object method : requestMethodJSONMap.keySet()){
 					String methodName = method.toString();
 					
-					Class bean = null;
+					Class<?> bean = null;
 					for(JavaMethod m:endpoint.getSEIModel().getJavaMethods()){
 						QName methodQName = m.getRequestPayloadName();
 						if(methodQName.getLocalPart().equals(methodName)){
@@ -95,11 +93,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						Object object = bean.newInstance();
 						Object methodParameter = requestMethodJSONMap.get(methodName);
 						if(methodParameter instanceof Map){
-							Map methodParameterMap = (Map) methodParameter;
+							Map<?,?> methodParameterMap = (Map<?,?>) methodParameter;
 							for(Field field:bean.getFields()){
 								if(field.getType() instanceof Class){//TODO check accessablity
 									Object val = field.getType().newInstance();
-									new JSONPopulator().populateObject(val, (Map) methodParameterMap.get(field.getName()));
+									new JSONPopulator().populateObject(val, (Map<?,?>) methodParameterMap.get(field.getName()));
 									field.set(object, val);
 								}else{
 									throw new Exception("TODO JSON Codec , Non object method parameter");
@@ -183,14 +181,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	public @Nullable <T> T getSPI(@NotNull Class<T> type) {
 		if (type == HttpMetadataPublisher.class) {
 			if (metadataPublisher == null)
-				metadataPublisher = new HttpMetadataPublisher(){
-					@Override
-					public boolean handleMetadataRequest(HttpAdapter arg0,
-							WSHTTPConnection arg1) throws IOException {
-						return true;
-					}
-				
-			};
+				metadataPublisher = new JSONHttpMetadataPublisher(endpoint);
 			return type.cast(metadataPublisher);
 		}
 		return null;
