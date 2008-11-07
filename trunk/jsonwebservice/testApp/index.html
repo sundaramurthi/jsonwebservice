@@ -26,12 +26,11 @@
 	   		}
 
 		  	xmlHttp.open("POST",url,true);
-	  		xmlHttp.send("{'listAlbums':{}}");  
+	  		xmlHttp.send('{"listAlbums":{"crediential":{"username":"tester"}}}');  
 	  	}
 
 	  	function callback(val){
 		  	document.getElementById("result").innerHTML = val;
-		  	alert(val);
 	  	}
 	</script>
 	<body>
@@ -51,10 +50,10 @@
 					Input
 				</td>
 				<td>
-					{"listAlbums":{}}
+					{"listAlbums":{"crediential":{"username":"tester"}}}
 				</td>
 				<td>
-					<button onclick="ajaxFunction('http://localhost:8080/album/json/album')">Execute</button>
+					<button onclick="ajaxFunction('http://localhost:9080/album/json/album')">Execute</button>
 				</td>
 				<td>
 					<div style="color: green;" id="result"></div>
