@@ -1,11 +1,9 @@
 
 package org.w3._2005.atom;
 
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -38,8 +36,7 @@ public class Crediential {
 
     @XmlElement(required = true)
     protected String username;
-    @XmlElementRef(name = "token", namespace = "http://www.w3.org/2005/Atom", type = JAXBElement.class)
-    protected JAXBElement<String> token;
+    protected String token;
 
     /**
      * Gets the value of the username property.
@@ -70,10 +67,10 @@ public class Crediential {
      * 
      * @return
      *     possible object is
-     *     {@link JAXBElement }{@code <}{@link String }{@code >}
+     *     {@link String }
      *     
      */
-    public JAXBElement<String> getToken() {
+    public String getToken() {
         return token;
     }
 
@@ -82,11 +79,11 @@ public class Crediential {
      * 
      * @param value
      *     allowed object is
-     *     {@link JAXBElement }{@code <}{@link String }{@code >}
+     *     {@link String }
      *     
      */
-    public void setToken(JAXBElement<String> value) {
-        this.token = ((JAXBElement<String> ) value);
+    public void setToken(String value) {
+        this.token = value;
     }
 
 }

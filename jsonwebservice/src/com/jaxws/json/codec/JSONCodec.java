@@ -17,6 +17,7 @@ import javax.xml.ws.WebServiceException;
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONPopulator;
 import com.googlecode.jsonplugin.JSONUtil;
+import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;

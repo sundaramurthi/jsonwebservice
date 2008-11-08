@@ -38,7 +38,7 @@
 		<xsd:complexType name="Crediential">
 			<xsd:sequence>
 				<xsd:element type="xsd:string" name="username"/>
-				<xsd:element type="xsd:string" name="token" nillable="true" minOccurs="0" maxOccurs="1"/>
+				<xsd:element type="xsd:string" name="token" minOccurs="0" maxOccurs="1"/>
 			</xsd:sequence>
 		</xsd:complexType>
 		
