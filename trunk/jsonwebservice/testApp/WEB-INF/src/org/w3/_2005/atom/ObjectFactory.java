@@ -26,45 +26,12 @@ public class ObjectFactory {
 
     private final static QName _Fault_QNAME = new QName("http://www.w3.org/2005/Atom", "fault");
     private final static QName _Feed_QNAME = new QName("http://www.w3.org/2005/Atom", "feed");
-    private final static QName _CredientialToken_QNAME = new QName("http://www.w3.org/2005/Atom", "token");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.w3._2005.atom
      * 
      */
     public ObjectFactory() {
-    }
-
-    /**
-     * Create an instance of {@link LoginFault }
-     * 
-     */
-    public LoginFault createLoginFault() {
-        return new LoginFault();
-    }
-
-    /**
-     * Create an instance of {@link LinkType }
-     * 
-     */
-    public LinkType createLinkType() {
-        return new LinkType();
-    }
-
-    /**
-     * Create an instance of {@link FeedType }
-     * 
-     */
-    public FeedType createFeedType() {
-        return new FeedType();
-    }
-
-    /**
-     * Create an instance of {@link EntryType }
-     * 
-     */
-    public EntryType createEntryType() {
-        return new EntryType();
     }
 
     /**
@@ -76,11 +43,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link LoginParameter }
+     * Create an instance of {@link FeedType }
      * 
      */
-    public LoginParameter createLoginParameter() {
-        return new LoginParameter();
+    public FeedType createFeedType() {
+        return new FeedType();
+    }
+
+    /**
+     * Create an instance of {@link LinkType }
+     * 
+     */
+    public LinkType createLinkType() {
+        return new LinkType();
     }
 
     /**
@@ -89,6 +64,30 @@ public class ObjectFactory {
      */
     public Crediential createCrediential() {
         return new Crediential();
+    }
+
+    /**
+     * Create an instance of {@link EntryType }
+     * 
+     */
+    public EntryType createEntryType() {
+        return new EntryType();
+    }
+
+    /**
+     * Create an instance of {@link LoginParameter }
+     * 
+     */
+    public LoginParameter createLoginParameter() {
+        return new LoginParameter();
+    }
+
+    /**
+     * Create an instance of {@link LoginFault }
+     * 
+     */
+    public LoginFault createLoginFault() {
+        return new LoginFault();
     }
 
     /**
@@ -107,15 +106,6 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://www.w3.org/2005/Atom", name = "feed")
     public JAXBElement<FeedType> createFeed(FeedType value) {
         return new JAXBElement<FeedType>(_Feed_QNAME, FeedType.class, null, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://www.w3.org/2005/Atom", name = "token", scope = Crediential.class)
-    public JAXBElement<String> createCredientialToken(String value) {
-        return new JAXBElement<String>(_CredientialToken_QNAME, String.class, Crediential.class, value);
     }
 
 }
