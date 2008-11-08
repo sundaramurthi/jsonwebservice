@@ -73,7 +73,10 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				serializeBean(bean,jsonIn);
 				jsonIn.append("}");
 				methodTemplate = methodTemplate.replaceFirst("#INPUT_JSON#", jsonIn.toString());
-				methodTemplate = methodTemplate.replaceFirst("#OUTPUT_JSON#", "");// TODO Sample out
+				bean = context.getGlobalType(method.getResponsePayloadName()).jaxbType;
+				StringBuffer jsonOut = new StringBuffer();
+				serializeBean(bean,jsonOut);
+				methodTemplate = methodTemplate.replaceFirst("#OUTPUT_JSON#", jsonOut.toString());
 				methods.append(methodTemplate);
 			}
 			templateMain		= templateMain.replace("#METHODS#", methods.toString());
