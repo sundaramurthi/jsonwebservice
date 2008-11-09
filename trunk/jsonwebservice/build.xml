@@ -9,7 +9,7 @@
      ====================================================================== -->
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
-	<property name="version" value="0.1"/>
+	<property name="version" value="0.2"/>
 	<property name="jsonjarname" value="jsonplugin"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
@@ -82,11 +82,10 @@
 		</jar>
 	</target>
 	
-	
 	<!-- ================================= 
-          target: war              
+          target: wsimport              
          ================================= -->
-    <target name="war" depends="build" description="create test war file">
+    <target name="wsimport" description="create pojos">
     	
     	<wsimport wsdl="${basedir}/testApp/WEB-INF/wsdl/picasa.wsdl"
     					  destdir="${buildroot}/testApp/WEB-INF/classes"
@@ -94,12 +93,19 @@
     					  keep="true"
     					  wsdllocation="http://picasa.com/wsdl">
     	</wsimport>
+    </target>
+
+	<!-- ================================= 
+          target: war              
+         ================================= -->
+    <target name="war" depends="build" description="create test war file">
     	
     	<javac classpathref="classpath" srcdir="${basedir}/testApp/WEB-INF/src"
     				destdir="${buildroot}/testApp/WEB-INF/classes" debug="off" source="1.5"/>
     	
         <war destfile="${archive}/album.war" webxml="${basedir}/testApp/WEB-INF/web.xml">
         	<fileset dir="${basedir}/testApp" excludes="**/servlet-api.jar"/>
+        	<classes dir="${buildroot}/testApp/WEB-INF/classes"/>
         	<lib dir="${archive}" >
         	    <include name="*-${version}.jar"/>
         	</lib>
