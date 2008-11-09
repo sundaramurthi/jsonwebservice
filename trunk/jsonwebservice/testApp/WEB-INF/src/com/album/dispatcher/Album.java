@@ -11,7 +11,6 @@ import org.w3._2005.atom.Crediential;
 import org.w3._2005.atom.FeedType;
 import org.w3._2005.atom.LoginParameter;
 import org.w3._2005.atom.LoginResponse;
-import org.w3._2005.atom.ObjectFactory;
 
 
 /**
@@ -23,7 +22,8 @@ import org.w3._2005.atom.ObjectFactory;
 @WebService(name = "Album", targetNamespace = "http://album.com/dispatcher")
 @SOAPBinding(style = SOAPBinding.Style.RPC)
 @XmlSeeAlso({
-    ObjectFactory.class
+    com.yahoo.search.mrss.ObjectFactory.class,
+    org.w3._2005.atom.ObjectFactory.class
 })
 public interface Album {
 
@@ -54,5 +54,20 @@ public interface Album {
     public FeedType listAlbums(
         @WebParam(name = "crediential", partName = "crediential")
         Crediential crediential);
+
+    /**
+     * 
+     * @param crediential
+     * @param albumUrl
+     * @return
+     *     returns org.w3._2005.atom.FeedType
+     */
+    @WebMethod(action = "http://code.google.com/p/jsonwebservice/album")
+    @WebResult(name = "requestcontext", partName = "requestcontext")
+    public FeedType listPhotos(
+        @WebParam(name = "crediential", partName = "crediential")
+        Crediential crediential,
+        @WebParam(name = "albumUrl", partName = "albumUrl")
+        String albumUrl);
 
 }

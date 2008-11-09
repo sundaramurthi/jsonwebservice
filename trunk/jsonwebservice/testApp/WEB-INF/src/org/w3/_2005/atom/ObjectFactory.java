@@ -43,11 +43,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link FeedType }
+     * Create an instance of {@link Crediential }
      * 
      */
-    public FeedType createFeedType() {
-        return new FeedType();
+    public Crediential createCrediential() {
+        return new Crediential();
     }
 
     /**
@@ -59,11 +59,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Crediential }
+     * Create an instance of {@link FeedType }
      * 
      */
-    public Crediential createCrediential() {
-        return new Crediential();
+    public FeedType createFeedType() {
+        return new FeedType();
     }
 
     /**

@@ -26,7 +26,7 @@ import com.album.dispatcher.ClientLoginFault;
  * @version 0.1
  */
 @WebService (name="AlbumService", targetNamespace="http://album.jsonplugin.com/json/")
-public class AlbumService implements Album{
+public class AlbumImpl implements Album{
 	
 	static 	JAXBContext		context;
 	
@@ -57,12 +57,28 @@ public class AlbumService implements Album{
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
 	@WebMethod (operationName="listAlbums")
 	public @WebResult(name="albums") FeedType listAlbums(@WebParam(name = "crediential") Crediential crediential) {
 		try {
 			//TODO from JNDI property
 			URL 			albumURL 	= new URL("http://picasaweb.google.com/data/feed/api/user/"+crediential.getUsername()+"?kind=album");
+			Unmarshaller 	um 			= context.createUnmarshaller();
+			FeedType ob = um.unmarshal(new StreamSource(albumURL.openStream()),FeedType.class).getValue();
+			return ob;
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new Error("Album request failed",e);
+		}
+	}
+
+	@WebMethod (operationName="listPhotos")
+	public @WebResult(name="photos") FeedType listPhotos(
+	        @WebParam(name = "crediential", partName = "crediential")
+	        Crediential crediential,
+	        @WebParam(name = "albumUrl", partName = "albumUrl")
+	        String albumUrl) {
+		try {
+			URL 			albumURL 	= new URL(albumUrl);
 			Unmarshaller 	um 			= context.createUnmarshaller();
 			FeedType ob = um.unmarshal(new StreamSource(albumURL.openStream()),FeedType.class).getValue();
 			return ob;

@@ -3,7 +3,7 @@
 	xmlns="http://java.sun.com/xml/ns/jax-ws/ri/runtime" >
   <endpoint 
   		name="AlbumService" 
-  		implementation="com.jsonwebservice.album.AlbumService" 
-  		url-pattern="/json/album" 
+  		implementation="com.jsonwebservice.album.AlbumImpl" 
+  		url-pattern="/json/picasa" 
   		binding="http://jsonplugin.googlecode.com/json/"/>
 </endpoints>
