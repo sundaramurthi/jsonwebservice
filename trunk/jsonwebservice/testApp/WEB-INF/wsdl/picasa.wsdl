@@ -33,6 +33,15 @@
 	<message name="albumListOutput">
 		<part name="requestcontext" type="atom:FeedType"></part>
 	</message>
+	
+	<message name="listPhotosInput">
+		<part name="crediential" type="atom:Crediential"></part>
+		<part name="albumUrl" type="xsd:string"></part>
+	</message>
+
+	<message name="listPhotosOutput">
+		<part name="requestcontext" type="atom:FeedType"></part>
+	</message>
 
 	<portType name="Album">
 		<operation name="clientLogin">
@@ -44,6 +53,11 @@
 		<operation name="listAlbums">
 			<input name="crediential" message="tns:credientialInput" />
 			<output name="albumList" message="tns:albumListOutput" />
+		</operation>
+		
+		<operation name="listPhotos">
+			<input name="listPhotosInput" message="tns:listPhotosInput" />
+			<output name="listPhotosOutput" message="tns:listPhotosOutput" />
 		</operation>
 	</portType>
 
@@ -61,6 +75,13 @@
 		</operation>
 		
 		<operation name="listAlbums">
+			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><soap:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><soap:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
+		<operation name="listPhotos">
 			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
 				style="rpc" />
 			<input><soap:body use="literal" namespace="http://code.google.com/json"/></input>

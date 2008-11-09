@@ -1,10 +1,11 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
 		targetNamespace="http://www.w3.org/2005/Atom"
 		xmlns:dis="http://www.w3.org/2005/Atom"
+		xmlns:media="http://search.yahoo.com/mrss/"
 		xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
 		xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
         jaxb:version="2.0" elementFormDefault="qualified">
-        
+        <xsd:import schemaLocation="picasa2.xsd" namespace="http://search.yahoo.com/mrss/"></xsd:import>
         <xsd:complexType name="LoginParameter">
 			<xsd:sequence>
 				<xsd:element type="xsd:string" name="accountType"/>
@@ -48,6 +49,7 @@
 			<xsd:attribute name="href" type="xsd:string" />
 		</xsd:complexType>
 		
+			
 		<xsd:complexType name="EntryType" xmlns="http://www.w3.org/2005/Atom">
 			<xsd:sequence>
 				<xsd:element type="xsd:string" name="id"/>
@@ -57,6 +59,7 @@
 				<xsd:element type="xsd:string" name="summary"/>
 				<xsd:element type="xsd:string" name="rights"/>
 				<xsd:element type="dis:LinkType" name="link" minOccurs="0" maxOccurs="5"></xsd:element>
+				<xsd:element type="media:MediaGroup" name="group" xmlns="http://search.yahoo.com/mrss/"/>
 			</xsd:sequence>
 		</xsd:complexType>
 		
