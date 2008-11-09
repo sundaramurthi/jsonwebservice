@@ -98,7 +98,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 							for(Field field:bean.getFields()){
 								if(field.getType() instanceof Class){//TODO check accessablity
 									Object val = field.getType().newInstance();
-									new JSONPopulator().populateObject(val, (Map<?,?>) methodParameterMap.get(field.getName()));
+									Object jsonVal = methodParameterMap.get(field.getName());
+									if(jsonVal instanceof Map){
+										new JSONPopulator().populateObject(val, (Map<?,?>) jsonVal);
+									}else{// WARN other than primitive type may end with error
+										val = jsonVal;
+									}
 									field.set(object, val);
 								}else{
 									throw new Exception("TODO JSON Codec , Non object method parameter");
