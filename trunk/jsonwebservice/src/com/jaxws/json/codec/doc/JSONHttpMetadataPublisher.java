@@ -61,9 +61,11 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 
 	        StringBuffer 	methods = new StringBuffer();
 	        
+	        int count = 0;
 			for(JavaMethod method:endPoint.getSEIModel().getJavaMethods()){
 				String methodTemplate 	= templates.getProperty("template.method", "");
 				methodTemplate			= methodTemplate.replaceAll("#METHOD_NAME#", method.getOperationName());
+				methodTemplate			= methodTemplate.replaceAll("#TR_CLASS#",(count % 2) == 1 ? "odd" : "even");
 
 				QName methodQName = method.getRequestPayloadName();
 				
@@ -72,12 +74,13 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				jsonIn.append("{\""+method.getOperationName()+"\":");
 				serializeBean(bean,jsonIn);
 				jsonIn.append("}");
-				methodTemplate = methodTemplate.replaceFirst("#INPUT_JSON#", jsonIn.toString());
+				methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#", jsonIn.toString());
 				bean = context.getGlobalType(method.getResponsePayloadName()).jaxbType;
 				StringBuffer jsonOut = new StringBuffer();
 				serializeBean(bean,jsonOut);
 				methodTemplate = methodTemplate.replaceFirst("#OUTPUT_JSON#", jsonOut.toString());
 				methods.append(methodTemplate);
+				count++;
 			}
 			templateMain		= templateMain.replace("#METHODS#", methods.toString());
 			
