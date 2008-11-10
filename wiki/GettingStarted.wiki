@@ -43,15 +43,15 @@ Getting started with jsonwebservice
                |_WebContent
                |    |_WEB-INF
                |         |_lib
-               |		 |	|_activation-1.1.jar
-               |		 |	|_commons-logging-1.0.4.jar
-               |		 |	|_jsonplugin-0.2.jar
-               |		 |	|_jsonwebservice-ri-0.2.jar
-               |		 |	|_webservices-api.jar
-               |		 |	|_webservices-extra-api.jar
-               |		 |	|_webservices-extra.jar
-               |		 |	|_webservices-rt.jar
-               |		 |	|_xwork-2.0.4.jar
+               |	 |  |_activation-1.1.jar
+               |	 |  |_commons-logging-1.0.4.jar
+               |	 |  |_jsonplugin-0.2.jar
+               |	 |  |_jsonwebservice-ri-0.2.jar
+               |	 |  |_webservices-api.jar
+               |	 |  |_webservices-extra-api.jar
+               |	 |  |_webservices-extra.jar
+               |	 |  |_webservices-rt.jar
+               |	 |  |_xwork-2.0.4.jar
                |         |_web.xml
                |         |_sun-jaxws.xml
                |_src
@@ -161,8 +161,8 @@ Getting started with jsonwebservice
 	 8) Now you can see the hello.war inside   workspace/helloWorld.
 
 	 9) Now copy the way file into tomcat webapps folder or use tomcat manager console to deploy it.
-     10) After successfull deployment look at automated json endpoint doc "http://localhost:8080/hello/json/hello"
-     11) Once you’re got doc/test page you’re done!!! Just copy sample input fill it and place it in endpoint post data…
+     10) After successfull deployment look at automated document for json endpoint "http://localhost:8080/hello/json/hello"
+     11) Once you’re got doc/test page you’re done!!! Just copy sample input, fill data in it, and place it in endpoint post data…
                 
                
                
