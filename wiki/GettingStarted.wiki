@@ -157,7 +157,9 @@ Getting started with jsonwebservice
 		</project>
 	 }}}
 	 7) Run the ant build.xml .
-	 8) Now you can see the hello.war inside   workspace/helloWorld
+
+	 8) Now you can see the hello.war inside   workspace/helloWorld.
+
 	 9) Now copy the way file into tomcat webapps folder or use tomcat manager console to deploy it.
      10) After successfull deployment look at automated json endpoint doc "http://localhost:8080/hello/json/hello"
      11) Once you’re got doc/test page you’re done!!! Just copy sample input fill it and place it in endpoint post data…
