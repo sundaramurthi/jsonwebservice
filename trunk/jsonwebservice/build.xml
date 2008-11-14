@@ -62,22 +62,22 @@
          - - - - - - - - - - - - - - - - - -->
 	<target name="build" depends="clean,init">
 		<javac classpathref="classpath" srcdir="${jsonjarname}"
-			destdir="${buildroot}/jsonclasses" debug="off" source="1.5" 
+			destdir="${buildroot}/jsonclasses" debug="on" source="1.5" 
     		excludes="**/JSONInterceptor.java,**/JSONResult.java"/>
 
 		<jar destfile="${archive}/${jsonjarname}-${version}.jar" basedir="${buildroot}/jsonclasses" />
 
 		<javac classpathref="classpath" srcdir="${src}"
-        					destdir="${buildroot}/classes" debug="off" source="1.5"/>
+        					destdir="${buildroot}/classes" debug="on" source="1.5"/>
 		<jar destfile="${archive}/${jarname}-${version}.jar">
 			<fileset dir="${buildroot}/classes"/>
-			<fileset dir="${basedir}/src"/>
+			<fileset dir="${basedir}/src" excludes="**/*.java"/>
 			<manifest>
 				<attribute name="Built-By" value="${user.name}"/>
 				<!-- Information about the program itself -->
 				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
 				<attribute name="Implementation-Title" value="JSONWebservice"/>
-				<attribute name="Implementation-Version" value="0.1b"/>
+				<attribute name="Implementation-Version" value="0.2"/>
 			</manifest>
 		</jar>
 	</target>
