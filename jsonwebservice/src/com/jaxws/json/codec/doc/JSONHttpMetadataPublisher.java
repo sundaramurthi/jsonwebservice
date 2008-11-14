@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
+import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.server.PortAddressResolver;
 import com.sun.xml.ws.api.server.WSEndpoint;
@@ -68,17 +71,22 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				methodTemplate			= methodTemplate.replaceAll("#TR_CLASS#",(count % 2) == 1 ? "odd" : "even");
 
 				QName methodQName = method.getRequestPayloadName();
-				
-				Class<?> bean = context.getGlobalType(methodQName).jaxbType;
+				JaxBeanInfo type = context.getGlobalType(methodQName);
+				if(type == null )continue;
+				Class<?> bean = type.jaxbType;
 				StringBuffer jsonIn = new StringBuffer();
 				jsonIn.append("{\""+method.getOperationName()+"\":");
-				serializeBean(bean,jsonIn);
+				serializeBean(bean,jsonIn,new ArrayList<Class<?>>());
 				jsonIn.append("}");
 				methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#", jsonIn.toString());
 				bean = context.getGlobalType(method.getResponsePayloadName()).jaxbType;
 				StringBuffer jsonOut = new StringBuffer();
-				serializeBean(bean,jsonOut);
-				methodTemplate = methodTemplate.replaceFirst("#OUTPUT_JSON#", jsonOut.toString());
+				serializeBean(bean,jsonOut, new ArrayList<Class<?>>());
+				try{
+					methodTemplate = methodTemplate.replaceAll("#OUTPUT_JSON#", jsonOut.toString().replaceAll("$", ""));
+				}catch(Throwable th){
+					th.printStackTrace();
+				}
 				methods.append(methodTemplate);
 				count++;
 			}
@@ -90,7 +98,15 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		return false;
 	}
 	
-	private void serializeBean(Class<?> bean,StringBuffer out) throws IOException{
+	private void serializeBean(Class<?> bean,StringBuffer out,List<Class<?>> stack) throws IOException{
+		for(Class<?> stackBean : stack ){
+			if(stackBean.equals(bean))//Recursion deducted
+				return;
+		}
+		if(bean.isEnum()){
+			out.append("\""+bean.getSimpleName()+"\"");
+			return;
+		}
 		try{
 			if(bean != null){
 				out.append("{");
@@ -101,24 +117,35 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 							out.append(",");
 						}
 						if(field.getType() instanceof Class && !field.getType().getName().startsWith("java.lang") ){
-							//TODO deduct recursive refrence
-							out.append("\""+field.getName()+"\":");
+							out.append("\""+escapeString(field.getName())+"\":");
 							if(field.getType().getName().equals(JAXBElement.class.getName())){
 								//TODO serialize element
 								//serializeBean(field.getType(), out);
 								out.append("\"\"");
 							}else{
-								serializeBean(field.getType(), out);
+								stack.add(bean);
+								serializeBean(field.getType(), out,stack);
 							}
 						}else{
-							out.append("\""+field.getName()+"\":\"\"");
+							out.append("\""+escapeString(field.getName())+"\":\"\"");
 						}
 					}
 					count++;
 				}
 				out.append("}");
 			}
-		}catch(Throwable th){out.append(th.getMessage());}
+		}catch(Throwable th){
+			th.printStackTrace();
+			out.append(th.getMessage());
+		}
+	}
+	
+	private String escapeString(String input){
+		try{
+			return input.replaceAll("\\$", "");
+		}catch(Throwable th){
+			return input;
+		}
 	}
 	
 }

@@ -13,6 +13,7 @@ import java.util.Map;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.WebServiceException;
+import javax.xml.ws.handler.MessageContext;
 
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONPopulator;
@@ -121,6 +122,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			
 		} catch (Exception e) {
 			e.printStackTrace();
+			response.put(MessageContext.HTTP_RESPONSE_CODE, new Integer(400)); //BAD request
 			message = Messages.createEmpty(soapVersion);
 		} 
 	    response.setMessage(message);
