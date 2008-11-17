@@ -16,8 +16,8 @@ import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
 import com.googlecode.jsonplugin.JSONException;
-import com.googlecode.jsonplugin.JSONPopulator;
 import com.googlecode.jsonplugin.JSONUtil;
+import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
@@ -75,7 +75,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		Object requestMethodJSON;
 		try {
 			JAXBContextImpl context = (JAXBContextImpl)endpoint.getSEIModel().getJAXBContext();
-			
+
 			requestMethodJSON = JSONUtil.deserialize(new InputStreamReader(in));
 			if(requestMethodJSON != null && requestMethodJSON instanceof Map){
 				Map<?,?> requestMethodJSONMap = (Map<?,?>) requestMethodJSON;
@@ -101,7 +101,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 									Object val = field.getType().newInstance();
 									Object jsonVal = methodParameterMap.get(field.getName());
 									if(jsonVal instanceof Map){
-										new JSONPopulator().populateObject(val, (Map<?,?>) jsonVal);
+										new JaxWsJSONPopulator(context).populateObject(val, (Map<?,?>) jsonVal);
 									}else{// WARN other than primitive type may end with error
 										val = jsonVal;
 									}

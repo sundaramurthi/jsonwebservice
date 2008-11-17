@@ -9,8 +9,11 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.namespace.QName;
 
+import com.googlecode.jsonplugin.JSONPopulator;
+import com.jaxws.json.JaxWsJSONPopulator;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.JavaMethod;
@@ -109,14 +112,16 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		}
 		try{
 			if(bean != null){
-				out.append("{");
 				int count =0;
 				for(Field field:bean.getDeclaredFields()){
+					field.getAnnotations();
 					if(field.getDeclaringClass().getName().equals(bean.getName())){
 						if(count != 0 ){
 							out.append(",");
+						}else{
+							out.append("{");
 						}
-						if(field.getType() instanceof Class && !field.getType().getName().startsWith("java.lang") ){
+						if(field.getType() instanceof Class && !JaxWsJSONPopulator.isJSONPrimitive(field.getType())){
 							out.append("\""+escapeString(field.getName())+"\":");
 							if(field.getType().getName().equals(JAXBElement.class.getName())){
 								//TODO serialize element
@@ -127,12 +132,21 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 								serializeBean(field.getType(), out,stack);
 							}
 						}else{
-							out.append("\""+escapeString(field.getName())+"\":\"\"");
+							XmlElement xmlElemnt = field.getAnnotation(XmlElement.class);
+							out.append("\""+escapeString(field.getName())+"\":\""+(xmlElemnt != null?xmlElemnt.defaultValue() != null ?xmlElemnt.defaultValue().trim():"":"") +"\"");
 						}
 					}
 					count++;
 				}
-				out.append("}");
+				if(count != 0 ){
+					out.append("}");
+				}else if(bean.isPrimitive()){
+					bean.getAnnotations();
+					bean.getDeclaredAnnotations();
+					out.append("\""+(new JSONPopulator().convert(bean, null, null, null))+"\"");
+				}else{
+					out.append("\"\"");
+				}
 			}
 		}catch(Throwable th){
 			th.printStackTrace();
