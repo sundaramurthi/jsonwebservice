@@ -121,6 +121,12 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 						}else{
 							out.append("{");
 						}
+						
+						try{
+						Class.forName("com.jaxws.json.JaxWsJSONPopulator");
+						}catch(Throwable th){
+							th.printStackTrace();
+						}
 						if(field.getType() instanceof Class && !JaxWsJSONPopulator.isJSONPrimitive(field.getType())){
 							out.append("\""+escapeString(field.getName())+"\":");
 							if(field.getType().getName().equals(JAXBElement.class.getName())){
