@@ -9,11 +9,14 @@ import java.lang.reflect.Field;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
+
+import org.w3c.dom.Element;
 
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONUtil;
@@ -135,19 +138,26 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	public ContentType encode(Packet packet, OutputStream out) throws IOException {
 		Message message = packet.getMessage();
 		if (message != null) {
-			// XMLStreamWriter sw = null;
 			OutputStreamWriter sw = null;
-			//BindingID.parse("https://www.nedstat.com/codec/html/").createEncoder(binding).encode(packet, out);
 			try {
 				sw = new OutputStreamWriter(out, "UTF-8");
 				HashMap<String, Object> result = new HashMap<String, Object>();
 				if (message.isFault()) {
 					result.put("status", "flase");
-					result.put("message", message.readAsSOAPMessage()
-							.getSOAPBody().getFault().getFaultString());
-					// result.put("detail",
-					// message.readAsSOAPMessage().getSOAPBody().getFault().getDetail());
+					result.put("message", message.readAsSOAPMessage().getSOAPBody().getFault().getFaultString());
+					HashMap<String,String> detail = new HashMap<String, String>(); 
+					try {
+						for (Iterator<Element> iterator = message
+								.readAsSOAPMessage().getSOAPBody().getFault()
+								.getDetail().getChildElements(); iterator
+								.hasNext();) {
+							Element type = iterator.next();
+							detail.put(type.getLocalName(), type.getTextContent());
+						}
+					} catch(Throwable th){/*Dont mind about custom message set fail*/}
+					result.put("detail", detail);
 				} else {
+					result.put("status", "true");
 					Object obj = message.readPayloadAsJAXB(endpoint.getSEIModel().getJAXBContext().createUnmarshaller());
 					for (int i = 0; i < obj.getClass().getDeclaredFields().length; i++) {
 						Field field = obj.getClass().getDeclaredFields()[i];
@@ -158,7 +168,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 					}
 				}
 				JSONUtil.serialize(sw, result);
-				
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
 			} finally {
