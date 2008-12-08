@@ -19,6 +19,9 @@ import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.server.PortAddressResolver;
 import com.sun.xml.ws.api.server.WSEndpoint;
+import com.sun.xml.ws.model.JavaMethodImpl;
+import com.sun.xml.ws.model.ParameterImpl;
+import com.sun.xml.ws.model.WrapperParameter;
 import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -75,21 +78,69 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 
 				QName methodQName = method.getRequestPayloadName();
 				JaxBeanInfo type = context.getGlobalType(methodQName);
-				if(type == null )continue;
-				Class<?> bean = type.jaxbType;
 				StringBuffer jsonIn = new StringBuffer();
-				jsonIn.append("{\""+method.getOperationName()+"\":");
-				serializeBean(bean,jsonIn,new ArrayList<Class<?>>());
-				jsonIn.append("}");
-				methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#", jsonIn.toString());
-				bean = context.getGlobalType(method.getResponsePayloadName()).jaxbType;
 				StringBuffer jsonOut = new StringBuffer();
-				serializeBean(bean,jsonOut, new ArrayList<Class<?>>());
+				if(type == null && method instanceof JavaMethodImpl){
+					JavaMethodImpl methodImpl = (JavaMethodImpl) method;
+					jsonIn.append("{\""+methodImpl.getOperationName()+"\":{");
+					int countParam = 0;
+					for(ParameterImpl param:methodImpl.getRequestParameters()){
+						if(param instanceof WrapperParameter){
+							WrapperParameter wparam =(WrapperParameter)param;
+							for(ParameterImpl paramChild :wparam.getWrapperChildren()){
+								if(countParam >0){
+									jsonIn.append(",");
+								}
+								jsonIn.append("\""+paramChild.getName().getLocalPart()+"\":");
+								serializeBean((Class<?>) paramChild.getTypeReference().type,jsonIn,new ArrayList<Class<?>>());
+								countParam ++;
+							}
+						}else{
+							jsonIn.append("\""+param.getName().getLocalPart()+"\":");
+							serializeBean((Class<?>) param.getTypeReference().type,jsonIn,new ArrayList<Class<?>>());
+							countParam ++;
+						}
+					}
+					jsonIn.append("}}");
+					
+					//Out
+					
+					jsonOut.append("{");
+					countParam = 0;
+					for(ParameterImpl param:methodImpl.getResponseParameters()){
+						if(param instanceof WrapperParameter){
+							WrapperParameter wparam =(WrapperParameter)param;
+							for(ParameterImpl paramChild :wparam.getWrapperChildren()){
+								if(countParam >0){
+									jsonOut.append(",");
+								}
+								jsonOut.append("\""+paramChild.getName().getLocalPart()+"\":");
+								serializeBean((Class<?>) paramChild.getTypeReference().type,jsonOut,new ArrayList<Class<?>>());
+								countParam ++;
+							}
+						}else{
+							jsonOut.append("\""+param.getName().getLocalPart()+"\":");
+							serializeBean((Class<?>) param.getTypeReference().type,jsonOut,new ArrayList<Class<?>>());
+							countParam ++;
+						}
+					}
+					jsonOut.append("}");
+				}else{
+					Class<?> bean = type.jaxbType;
+					jsonIn.append("{\""+method.getOperationName()+"\":");
+					serializeBean(bean,jsonIn,new ArrayList<Class<?>>());
+					jsonIn.append("}");
+					//
+					bean = context.getGlobalType(method.getResponsePayloadName()).jaxbType;
+					serializeBean(bean,jsonOut, new ArrayList<Class<?>>());
+				}
+				methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#", jsonIn.toString());
 				try{
 					methodTemplate = methodTemplate.replaceAll("#OUTPUT_JSON#", jsonOut.toString().replaceAll("$", ""));
 				}catch(Throwable th){
 					th.printStackTrace();
 				}
+				
 				methods.append(methodTemplate);
 				count++;
 			}
@@ -107,6 +158,10 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				return;
 		}
 		if(bean.isEnum()){
+			out.append("\""+bean.getSimpleName()+"\"");
+			return;
+		}
+		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
 			out.append("\""+bean.getSimpleName()+"\"");
 			return;
 		}
