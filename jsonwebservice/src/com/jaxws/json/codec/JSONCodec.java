@@ -62,9 +62,10 @@ import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
  * @mail sundaramurthis@gmail.com
  */
 public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
-	private static final String 		JSON_MIME_TYPE 	= "application/json";
-	private static final ContentType 	jsonContentType = new JSONContentType();
-	private final static String STATUS_STRING_RESERVED = "statusFlag";
+	private static final String 		JSON_MIME_TYPE 			= "application/json";
+	private static final ContentType 	jsonContentType 		= new JSONContentType();
+	private final static String 		STATUS_STRING_RESERVED 	= "statusFlag";
+	private final static String 		PAYLOAD_STRING_RESERVED = "payloadName";
 	private final 	WSBinding 		binding;
 	public final 	SOAPVersion 	soapVersion;
     private 		WSEndpoint<?> 		endpoint;
@@ -307,10 +308,18 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			JAXBContextImpl 	context 	= (JAXBContextImpl)seiModel.getJAXBContext();
 			inputJSON 						= JSONUtil.deserialize(new InputStreamReader(in));
 			if(inputJSON != null && inputJSON instanceof Map){
-				Map<?,?> requestPayloadJSONMap = (Map<?,?>) inputJSON;
+				Map<String, Object> requestPayloadJSONMap = (Map<String, Object>) inputJSON;
 				if(requestPayloadJSONMap.containsKey(STATUS_STRING_RESERVED)){
 					// Remove codec set value WARN user should not used condec specific key
 					requestPayloadJSONMap.remove(STATUS_STRING_RESERVED);
+				}
+				if(requestPayloadJSONMap.containsKey(PAYLOAD_STRING_RESERVED)){
+					String payloadname = requestPayloadJSONMap.get(PAYLOAD_STRING_RESERVED).toString();
+					requestPayloadJSONMap.remove(PAYLOAD_STRING_RESERVED);
+					Map<String, Object> requestPayloadJSONMapWithPayload = new HashMap<String, Object>();
+					requestPayloadJSONMapWithPayload.putAll(requestPayloadJSONMap);
+					requestPayloadJSONMap.clear();
+					requestPayloadJSONMap.put(payloadname, requestPayloadJSONMapWithPayload);
 				}
 				//TODO right now handle only last method, change this to handle multiple batch request
 				for(Object payload : requestPayloadJSONMap.keySet()){
@@ -402,7 +411,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 								}
 							}
 							//end remove holder
-							result.put(payloadName,parameters);
+							//result.put(payloadName,parameters);
+							result.putAll(parameters);
 						}else{
 							//Encode as Response
 							parameterObjects = readRequestPayLoadAsObjects(
@@ -415,8 +425,10 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				        	HashMap<String, Object> parameters = new HashMap<String, Object>();
 							parameters.put(parameterObjects.keySet().toArray()[0].toString(), 
 									responseBuilder.readResponse(message, parameterObjects.values().toArray()));
-							result.put(payloadName,parameters);
+							//result.put(payloadName,parameters);
+							result.putAll(parameters);
 						}
+						result.put(PAYLOAD_STRING_RESERVED, payloadName);
 					}else{
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
