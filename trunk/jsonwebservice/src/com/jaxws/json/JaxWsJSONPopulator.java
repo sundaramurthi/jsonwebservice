@@ -66,7 +66,7 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 				}
 			}
 		}
-		if(value.equals("") && isJSONPrimitive(clazz)){
+		if(value != null && value.equals("") && isJSONPrimitive(clazz)){
 			value = null; // Bug with number conversion
 		}
 		return super.convert(clazz, type, value, method);
