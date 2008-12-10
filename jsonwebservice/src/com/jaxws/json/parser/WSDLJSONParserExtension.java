@@ -39,8 +39,8 @@ public class WSDLJSONParserExtension extends WSDLParserExtension {
 		QName name = reader.getName();
         if (JSONBindingID.NS_JSON_BINDING.equals(name) && binding instanceof WSDLBoundPortTypeImpl ) {
         	WSDLBoundPortTypeImpl bindingImpl = (WSDLBoundPortTypeImpl)binding;
-        	//bindingImpl.setBindingId(JSONBindingID.JSON_HTTP);
-        	bindingImpl.setBindingId(BindingID.SOAP11_HTTP);
+        	bindingImpl.setBindingId(JSONBindingID.JSON_HTTP);
+        	//bindingImpl.setBindingId(BindingID.SOAP11_HTTP);
             String style = reader.getAttributeValue(null, "style");
 
             if ((style != null) && (style.equals("rpc"))) {
