@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.jws.WebParam.Mode;
 import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
@@ -175,6 +176,14 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						try {
 							new JaxWsJSONPopulator(context).populateObject(val,(Map<?, ?>)
 									((Map<?, ?>) requestPayloadJSON).get(parameter.getName().getLocalPart()));
+							if(parameter.getMode() == Mode.OUT){
+								CompositeStructure str = new CompositeStructure();
+								str.bridges = new Bridge[1];
+								str.bridges[0] = context.createBridge(parameter.getTypeReference());
+								str.values = new Object[1];
+								str.values[0] = val;
+								val = str;
+							}
 						} catch (Exception e) {
 							codecLog.error("Value population failed for "
 									+ parameter.getPartName(), e);
