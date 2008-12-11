@@ -319,6 +319,10 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			if(inputJSON != null && inputJSON instanceof Map){
 				Map<String, Object> requestPayloadJSONMap = (Map<String, Object>) inputJSON;
 				if(requestPayloadJSONMap.containsKey(STATUS_STRING_RESERVED)){
+					if(!new Boolean(requestPayloadJSONMap.get(STATUS_STRING_RESERVED).toString())){
+						packet.setMessage(new com.sun.xml.ws.message.FaultMessage(Messages.createEmpty(soapVersion),null));
+						return;
+					}
 					// Remove codec set value WARN user should not used condec specific key
 					requestPayloadJSONMap.remove(STATUS_STRING_RESERVED);
 				}
@@ -379,7 +383,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				sw = new OutputStreamWriter(out, "UTF-8");
 				HashMap<String, Object> result = new HashMap<String, Object>();
 				if (message.isFault()) {
-					result.put(STATUS_STRING_RESERVED, "flase");
+					result.put(STATUS_STRING_RESERVED, false);
 					result.put("message", message.readAsSOAPMessage().getSOAPBody().getFault().getFaultString());
 					HashMap<String,String> detail = new HashMap<String, String>(); 
 					try {
@@ -393,7 +397,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 					} catch(Throwable th){/*Dont mind about custom message set fail*/}
 					result.put("detail", detail);
 				} else {
-					result.put(STATUS_STRING_RESERVED, "true");
+					result.put(STATUS_STRING_RESERVED, true);
 					JavaMethodImpl methodImpl = getJavaMethodUsingPayloadName(seiModel, message.getPayloadLocalPart());
 					
 					
