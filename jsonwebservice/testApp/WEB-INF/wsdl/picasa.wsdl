@@ -4,7 +4,7 @@
 	xmlns:tns="http://album.com/dispatcher" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns:atom="http://www.w3.org/2005/Atom"
 	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
-	xmlns:json="http://code.google.com/json"
+	xmlns:json="http://schemas.jsonsoap.org/wsdl/json/"
 	xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="1.0"
 	xmlns="http://schemas.xmlsoap.org/wsdl/">
 
@@ -62,37 +62,35 @@
 	</portType>
 
 	<binding name="AlbumService" type="tns:Album">
-		<!-- <json:binding transport="http://schemas.xmlsoap.org/soap/http"	style="rpc" />-->
-		<soap:binding transport="http://schemas.xmlsoap.org/soap/http"	style="rpc" />
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
 		<operation name="clientLogin">
-			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
 				style="rpc" />
-			<input><soap:body use="literal" namespace="http://code.google.com/json"/></input>
-		  	<output><soap:body use="literal" namespace="http://code.google.com/json"/></output>
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
 			<fault name="loginFault"> 
-		  		<soap:fault name="loginFault" use="literal"/>
+		  		<json:fault name="loginFault" use="literal"/>
 			</fault>
 		</operation>
 		
 		<operation name="listAlbums">
-			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
 				style="rpc" />
-			<input><soap:body use="literal" namespace="http://code.google.com/json"/></input>
-		  	<output><soap:body use="literal" namespace="http://code.google.com/json"/></output>
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
 		</operation>
 		
 		<operation name="listPhotos">
-			<soap:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
 				style="rpc" />
-			<input><soap:body use="literal" namespace="http://code.google.com/json"/></input>
-		  	<output><soap:body use="literal" namespace="http://code.google.com/json"/></output>
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
 		</operation>
 	</binding>
 
 	<service name="AlbumService">
 		<port name="AlbumServicePort" binding="tns:AlbumService">
-			<!-- <json:address location="http://localhost/AlbumService" />-->
-			<soap:address location="http://localhost/AlbumService" />
+			<json:address location="http://localhost/AlbumService" />
 		</port>
 	</service>
 
