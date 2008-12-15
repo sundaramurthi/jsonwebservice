@@ -1,0 +1,9 @@
+#Creating first JSON webservice.
+
+= Introduction =
+
+First JSON webservice from WSDL
+
+
+= Details =
+TODO
