@@ -1,0 +1,10 @@
+#how to integrate with SOAP services.
+
+= Introduction =
+
+Using JSON webservice as codec for JAX-WS, CXF, and AXIS
+
+
+= Details =
+
+TODO
