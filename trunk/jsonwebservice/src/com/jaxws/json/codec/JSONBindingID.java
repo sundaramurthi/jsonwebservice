@@ -18,7 +18,7 @@ import com.sun.xml.ws.binding.WebServiceFeatureList;
 public class JSONBindingID extends BindingID {
 
     public static final String JSON_BINDING = "http://jsonplugin.googlecode.com/json/";
-    public static final String NS_WSDL_JSON = "http://schemas.xmlsoap.org/wsdl/json/";
+    public static final String NS_WSDL_JSON = "http://schemas.jsonsoap.org/wsdl/json/";
     public static final QName NS_JSON_BINDING 	= new QName(NS_WSDL_JSON,"binding");
     public static final QName QNAME_ADDRESS 	= new QName(NS_WSDL_JSON, "address");
     public static final QName QNAME_OPERATION 	= new QName(NS_WSDL_JSON, "operation");
