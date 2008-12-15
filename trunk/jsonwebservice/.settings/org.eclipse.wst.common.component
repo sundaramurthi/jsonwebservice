@@ -2,8 +2,11 @@
 <project-modules id="moduleCoreId" project-version="1.5.0">
     <wb-module deploy-name="jsonwebservice">
         <wb-resource deploy-path="/" source-path="/testApp/WEB-INF/src"/>
-        <wb-resource deploy-path="/" source-path="/testApp"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/testApp/WEB-INF/src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/jsonplugin"/>
+        <wb-resource deploy-path="/" source-path="/samples/album"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/samples/album/WEB-INF/src"/>
         <property name="context-root" value="album"/>
         <property name="java-output-path" value="build/classes"/>
     </wb-module>
