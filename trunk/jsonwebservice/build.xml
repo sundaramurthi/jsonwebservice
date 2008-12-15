@@ -53,8 +53,9 @@
 		<mkdir dir="${buildroot}"/>
 		<mkdir dir="${buildroot}/classes"/>
 		<mkdir dir="${buildroot}/jsonclasses"/>
-		<mkdir dir="${buildroot}/testApp"/>
-		<mkdir dir="${buildroot}/testApp/WEB-INF/classes"/>
+		<mkdir dir="${buildroot}/samples"/>
+		<mkdir dir="${buildroot}/samples/album"/>
+		<mkdir dir="${buildroot}/samples/album/WEB-INF/classes"/>
 	</target>
 
 	<!-- - - - - - - - - - - - - - - - - - 
@@ -87,9 +88,9 @@
          ================================= -->
     <target name="wsimport" description="create pojos">
     	
-    	<wsimport wsdl="${basedir}/testApp/WEB-INF/wsdl/picasa.wsdl"
-    					  destdir="${buildroot}/testApp/WEB-INF/classes"
-    					  sourcedestdir="${basedir}/testApp/WEB-INF/src"
+    	<wsimport wsdl="${basedir}/samples/album/WEB-INF/wsdl/picasa.wsdl"
+    					  destdir="${buildroot}/samples/album/WEB-INF/classes"
+    					  sourcedestdir="${basedir}/samples/album/WEB-INF/src"
     					  keep="true"
     					  wsdllocation="http://picasa.com/wsdl">
     	</wsimport>
@@ -100,12 +101,12 @@
          ================================= -->
     <target name="war" depends="build" description="create test war file">
     	
-    	<javac classpathref="classpath" srcdir="${basedir}/testApp/WEB-INF/src"
-    				destdir="${buildroot}/testApp/WEB-INF/classes" debug="off" source="1.5"/>
+    	<javac classpathref="classpath" srcdir="${basedir}/samples/album/WEB-INF/src"
+    				destdir="${buildroot}/samples/album/WEB-INF/classes" debug="off" source="1.5"/>
     	
-        <war destfile="${archive}/album.war" webxml="${basedir}/testApp/WEB-INF/web.xml">
-        	<fileset dir="${basedir}/testApp" excludes="**/servlet-api.jar"/>
-        	<classes dir="${buildroot}/testApp/WEB-INF/classes"/>
+        <war destfile="${archive}/album.war" webxml="${basedir}/samples/album/WEB-INF/web.xml">
+        	<fileset dir="${basedir}/samples/album" excludes="**/servlet-api.jar"/>
+        	<classes dir="${buildroot}/samples/album/WEB-INF/classes"/>
         	<lib dir="${archive}" >
         	    <include name="*-${version}.jar"/>
         	</lib>
