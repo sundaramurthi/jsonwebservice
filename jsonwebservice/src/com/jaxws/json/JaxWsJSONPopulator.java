@@ -1,12 +1,17 @@
 package com.jaxws.json;
 
+import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElementRef;
@@ -71,4 +76,42 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 		}
 		return super.convert(clazz, type, value, method);
 	}
+
+	@SuppressWarnings("unchecked")
+    public void populateObject(Object object, final Map elements)
+        throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
+        IntrospectionException, IllegalArgumentException, JSONException,
+        InstantiationException {
+		super.populateObject(object, elements);
+		
+        Class clazz = object.getClass();
+
+        BeanInfo info = Introspector.getBeanInfo(clazz);
+        PropertyDescriptor[] props = info.getPropertyDescriptors();
+
+        //iterate over class fields
+        for (int i = 0; i < props.length; ++i) {
+            PropertyDescriptor prop = props[i];
+            String name = prop.getName();
+
+            if (elements.containsKey(name)) {
+                Object value = elements.get(name);
+                Method method = prop.getWriteMethod();
+
+                if (method == null && prop.getReadMethod() != null && Collection.class.isAssignableFrom(prop.getPropertyType())){
+					try {
+						Method readMethod = prop.getReadMethod();
+						Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
+						if(objectList !=null){
+							Object convertedValue = this.convert(readMethod.getReturnType(), readMethod.getGenericReturnType(), value, readMethod);
+							objectList.addAll((Collection) convertedValue);
+						}
+					} catch (Exception e) {
+						// IGNORE it
+						e.printStackTrace();
+					}
+                }
+            }
+        }
+    }
 }
