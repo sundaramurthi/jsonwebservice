@@ -7,6 +7,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -14,6 +15,7 @@ import javax.xml.namespace.QName;
 
 import com.googlecode.jsonplugin.JSONPopulator;
 import com.jaxws.json.JaxWsJSONPopulator;
+import com.jaxws.json.codec.JSONCodec;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.JavaMethod;
@@ -168,8 +170,14 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		try{
 			if(bean != null){
 				int count =0;
+				nextField:
 				for(Field field:bean.getDeclaredFields()){
 					field.getAnnotations();
+					for(Pattern patten:JSONCodec.excludeProperties){
+						if(patten.matcher(field.getName()).matches()){
+							continue nextField;
+						}
+					}
 					if(field.getDeclaringClass().getName().equals(bean.getName())){
 						if(count != 0 ){
 							out.append(",");
