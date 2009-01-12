@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.jws.WebParam.Mode;
 import javax.xml.ws.Holder;
@@ -72,6 +73,13 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     private 		WSEndpoint<?> 		endpoint;
     private HttpMetadataPublisher 	metadataPublisher;
     static private SEIModel staticSeiModel;
+    
+    public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
+    private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
+    static{
+    	excludeProperties.add(Pattern.compile("serialVersionUID"));
+    	//includeProperties.add(Pattern.compile("*"));
+    }
     
     Log codecLog = LogFactory.getFactory().getInstance(JSONCodec.class);
 
@@ -446,7 +454,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
 				}
-				JSONUtil.serialize(sw, result);
+				JSONUtil.serialize(sw, result,excludeProperties,includeProperties,false);
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
 			} finally {
