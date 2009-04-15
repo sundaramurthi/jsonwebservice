@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.jws.WebParam.Mode;
@@ -21,8 +22,6 @@ import javax.xml.ws.Holder;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Element;
 
 import com.googlecode.jsonplugin.JSONException;
@@ -81,7 +80,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     	//includeProperties.add(Pattern.compile("*"));
     }
     
-    Log codecLog = LogFactory.getFactory().getInstance(JSONCodec.class);
+    Logger codecLog = Logger.getLogger(JSONCodec.class.getName());
 
 	public JSONCodec(WSBinding binding) {
 		this.binding = binding;
@@ -160,10 +159,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
              		try {
 						val = type.newInstance();
 					} catch (Exception e) {
-						codecLog.error(e);
-						if(codecLog.isDebugEnabled()){
-							e.printStackTrace();
-						}
+						codecLog.throwing(JSONCodec.class.getName(), "readRequestPayLoadAsObjects", e);
 					}
              	}
 				if (val != null && requestPayloadJSON != null && context != null) {
@@ -193,11 +189,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 								val = str;
 							}
 						} catch (Exception e) {
-							codecLog.error("Value population failed for "
+							codecLog.throwing(JSONCodec.class.getName(), "Value population failed for "
 									+ parameter.getPartName(), e);
-							if (codecLog.isDebugEnabled()) {
-								e.printStackTrace();
-							}
 						}
 					} else{
 						throw new Error("Unhandled type "+type);
@@ -390,6 +383,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			try {
 				sw = new OutputStreamWriter(out, "UTF-8");
 				HashMap<String, Object> result = new HashMap<String, Object>();
+				for (Iterator iterator = packet.invocationProperties.keySet().iterator(); iterator
+						.hasNext();) {
+					Object type = iterator.next();
+					result.put(type.toString(),packet.invocationProperties.get(type));
+				}
+								
 				if (message.isFault()) {
 					result.put(STATUS_STRING_RESERVED, false);
 					result.put("message", message.readAsSOAPMessage().getSOAPBody().getFault().getFaultString());
