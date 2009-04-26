@@ -27,6 +27,7 @@ import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.WSJSONReader;
 import com.googlecode.jsonplugin.WSJSONWriter;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
+import com.jaxws.json.feature.JSONWebService;
 import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -61,12 +62,14 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     static private SEIModel 			staticSeiModel;
     private static boolean				responsePayloadEnabled	= true;	
     private static boolean				excludeNullProperties	= false;
-    public 	static boolean				skipListWrapper			= true;
-    public  static Pattern 				listMapKey				= null;
-    private static Logger LOG				= Logger.getLogger(JSONCodec.class.getName());
+    private static Pattern 				pattern = null;
+    private static boolean 				listWarperSkip = false;
+    
+    private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
     
     public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
     private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
+	
     static{
     	Properties properties = new Properties();
     	URL serviceProperties = JSONCodec.class.getResource("/jsonservice.properties");
@@ -92,11 +95,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     		if(key.toString().equals("json.excludeNullProperties")){
     			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}
-    		if(key.toString().equals("json.list.wrapper.skip")){
-    			skipListWrapper	= properties.getProperty(key.toString()).trim().equals("true");
-    		}
     		if(key.toString().equals("json.list.map.key")){
-    			listMapKey	= Pattern.compile(properties.getProperty(key.toString()));
+    			pattern = Pattern.compile(properties.getProperty(key.toString()).trim());
+    		}
+    		if(key.toString().equals("json.response.list.wrapper.skip")){
+    			listWarperSkip = Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}
     		
     	}
@@ -194,13 +197,13 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 							// TEST HIT 2
 							// PRODUCTION HIT 1
 							// Decode as Request
-							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(soapVersion,skipListWrapper,listMapKey);
+							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(soapVersion);
 							message = jsonRequestBodyBuilder.createMessage(methodImpl,requestPayloadJSONMap,context);
 						}else{
 							// TEST HIT 4 END
 							//Decode as Response
 							// Should happen only in TEST decoder
-							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(soapVersion,skipListWrapper,listMapKey);
+							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(soapVersion);
 							message = jsonResponseBodyBuilder.createMessage(methodImpl,requestPayloadJSONMap,context);
 						}
 					}else{
@@ -228,7 +231,9 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			SEIModel seiModel = getSEIModel(packet);
 			OutputStreamWriter sw = null;
 			try {
-				boolean skipListWrapper = JSONCodec.skipListWrapper;
+				Pattern listMapKey		= null;
+				boolean listWrapperSkip = false;
+				
 				sw = new OutputStreamWriter(out, "UTF-8");
 				HashMap<String, Object> result = new HashMap<String, Object>();
 				for (Iterator iterator = packet.invocationProperties.keySet().iterator(); iterator
@@ -257,10 +262,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						methodImpl = getJavaMethodUsingPayloadName(seiModel, message.getPayloadLocalPart());
 					
 					if(methodImpl != null){
+						listMapKey = getListMapKey(methodImpl);
+						listWrapperSkip	= isListWarperSkip(methodImpl);
 						if(methodImpl.getOperationName().equals(message.getPayloadLocalPart())){
 							// TEST HIT 1
 							// Encode as Request For testing
-							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(soapVersion,skipListWrapper,listMapKey);
+							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(soapVersion);
 							Map<String, Object> parameters = jsonRequestBodyBuilder.createMap(methodImpl,message);
 							//end remove holder
 							// When request use "methodName":{"param1":{},"param2":{}}
@@ -268,7 +275,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						}else{
 							// TEST HIT 3
 							// PRODUCTION HIT 2
-							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(soapVersion,skipListWrapper,listMapKey);
+							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(soapVersion);
 							if(!methodImpl.getMEP().isOneWay()){
 								Map<String, Object> parameters = jsonResponseBodyBuilder.createMap(methodImpl,message);
 								if(responsePayloadEnabled){
@@ -284,7 +291,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
 				}
-				WSJSONWriter writer = new WSJSONWriter(skipListWrapper,listMapKey);
+				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,listMapKey);
 				sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
@@ -299,6 +306,27 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			}
 		}
 		return jsonContentType;
+	}
+	
+	public static boolean isListWarperSkip(JavaMethodImpl methodImpl){
+		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
+		if(jsonService != null){
+			return jsonService.skipListWrapper();
+		}
+		// default codec level
+		return listWarperSkip;
+	}
+	
+	public static Pattern getListMapKey(JavaMethodImpl methodImpl){
+		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
+		if(jsonService != null){
+			if(!jsonService.listMapKey().trim().equals("")){
+				// Performance down, TODO via singleton
+				return Pattern.compile(jsonService.listMapKey()); 
+			}
+		}
+		// default codec level
+		return pattern;
 	}
 
 	public ContentType encode(Packet arg0, WritableByteChannel arg1) {
