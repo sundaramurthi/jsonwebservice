@@ -49,7 +49,13 @@ public class WSJSONWriter {
     private DateFormat formatter;
     private boolean enumAsBean = ENUM_AS_BEAN_DEFAULT;
     private boolean excludeNullProperties;
+	private boolean skipListWrapper  = false;
+	private Pattern listMapKey;
 
+    public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey){
+    	this.skipListWrapper   	= skipListWrapper;
+    	this.listMapKey			= listMapKey;
+    }
     /**
      * @param object Object to be serialized into JSON
      * @return JSON string for object
@@ -107,42 +113,44 @@ public class WSJSONWriter {
 
         this.process(object, method);
     }
+    
 
-    public static List getWarpedList(Object object){
+	
+	private List<Object> getWarpedList(Object object){
     	// JSON webserivce strip List wrapper  parameter 
         //    IF number of properties == 1 and Its collection and wrapper disable
         //		then
         //		  pass on list vale
         try {
-            if(JSONCodec.listWrapper){
-	            Method[] methods = object.getClass().getDeclaredMethods();
-        		if(methods.length == 1 && methods[0].getParameterTypes().length == 0 && 
-        				methods[0].getReturnType().equals(List.class)){
-        			return (List) methods[0].invoke(object, (Object[])null);
-        		}
-            }
+            Method[] methods = object.getClass().getDeclaredMethods();
+    		if(methods.length == 1 && methods[0].getParameterTypes().length == 0 && 
+    				methods[0].getReturnType().equals(List.class)){
+    			return (List<Object>) methods[0].invoke(object, (Object[])null);
+    		}
         } catch (Throwable e) {/*Dont mind*/}
         return null;
         // End
     }
+	
+
     /**
      * Serialize object into json
      */
     private void process(Object object, Method method) throws JSONException {
         this.stack.push(object);
         //Codec
-        if(JSONCodec.listWrapper){// definitly not a list
+        if(skipListWrapper){// definitly not a list
         	Object warped = getWarpedList(object);
         	if(warped !=null) object = warped;
         }
         
-        if(object instanceof Iterable && JSONCodec.listMapKey != null ){
+        if(object instanceof Iterable && listMapKey != null ){
         	Iterator<Object> itr = ((Iterable) object).iterator();
         	if(itr.hasNext()){
 	        	Object instance = itr.next();
 	        	Method[] methods = instance.getClass().getDeclaredMethods();
 	        	for(Method meth: methods){
-	        		if(JSONCodec.listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
+	        		if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
 	        			HashMap<String,Object> map = new HashMap<String,Object>();
 	        			try {
 	        				map.put(""+meth.invoke(instance, (Object[])null), instance);
