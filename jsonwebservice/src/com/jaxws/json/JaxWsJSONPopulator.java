@@ -7,7 +7,6 @@ import java.beans.PropertyDescriptor;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,13 +15,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElementRef;
 
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONPopulator;
-import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.JSONRequestBodyBuilder;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 
@@ -30,17 +30,27 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 	
 	private JAXBContextImpl context;
 
-	public JaxWsJSONPopulator() {
+	private boolean skipListWrapper = false;
+
+	private Pattern listMapKey;
+	
+	public JaxWsJSONPopulator(boolean skipListWrapper,Pattern listMapKey) {
 		super();
+		this.skipListWrapper 	= skipListWrapper;
+		this.listMapKey 		= listMapKey;
 	}
 
-	public JaxWsJSONPopulator(String dateFormat) {
+	public JaxWsJSONPopulator(String dateFormat,boolean skipListWrapper,Pattern listMapKey) {
 		super(dateFormat);
+		this.skipListWrapper = skipListWrapper;
+		this.listMapKey 		= listMapKey;
 	}
 	
-	public JaxWsJSONPopulator(JAXBContextImpl context) {
+	public JaxWsJSONPopulator(JAXBContextImpl context,boolean skipListWrapper,Pattern listMapKey) {
 		super();
 		this.context = context;
+		this.skipListWrapper = skipListWrapper;
+		this.listMapKey 		= listMapKey;
 	}
 	
 
@@ -79,8 +89,8 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 		if(value != null && value.equals("") && isJSONPrimitive(clazz)){
 			value = null; // Bug with number conversion
 		}
-		if(JSONCodec.listWrapper && value instanceof List ){
-			String name = JSONCodec.getWarpedListName(clazz);
+		if(skipListWrapper && value instanceof List ){
+			String name = JSONRequestBodyBuilder.getWarpedListName(clazz);
 			if(name != null){
 				HashMap map = new HashMap();
 				map.put(name, value);
@@ -96,7 +106,7 @@ public class JaxWsJSONPopulator extends JSONPopulator {
         IntrospectionException, IllegalArgumentException, JSONException,
         InstantiationException {
 		// unmap
-		if(JSONCodec.listMapKey != null ){
+		if(listMapKey != null ){
 	        Method[] methods1 = object.getClass().getDeclaredMethods();
 	        for(Method meth1: methods1){
 	        	if(meth1.getReturnType() == List.class){
@@ -105,7 +115,7 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 		        	Type ob = ((java.lang.reflect.ParameterizedType)meth1.getGenericReturnType()).getActualTypeArguments()[0];
 		        	Method[]  methods =  ((Class)ob).getMethods();
 		        	 for(Method meth: methods){
-			        	if(JSONCodec.listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
+			        	if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
 			        		Map list = new HashMap();
 			        		if(meth.getName().startsWith("get")){
 			        			List lis = new ArrayList();
