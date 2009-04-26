@@ -7,9 +7,13 @@ import java.beans.PropertyDescriptor;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -18,6 +22,7 @@ import javax.xml.bind.annotation.XmlElementRef;
 
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONPopulator;
+import com.jaxws.json.codec.JSONCodec;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 
@@ -74,16 +79,55 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 		if(value != null && value.equals("") && isJSONPrimitive(clazz)){
 			value = null; // Bug with number conversion
 		}
+		if(JSONCodec.listWrapper && value instanceof List ){
+			String name = JSONCodec.getWarpedListName(clazz);
+			if(name != null){
+				HashMap map = new HashMap();
+				map.put(name, value);
+				value = map;
+			}
+		}
 		return super.convert(clazz, type, value, method);
 	}
 
 	@SuppressWarnings("unchecked")
-    public void populateObject(Object object, final Map elements)
+    public void populateObject(Object object, Map elements)
         throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
         IntrospectionException, IllegalArgumentException, JSONException,
         InstantiationException {
-		super.populateObject(object, elements);
+		// unmap
+		if(JSONCodec.listMapKey != null ){
+	        Method[] methods1 = object.getClass().getDeclaredMethods();
+	        for(Method meth1: methods1){
+	        	if(meth1.getReturnType() == List.class){
+	        		String charStart = ""+meth1.getName().charAt(3);
+					String key = charStart.toLowerCase()+meth1.getName().substring(4);
+		        	Type ob = ((java.lang.reflect.ParameterizedType)meth1.getGenericReturnType()).getActualTypeArguments()[0];
+		        	Method[]  methods =  ((Class)ob).getMethods();
+		        	 for(Method meth: methods){
+			        	if(JSONCodec.listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
+			        		Map list = new HashMap();
+			        		if(meth.getName().startsWith("get")){
+			        			List lis = new ArrayList();
+			        			for(Object v :elements.values()){
+			        				lis.add(v);
+			        			}
+								list.put(key, lis);
+								elements = list;
+								break;
+							}
+			        	}
+		        	 }
+	        	}
+	        }
+        } 
+		// demap
 		
+		try{
+			super.populateObject(object, elements);
+		}catch(Throwable th){
+			th.printStackTrace();
+		}
         Class clazz = object.getClass();
 
         BeanInfo info = Introspector.getBeanInfo(clazz);

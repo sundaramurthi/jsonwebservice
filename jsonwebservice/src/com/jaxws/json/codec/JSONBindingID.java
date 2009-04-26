@@ -42,11 +42,11 @@ public class JSONBindingID extends BindingID {
         return true;
     }
 
-	/*@Override
+	@Override
 	public WebServiceFeatureList createBuiltinFeatureList() {
 		WebServiceFeatureList featureList = super.createBuiltinFeatureList();
 		featureList.add(new JSONWebServiceFeature());
 		return featureList;
 	}
-*/
+
 }

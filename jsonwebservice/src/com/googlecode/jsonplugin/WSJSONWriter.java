@@ -27,8 +27,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jsonplugin.annotations.JSON;
+import com.jaxws.json.codec.JSONCodec;
 
-public class WSJSONWriter extends JSONWriter {
+public class WSJSONWriter {
     private static final Log log = LogFactory.getLog(JSONWriter.class);
 
     /**
@@ -113,7 +114,7 @@ public class WSJSONWriter extends JSONWriter {
         //		then
         //		  pass on list vale
         try {
-            if(System.getProperty("json.response.list.wrapper.skip").equals("true")){
+            if(JSONCodec.listWrapper){
 	            Method[] methods = object.getClass().getDeclaredMethods();
         		if(methods.length == 1 && methods[0].getParameterTypes().length == 0 && 
         				methods[0].getReturnType().equals(List.class)){
@@ -130,28 +131,32 @@ public class WSJSONWriter extends JSONWriter {
     private void process(Object object, Method method) throws JSONException {
         this.stack.push(object);
         //Codec
-        if(object instanceof Collection && !((Collection)object).isEmpty()){
-        	Collection col = (Collection)object;
-        	Iterator itr = col.iterator();
-        	Object first = itr.next();
-        	Method[] methods = first.getClass().getDeclaredMethods();
-        	Pattern mapKey = Pattern.compile("FIXME");
-        	for(Method meth: methods){
-        		if(mapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
-        			HashMap map = new HashMap();
-        			try {
-        				for(Object instance: col){
-        					map.put(meth.invoke(instance, (Object[])null), instance);
-        				}
-						object = map;
-						break;
-					} catch (Throwable e) {}
-        		}
-        	}
-        }else{
+        if(JSONCodec.listWrapper){// definitly not a list
         	Object warped = getWarpedList(object);
         	if(warped !=null) object = warped;
         }
+        
+        if(object instanceof Iterable && JSONCodec.listMapKey != null ){
+        	Iterator<Object> itr = ((Iterable) object).iterator();
+        	if(itr.hasNext()){
+	        	Object instance = itr.next();
+	        	Method[] methods = instance.getClass().getDeclaredMethods();
+	        	for(Method meth: methods){
+	        		if(JSONCodec.listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
+	        			HashMap<String,Object> map = new HashMap<String,Object>();
+	        			try {
+	        				map.put(""+meth.invoke(instance, (Object[])null), instance);
+	        				while(itr.hasNext()){
+	        					instance = itr.next();
+	        					map.put(""+meth.invoke(instance, (Object[])null), instance);
+	        				}
+							object = map;
+							break;
+						} catch (Throwable e) {}
+	        		}
+	        	}
+        	}
+        } 
         //Codc
 
         if (object instanceof Class) {
