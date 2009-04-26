@@ -1,10 +1,13 @@
 package com.jaxws.json.codec;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
@@ -14,6 +17,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -25,7 +29,8 @@ import javax.xml.ws.handler.MessageContext;
 import org.w3c.dom.Element;
 
 import com.googlecode.jsonplugin.JSONException;
-import com.googlecode.jsonplugin.JSONUtil;
+import com.googlecode.jsonplugin.WSJSONReader;
+import com.googlecode.jsonplugin.WSJSONWriter;
 import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.builder.BodyBuilder;
 import com.jaxws.json.builder.ResponseBuilder;
@@ -66,22 +71,54 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	private static final String 		JSON_MIME_TYPE 			= "application/json";
 	private static final ContentType 	jsonContentType 		= new JSONContentType();
 	private final static String 		STATUS_STRING_RESERVED 	= "statusFlag";
-	private final static String 		PAYLOAD_STRING_RESERVED = "payloadName";
-	private final 	WSBinding 		binding;
-	public final 	SOAPVersion 	soapVersion;
+	private final 	WSBinding 			binding;
+	public final 	SOAPVersion 		soapVersion;
     private 		WSEndpoint<?> 		endpoint;
-    private HttpMetadataPublisher 	metadataPublisher;
-    static private SEIModel staticSeiModel;
+    private HttpMetadataPublisher 		metadataPublisher;
+    static private SEIModel 			staticSeiModel;
+    private static boolean				responsePayloadEnabled	= true;	
+    private static boolean				excludeNullProperties	= false;
+    public 	static boolean				listWrapper				= true;
+    public  static Pattern 				listMapKey				= null;
+    private static Logger LOG				= Logger.getLogger(JSONCodec.class.getName());
     
     public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
     private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
     static{
-    	excludeProperties.add(Pattern.compile("serialVersionUID"));
-    	//includeProperties.add(Pattern.compile("*"));
+    	Properties properties = new Properties();
+    	URL serviceProperties = JSONCodec.class.getResource("/jsonservice.properties");
+    	if(serviceProperties != null){
+    		LOG.info("Using JSON service properties from "+serviceProperties);
+    		try {
+				properties.load(serviceProperties.openStream());
+			} catch (Throwable thrown) {
+				LOG.throwing(JSONCodec.class.getSimpleName(), "property load", thrown);
+			}
+    	}
+    	properties.put("json.exclude.serialVersionUID", "serialVersionUID");
+    	for(Object key:properties.keySet()){
+    		if(key.toString().startsWith("json.exclude")){
+    			excludeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
+    		}
+    		if(key.toString().startsWith("json.include")){
+    			includeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
+    		}
+    		if(key.toString().equals("json.response.enable.payloadname")){
+    			responsePayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}
+    		if(key.toString().equals("json.excludeNullProperties")){
+    			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}
+    		if(key.toString().equals("json.list.wrapper.skip")){
+    			listWrapper	= properties.getProperty(key.toString()).trim().equals("true");
+    		}
+    		if(key.toString().equals("json.list.map.key")){
+    			listMapKey	= Pattern.compile(properties.getProperty(key.toString()));
+    		}
+    		
+    	}
     }
     
-    Logger codecLog = Logger.getLogger(JSONCodec.class.getName());
-
 	public JSONCodec(WSBinding binding) {
 		this.binding = binding;
 		this.soapVersion = binding.getSOAPVersion();
@@ -121,8 +158,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	private JavaMethodImpl getJavaMethodUsingPayloadName(SEIModel seiModel,String payloadName){
 		JavaMethodImpl methodImpl = null;
 		for(JavaMethod m:seiModel.getJavaMethods()){
-			if(m.getRequestPayloadName().getLocalPart().equals(payloadName) 
-					|| m.getResponsePayloadName().getLocalPart().equals(payloadName)){
+			if(m.getOperationName().equals(payloadName) 
+					|| ((!m.getMEP().isOneWay()) &&  m.getResponsePayloadName().getLocalPart().equals(payloadName))){
 				if(m instanceof JavaMethodImpl){
 					methodImpl = (JavaMethodImpl)m;
 				}else{
@@ -159,7 +196,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
              		try {
 						val = type.newInstance();
 					} catch (Exception e) {
-						codecLog.throwing(JSONCodec.class.getName(), "readRequestPayLoadAsObjects", e);
+						LOG.throwing(JSONCodec.class.getName(), "readRequestPayLoadAsObjects", e);
 					}
              	}
 				if (val != null && requestPayloadJSON != null && context != null) {
@@ -178,8 +215,22 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						val = str;
 					}else if (requestPayloadJSON instanceof Map) {
 						try {
-							new JaxWsJSONPopulator(context).populateObject(val,(Map<?, ?>)
-									((Map<?, ?>) requestPayloadJSON).get(parameter.getName().getLocalPart()));
+							try{
+								String parameterName = parameter.getName().getLocalPart();
+								Object parameterValue = ((Map<?, ?>) requestPayloadJSON).get(parameterName);
+								if(parameterValue instanceof Map){
+									new JaxWsJSONPopulator(context).populateObject(val,(Map<?, ?>)parameterValue	);
+								}else if(listWrapper && parameterValue instanceof List){
+									HashMap<String,Object> map = new HashMap<String, Object>();
+									String warperName = getWarpedListName(val.getClass());
+									if(warperName != null){
+										map.put(warperName, parameterValue);
+										new JaxWsJSONPopulator(context).populateObject(val,map);
+									}
+								}
+							}catch(Throwable th){
+								th.printStackTrace();
+							}
 							if(parameter.getMode() == Mode.OUT){
 								CompositeStructure str = new CompositeStructure();
 								str.bridges = new Bridge[1];
@@ -189,7 +240,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 								val = str;
 							}
 						} catch (Exception e) {
-							codecLog.throwing(JSONCodec.class.getName(), "Value population failed for "
+							LOG.throwing(JSONCodec.class.getName(), "Value population failed for "
 									+ parameter.getPartName(), e);
 						}
 					} else{
@@ -203,6 +254,27 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		 }
 		return objects; 
 	}
+	
+	public static String getWarpedListName(Class<? extends Object> clazz){
+    	// JSON webserivce strip List wrapper  parameter 
+        //    IF number of properties == 1 and Its collection and wrapper disable
+        //		then
+        //		  pass on list vale
+        try {
+            if(listWrapper){
+	            Method[] methods = clazz.getDeclaredMethods();
+        		if(methods.length == 1 && methods[0].getParameterTypes().length == 0 && 
+        				methods[0].getReturnType().equals(List.class)){
+        			if(methods[0].getName().startsWith("get")){
+						String charStart = ""+methods[0].getName().charAt(3);
+						return charStart.toLowerCase()+methods[0].getName().substring(4);
+					}
+        		}
+            }
+        } catch (Throwable e) {/*Dont mind*/}
+        return null;
+        // End
+    }
 	
 	private BodyBuilder getBodyBuilder(List<ParameterImpl> parameters) {
 		BodyBuilder bodyBuilder = null;
@@ -316,7 +388,20 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		try {
 			SEIModel 			seiModel 	= getSEIModel(packet);
 			JAXBContextImpl 	context 	= (JAXBContextImpl)seiModel.getJAXBContext();
-			inputJSON 						= JSONUtil.deserialize(new InputStreamReader(in));
+			
+			//
+			//read content
+	        BufferedReader bufferReader = new BufferedReader(new InputStreamReader(in));
+	        String line = null;
+	        StringBuilder buffer = new StringBuilder();
+	        try {
+	            while ((line = bufferReader.readLine()) != null) {
+	                buffer.append(line);
+	            }
+	        } catch (IOException e) {
+	            throw new JSONException(e);
+	        }
+	        inputJSON =  new WSJSONReader().read(buffer.toString());
 			if(inputJSON != null && inputJSON instanceof Map){
 				Map<String, Object> requestPayloadJSONMap = (Map<String, Object>) inputJSON;
 				if(requestPayloadJSONMap.containsKey(STATUS_STRING_RESERVED)){
@@ -327,21 +412,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 					// Remove codec set value WARN user should not used condec specific key
 					requestPayloadJSONMap.remove(STATUS_STRING_RESERVED);
 				}
-				if(requestPayloadJSONMap.containsKey(PAYLOAD_STRING_RESERVED)){
-					String payloadname = requestPayloadJSONMap.get(PAYLOAD_STRING_RESERVED).toString();
-					requestPayloadJSONMap.remove(PAYLOAD_STRING_RESERVED);
-					Map<String, Object> requestPayloadJSONMapWithPayload = new HashMap<String, Object>();
-					requestPayloadJSONMapWithPayload.putAll(requestPayloadJSONMap);
-					requestPayloadJSONMap.clear();
-					requestPayloadJSONMap.put(payloadname, requestPayloadJSONMapWithPayload);
-				}
-				//TODO right now handle only last method, change this to handle multiple batch request
 				for(Object payload : requestPayloadJSONMap.keySet()){
 					JavaMethodImpl methodImpl = getJavaMethodUsingPayloadName(seiModel,payload.toString());
 					if(methodImpl != null){
 						Class<?> bean = null;
 						JaxWsJSONPopulator populator = new JaxWsJSONPopulator(context);
-						if(methodImpl.getRequestPayloadName().getLocalPart().equals(payload)){
+						if(methodImpl.getOperationName().equals(payload)){
 							// Decode as Request
 							Collection<Object> parameterObjects = readRequestPayLoadAsObjects(
 																methodImpl.getRequestParameters(),
@@ -354,7 +430,16 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 																methodImpl.getResponseParameters(),
 																requestPayloadJSONMap,context).values();
 							assert parameterObjects.size() == 1;
-							message = JAXBMessage.create(methodImpl.getResponseParameters().get(0).getBridge(), parameterObjects.toArray()[0], soapVersion);
+							if(methodImpl.getResponseParameters().get(0) instanceof WrapperParameter &&
+									((WrapperParameter)methodImpl.getResponseParameters().get(0)).getTypeReference().type
+									!= com.sun.xml.bind.api.CompositeStructure.class){
+								
+								message = JAXBMessage.create(((WrapperParameter)methodImpl.getResponseParameters().get(0)).getWrapperChildren().get(0).getBridge(),
+										((WrapperParameter)methodImpl.getResponseParameters().get(0)).getWrapperChildren().get(0), soapVersion);
+							}else{
+							//methodImpl.getResponseParameters().get(0).getBridge().getContext().
+								message = JAXBMessage.create(methodImpl.getResponseParameters().get(0).getBridge(), parameterObjects.toArray()[0], soapVersion);
+							}
 						}
 					}else{
 						throw new Error("Unknown payload "+payload);
@@ -405,19 +490,21 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 					result.put("detail", detail);
 				} else {
 					result.put(STATUS_STRING_RESERVED, true);
-					JavaMethodImpl methodImpl = getJavaMethodUsingPayloadName(seiModel, message.getPayloadLocalPart());
+					JavaMethodImpl methodImpl = (JavaMethodImpl)message.getMethod(seiModel);
+					if(methodImpl == null)// in case response OUT
+						methodImpl = getJavaMethodUsingPayloadName(seiModel, message.getPayloadLocalPart());
 					
 					
 					if(methodImpl != null){
 						ResponseBuilder responseBuilder;
 						Map<String,Object> parameterObjects;
 						String payloadName;
-						if(methodImpl.getRequestPayloadName().getLocalPart().equals(message.getPayloadLocalPart())){
+						if(methodImpl.getOperationName().equals(message.getPayloadLocalPart())){
 							// Encode as Request
 							parameterObjects = readRequestPayLoadAsObjects(
 																methodImpl.getRequestParameters(),
 																null,null);
-							payloadName	= methodImpl.getRequestPayloadName().getLocalPart();
+							payloadName	= methodImpl.getOperationName();
 							
 							responseBuilder = getResponseBuilder(methodImpl.getRequestParameters());
 							responseBuilder.readResponse(message, parameterObjects.values().toArray());
@@ -431,29 +518,36 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 								}
 							}
 							//end remove holder
-							//result.put(payloadName,parameters);
-							result.putAll(parameters);
+							// When request use "methodName":{"param1":{},"param2":{}}
+							result.put(payloadName,parameters);
 						}else{
 							//Encode as Response
 							parameterObjects = readRequestPayLoadAsObjects(
 																methodImpl.getResponseParameters(),
 																null,null);
 							assert parameterObjects.size() == 1;
-							payloadName = methodImpl.getResponsePayloadName().getLocalPart();
-							
-				        	responseBuilder = getResponseBuilder(methodImpl.getResponseParameters());
-				        	HashMap<String, Object> parameters = new HashMap<String, Object>();
-							parameters.put(parameterObjects.keySet().toArray()[0].toString(), 
-									responseBuilder.readResponse(message, parameterObjects.values().toArray()));
-							//result.put(payloadName,parameters);
-							result.putAll(parameters);
+							 if(!methodImpl.getMEP().isOneWay()){
+								payloadName = methodImpl.getResponsePayloadName().getLocalPart();
+								
+					        	responseBuilder = getResponseBuilder(methodImpl.getResponseParameters());
+					        	HashMap<String, Object> parameters = new HashMap<String, Object>();
+								parameters.put(parameterObjects.keySet().toArray()[0].toString(), 
+										responseBuilder.readResponse(message, parameterObjects.values().toArray()));
+								if(responsePayloadEnabled){
+									result.put(payloadName,parameters);
+								}else{
+									result.putAll(parameters);
+								}
+							 }else{
+								 //result.put("void","");
+							 }
 						}
-						result.put(PAYLOAD_STRING_RESERVED, payloadName);
 					}else{
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
 				}
-				JSONUtil.serialize(sw, result,excludeProperties,includeProperties,false);
+				WSJSONWriter writer = new WSJSONWriter();
+				sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
 			} finally {
