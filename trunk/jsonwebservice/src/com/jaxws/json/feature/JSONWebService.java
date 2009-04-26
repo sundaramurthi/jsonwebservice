@@ -7,4 +7,6 @@ import java.lang.annotation.RetentionPolicy;
 @java.lang.annotation.Target(value= ElementType.METHOD)
 public @interface JSONWebService {
 	boolean skipListWrapper() default true;
+	String	listMapKey() default "";
+	String	listMapValue() default "";
 }
