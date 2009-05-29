@@ -9,4 +9,6 @@ public @interface JSONWebService {
 	boolean skipListWrapper() default true;
 	String	listMapKey() default "";
 	String	listMapValue() default "";
+	String[] includeProperties() default {};
+	String[] excludeProperties() default {};
 }

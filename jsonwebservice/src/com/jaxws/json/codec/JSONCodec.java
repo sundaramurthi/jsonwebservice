@@ -26,6 +26,7 @@ import org.w3c.dom.Element;
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.WSJSONReader;
 import com.googlecode.jsonplugin.WSJSONWriter;
+import com.jaxws.json.DateFormat;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.jaxws.json.feature.JSONWebService;
 import com.sun.istack.NotNull;
@@ -64,6 +65,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     private static boolean				excludeNullProperties	= false;
     private static Pattern 				pattern = null;
     private static boolean 				listWarperSkip = false;
+    protected static DateFormat			dateFormatType = DateFormat.PLAIN;
     
     private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
     
@@ -85,21 +87,18 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     	for(Object key:properties.keySet()){
     		if(key.toString().startsWith("json.exclude")){
     			excludeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
-    		}
-    		if(key.toString().startsWith("json.include")){
+    		}else if(key.toString().startsWith("json.include")){
     			includeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
-    		}
-    		if(key.toString().equals("json.response.enable.payloadname")){
+    		}else if(key.toString().equals("json.response.enable.payloadname")){
     			responsePayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}
-    		if(key.toString().equals("json.excludeNullProperties")){
+    		}else if(key.toString().equals("json.excludeNullProperties")){
     			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}
-    		if(key.toString().equals("json.list.map.key")){
+    		}else if(key.toString().equals("json.list.map.key")){
     			pattern = Pattern.compile(properties.getProperty(key.toString()).trim());
-    		}
-    		if(key.toString().equals("json.response.list.wrapper.skip")){
+    		}else if(key.toString().equals("json.response.list.wrapper.skip")){
     			listWarperSkip = Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals(com.jaxws.json.DateFormat.class.getName())){
+    			dateFormatType	= Enum.valueOf(com.jaxws.json.DateFormat.class, properties.getProperty(key.toString()).trim());
     		}
     		
     	}
@@ -233,6 +232,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			try {
 				Pattern listMapKey		= null;
 				boolean listWrapperSkip = false;
+				Collection<Pattern> excludeProperties 	= this.excludeProperties;
+			    Collection<Pattern> includeProperties	= this.includeProperties;
 				
 				sw = new OutputStreamWriter(out, "UTF-8");
 				HashMap<String, Object> result = new HashMap<String, Object>();
@@ -262,6 +263,21 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						methodImpl = getJavaMethodUsingPayloadName(seiModel, message.getPayloadLocalPart());
 					
 					if(methodImpl != null){
+						String inEx[][] = getInExProperties(methodImpl);
+						if(inEx[0].length > 0){
+							if(includeProperties == null)
+								includeProperties = new ArrayList<Pattern>();
+							for(String include:inEx[0])
+								includeProperties.add(Pattern.compile(include));
+							
+						}
+						if(inEx[1].length > 0){
+							if(excludeProperties == null)
+								excludeProperties = new ArrayList<Pattern>();
+							for(String exclude:inEx[1])
+								excludeProperties.add(Pattern.compile(exclude));
+						}
+						
 						listMapKey = getListMapKey(methodImpl);
 						listWrapperSkip	= isListWarperSkip(methodImpl);
 						if(methodImpl.getOperationName().equals(message.getPayloadLocalPart())){
@@ -291,7 +307,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
 				}
-				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,listMapKey);
+				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,listMapKey,dateFormatType);
 				sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
@@ -327,6 +343,15 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		}
 		// default codec level
 		return pattern;
+	}
+	
+	public static String[][] getInExProperties(JavaMethodImpl methodImpl){
+		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
+		if(jsonService != null){
+			return new String[][]{jsonService.includeProperties(),jsonService.excludeProperties()};
+		}
+		// default codec level
+		return new String[][]{{},{}};
 	}
 
 	public ContentType encode(Packet arg0, WritableByteChannel arg1) {

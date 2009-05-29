@@ -8,6 +8,9 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.sql.Timestamp;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -31,26 +34,30 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 	private JAXBContextImpl context;
 
 	private boolean skipListWrapper = false;
+	private DateFormat dateFormat;
 
 	private Pattern listMapKey;
 	
-	public JaxWsJSONPopulator(boolean skipListWrapper,Pattern listMapKey) {
+	public JaxWsJSONPopulator(boolean skipListWrapper,Pattern listMapKey,DateFormat dateFormat) {
 		super();
 		this.skipListWrapper 	= skipListWrapper;
 		this.listMapKey 		= listMapKey;
+		this.dateFormat			= dateFormat;
 	}
 
-	public JaxWsJSONPopulator(String dateFormat,boolean skipListWrapper,Pattern listMapKey) {
+	public JaxWsJSONPopulator(String dateFormat,boolean skipListWrapper,Pattern listMapKey,DateFormat dateFormatType) {
 		super(dateFormat);
 		this.skipListWrapper = skipListWrapper;
 		this.listMapKey 		= listMapKey;
+		this.dateFormat			= dateFormatType;
 	}
 	
-	public JaxWsJSONPopulator(JAXBContextImpl context,boolean skipListWrapper,Pattern listMapKey) {
+	public JaxWsJSONPopulator(JAXBContextImpl context,boolean skipListWrapper,Pattern listMapKey,DateFormat dateFormat) {
 		super();
 		this.context = context;
 		this.skipListWrapper = skipListWrapper;
 		this.listMapKey 		= listMapKey;
+		this.dateFormat			= dateFormat;
 	}
 	
 
@@ -85,6 +92,12 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 					return new JAXBElement(beanInfo.getTypeName(elementName),beanInfo.jaxbType,value);
 				}
 			}
+		}else if (value !=null && (clazz.equals(Date.class) || clazz.equals(Timestamp.class))){
+				if(dateFormat == DateFormat.ISO){
+					return new Timestamp(ISO2Date(value.toString()).getTime());
+				}else if(dateFormat == DateFormat.PLAIN){
+					return new Timestamp(new Long(value.toString()));
+				}
 		}
 		if(value != null && value.equals("") && isJSONPrimitive(clazz)){
 			value = null; // Bug with number conversion
@@ -167,5 +180,50 @@ public class JaxWsJSONPopulator extends JSONPopulator {
                 }
             }
         }
+    }
+	
+	/**
+     * Convert ISO formated dates to Java Date
+     *
+     *
+     * @param dateStr
+     *
+     * @return
+     *
+     * @see
+     */
+    static public Date ISO2Date(String dateStr) {
+
+        String timePattern = "";
+
+        // select the time pattern to use:
+        if (dateStr.length() == 8) {
+            timePattern = "yyyyMMdd";
+        } else if (dateStr.length() == 12) {
+            timePattern = "yyyyMMddHHmm";
+        } else if (dateStr.length() == 13) {
+            timePattern = "yyyyMMdd'T'HHmm";
+        } else if (dateStr.length() == 14) {
+            timePattern = "yyyyMMddHHmmss";
+        } else if (dateStr.length() == 15) {
+            timePattern = "yyyyMMdd'T'HHmmss";
+        } else if (dateStr.length() > 8 && dateStr.charAt(8) == 'T') {
+            timePattern = "yyyyMMdd'T'HHmmssz";
+        } else {
+            timePattern = "yyyyMMddHHmmssz";
+        }
+
+        // Format the current time.
+        SimpleDateFormat formatter = new SimpleDateFormat(timePattern);
+
+        Date d = null;
+
+        try {
+            d = formatter.parse(dateStr, new ParsePosition(0));
+        } catch (NullPointerException e) {
+          //  LOG.error("constructor failed for" + dateStr);
+        }
+
+        return d;
     }
 }

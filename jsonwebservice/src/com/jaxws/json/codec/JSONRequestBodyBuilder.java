@@ -31,7 +31,7 @@ public class JSONRequestBodyBuilder extends MessageBodyBuilder{
 		Collection<Object> parameterObjects = readParameterAsObjects(
 						methodImpl.getRequestParameters(),
 						requestJSONObject,
-						context,listWrapperSkip, listMapKey).values();
+						context,listWrapperSkip, listMapKey,JSONCodec.dateFormatType).values();
 		BodyBuilder bodyBuilder = getRequestBodyBuilder(methodImpl
 				.getRequestParameters());
 		return bodyBuilder.createMessage(parameterObjects.toArray());
@@ -50,7 +50,7 @@ public class JSONRequestBodyBuilder extends MessageBodyBuilder{
 		
 		Map<String,Object> parameterObjects = readParameterAsObjects(
 				methodImpl.getRequestParameters(),
-				null,null,listWrapperSkip,listMapKey);
+				null,null,listWrapperSkip,listMapKey,JSONCodec.dateFormatType);
 		getResponseBuilder(methodImpl.getRequestParameters()).readResponse(message, parameterObjects.values().toArray());
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
 		//Remove Holder objects

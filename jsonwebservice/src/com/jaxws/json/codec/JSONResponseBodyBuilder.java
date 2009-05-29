@@ -34,7 +34,7 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 		Collection<Object> parameterObjects = readParameterAsObjects(
 				methodImpl.getResponseParameters(),
 				responseJSONObject,context,listWrapperSkip,
-						listMapKey).values();
+						listMapKey,JSONCodec.dateFormatType).values();
 		assert parameterObjects.size() == 1;
 		ParameterImpl responseParameter = methodImpl.getResponseParameters().get(0);
 		if(responseParameter instanceof WrapperParameter &&
@@ -58,17 +58,18 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		//Encode as Response
+		
 		Map<String,Object> parameterObjects = readParameterAsObjects(
 											methodImpl.getResponseParameters(),
 											null,null,listWrapperSkip,
-													listMapKey);
+													listMapKey,JSONCodec.dateFormatType);
 		assert parameterObjects.size() == 1;
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
-		
-		parameters.put(parameterObjects.keySet().toArray()[0].toString(), 
-				getResponseBuilder(methodImpl.getResponseParameters())
-				.readResponse(message, parameterObjects.values().toArray()));
-			
+		if(!parameterObjects.keySet().isEmpty()){	
+			parameters.put(parameterObjects.keySet().toArray()[0].toString(), 
+					getResponseBuilder(methodImpl.getResponseParameters())
+					.readResponse(message, parameterObjects.values().toArray()));
+		}
 		return parameters;
 	}
 	

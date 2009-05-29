@@ -94,12 +94,12 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 									jsonIn.append(",");
 								}
 								jsonIn.append("\""+paramChild.getName().getLocalPart()+"\":");
-								serializeBean((Class<?>) paramChild.getTypeReference().type,jsonIn,new ArrayList<Class<?>>());
+								serializeBean((Class<?>) paramChild.getTypeReference().type,jsonIn,new ArrayList<Class<?>>(),false);
 								countParam ++;
 							}
 						}else{
 							jsonIn.append("\""+param.getName().getLocalPart()+"\":");
-							serializeBean((Class<?>) param.getTypeReference().type,jsonIn,new ArrayList<Class<?>>());
+							serializeBean((Class<?>) param.getTypeReference().type,jsonIn,new ArrayList<Class<?>>(),false);
 							countParam ++;
 						}
 					}
@@ -117,12 +117,12 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 									jsonOut.append(",");
 								}
 								jsonOut.append("\""+paramChild.getName().getLocalPart()+"\":");
-								serializeBean((Class<?>) paramChild.getTypeReference().type,jsonOut,new ArrayList<Class<?>>());
+								serializeBean((Class<?>) paramChild.getTypeReference().type,jsonOut,new ArrayList<Class<?>>(),false);
 								countParam ++;
 							}
 						}else{
 							jsonOut.append("\""+param.getName().getLocalPart()+"\":");
-							serializeBean((Class<?>) param.getTypeReference().type,jsonOut,new ArrayList<Class<?>>());
+							serializeBean((Class<?>) param.getTypeReference().type,jsonOut,new ArrayList<Class<?>>(),false);
 							countParam ++;
 						}
 					}
@@ -130,11 +130,15 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				}else{
 					Class<?> bean = type.jaxbType;
 					jsonIn.append("{\""+method.getOperationName()+"\":");
-					serializeBean(bean,jsonIn,new ArrayList<Class<?>>());
+					serializeBean(bean,jsonIn,new ArrayList<Class<?>>(),false);
 					jsonIn.append("}");
 					//
-					bean = context.getGlobalType(method.getResponsePayloadName()).jaxbType;
-					serializeBean(bean,jsonOut, new ArrayList<Class<?>>());
+					if(!method.getMEP().isOneWay()){
+						bean = context.getGlobalType(method.getResponsePayloadName()).jaxbType;
+						serializeBean(bean,jsonOut, new ArrayList<Class<?>>(),false);
+					}else{
+						jsonOut.append("ONE-WAY");
+					}
 				}
 				methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#", jsonIn.toString());
 				try{
@@ -150,11 +154,66 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			
 			out.write(templateMain.getBytes());
 			return true;
+		}else if(queryString.startsWith("form")){
+			StringBuffer form = new StringBuffer();
+			connection.setStatus(HttpURLConnection.HTTP_OK);
+			connection.setContentTypeResponseHeader("application/json;charset=\"utf-8\"");
+	        
+			OutputStream out = connection.getOutput();
+			
+			form.append("{\""+endPoint.getServiceName().getLocalPart()+"\":{");
+			form.append("\""+endPoint.getPortName().getLocalPart()+"\":{");
+			byte count 	= 0;
+			for(JavaMethod method:endPoint.getSEIModel().getJavaMethods()){
+				JavaMethodImpl methodImpl = (JavaMethodImpl) method;
+				if(count != 0){
+					form.append(",");
+				}
+				count++;
+				form.append("\""+methodImpl.getOperationName()+"\":{");
+				form.append("\"input\":{");
+				int countParam = 0;
+				for(ParameterImpl param:methodImpl.getRequestParameters()){
+					if(param instanceof WrapperParameter){
+						WrapperParameter wparam =(WrapperParameter)param;
+						for(ParameterImpl paramChild :wparam.getWrapperChildren()){
+							if(countParam >0){
+								form.append(",");
+							}
+							form.append("\""+paramChild.getName().getLocalPart()+"\":");
+							serializeBean((Class<?>) paramChild.getTypeReference().type,form,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
+							countParam ++;
+						}
+					}else{
+						form.append("\""+param.getName().getLocalPart()+"\":");
+						serializeBean((Class<?>) param.getTypeReference().type,form,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
+						countParam ++;
+					}
+				}
+				form.append("},");
+				form.append("\"invoke\":function(callback){");
+				/// AJAX invoker
+				form.append(
+						"new Ajax.Request('"+endPoint.getPort().getAddress().getURL().toExternalForm()+"',{"+
+					 " method:'post',"+
+					 " requestHeaders: {Accept: 'application/json'},"+
+					 " postBody: '{\""+methodImpl.getOperationName()+"\":'+Object.toJSON(this.input)+'}',"+
+					 " onComplete: callback"+
+					"});}");
+
+				
+				///
+				form.append("}");
+			}
+			form.append("}}}");
+			//serializeBean(endPoint.getImplementationClass(),form,new ArrayList<Class<?>>());
+			out.write(form.toString().getBytes());
+			return true;
 		}
 		return false;
 	}
 	
-	private void serializeBean(Class<?> bean,StringBuffer out,List<Class<?>> stack) throws IOException{
+	private void serializeBean(Class<?> bean,StringBuffer out,List<Class<?>> stack,boolean autoBind) throws IOException{
 		for(Class<?> stackBean : stack ){
 			if(stackBean.equals(bean))//Recursion deducted
 				return;
@@ -198,11 +257,15 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 								out.append("\"\"");
 							}else{
 								stack.add(bean);
-								serializeBean(field.getType(), out,stack);
+								serializeBean(field.getType(), out,stack,autoBind);
 							}
 						}else{
 							XmlElement xmlElemnt = field.getAnnotation(XmlElement.class);
-							out.append("\""+escapeString(field.getName())+"\":\""+(xmlElemnt != null?xmlElemnt.defaultValue() != null ?xmlElemnt.defaultValue().trim():"":"") +"\"");
+							if(autoBind){
+								out.append("\""+escapeString(field.getName())+"\":function(){try{return $(\""+escapeString(field.getName())+"\").getValue().toJSON();}catch(e){}}");
+							}else{
+								out.append("\""+escapeString(field.getName())+"\":\""+(xmlElemnt != null?xmlElemnt.defaultValue() != null ?xmlElemnt.defaultValue().trim():"":"") +"\"");
+							}
 						}
 					}
 					count++;

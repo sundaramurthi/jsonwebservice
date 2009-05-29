@@ -50,11 +50,31 @@ public class WSJSONWriter {
     private boolean excludeNullProperties;
 	private boolean skipListWrapper  = false;
 	private Pattern listMapKey;
+	private com.jaxws.json.DateFormat dateFormat;
 
-    public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey){
+    public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey,com.jaxws.json.DateFormat dateFormat){
     	this.skipListWrapper   	= skipListWrapper;
     	this.listMapKey			= listMapKey;
+    	this.dateFormat			= dateFormat;
     }
+    
+    /**
+     * Convert Java Date to ISO Date string
+     *
+     *
+     * @param date
+     *
+     * @return
+     *
+     * @see
+     */
+    static public String Date2ISO(Date date) {
+        String timePattern = "yyyyMMdd'T'HHmmssz";
+        SimpleDateFormat formatter = new SimpleDateFormat(timePattern);
+
+        return formatter.format(date);
+    }
+
     /**
      * @param object Object to be serialized into JSON
      * @return JSON string for object
@@ -122,9 +142,12 @@ public class WSJSONWriter {
         //		  pass on list vale
         try {
             Method[] methods = object.getClass().getDeclaredMethods();
-    		if(methods.length == 1 && methods[0].getParameterTypes().length == 0 && 
-    				methods[0].getReturnType().equals(List.class)){
-    			return (List<Object>) methods[0].invoke(object, (Object[])null);
+    		if(methods.length <= 2 ){
+    			for(Method method:methods){
+    				if(method.getParameterTypes().length == 0 && 
+    				method.getReturnType().equals(List.class))
+    					return (List<Object>) methods[0].invoke(object, (Object[])null);
+    			}
     		}
         } catch (Throwable e) {/*Dont mind*/}
         return null;
@@ -148,19 +171,21 @@ public class WSJSONWriter {
         	if(itr.hasNext()){
 	        	Object instance = itr.next();
 	        	Method[] methods = instance.getClass().getDeclaredMethods();
-	        	for(Method meth: methods){
-	        		if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
-	        			HashMap<String,Object> map = new HashMap<String,Object>();
-	        			try {
-	        				map.put(""+meth.invoke(instance, (Object[])null), instance);
-	        				while(itr.hasNext()){
-	        					instance = itr.next();
-	        					map.put(""+meth.invoke(instance, (Object[])null), instance);
-	        				}
-							object = map;
-							break;
-						} catch (Throwable e) {}
-	        		}
+	        	if(methods.length <=2){
+		        	for(Method meth: methods){
+		        		if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
+		        			HashMap<String,Object> map = new HashMap<String,Object>();
+		        			try {
+		        				map.put(""+meth.invoke(instance, (Object[])null), instance);
+		        				while(itr.hasNext()){
+		        					instance = itr.next();
+		        					map.put(""+meth.invoke(instance, (Object[])null), instance);
+		        				}
+								object = map;
+								break;
+							} catch (Throwable e) {}
+		        		}
+		        	}
 	        	}
         	}
         } 
@@ -277,7 +302,7 @@ public class WSJSONWriter {
 	                        			log.warn("Recursive object");
 	                        		}else{
 	                        			value = declaredField.getType().newInstance();
-	                        			if(value instanceof Collection){
+	                        			if(value instanceof Collection || getWarpedList(value) != null){
 	                        				// dont make for list
 	                        				value = null;
 		                        		}
@@ -438,6 +463,17 @@ public class WSJSONWriter {
      * Add date to buffer
      */
     private void date(Date date, Method method) {
+    	// start codec
+    	if(date != null){
+	    	if(this.dateFormat == com.jaxws.json.DateFormat.ISO){
+	    		this.string(this.Date2ISO(date));
+	    		return;
+	    	}else if(this.dateFormat == com.jaxws.json.DateFormat.PLAIN){
+	    		this.string(date.getTime());
+	    		return;
+	    	}
+    	}
+    	//end codec
         JSON json = null;
         if (method != null)
             json = method.getAnnotation(JSON.class);
