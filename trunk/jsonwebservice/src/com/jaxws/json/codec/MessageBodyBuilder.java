@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import javax.jws.WebParam.Mode;
 import javax.xml.ws.Holder;
 
+import com.jaxws.json.DateFormat;
 import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.builder.BodyBuilder;
 import com.jaxws.json.builder.ResponseBuilder;
@@ -143,7 +144,7 @@ public class MessageBodyBuilder {
 	
 	protected Map<String,Object> readParameterAsObjects(List<ParameterImpl> parameters,
 			Object requestPayloadJSON,JAXBContextImpl context,boolean skipListWrapper,
-			Pattern listMapKey){
+			Pattern listMapKey,DateFormat dateFormat){
 		Map<String,Object> objects	= new LinkedHashMap<String,Object>();
 		 for (ParameterImpl parameter : parameters) {
 			 if(parameter.isWrapperStyle()) {
@@ -155,7 +156,7 @@ public class MessageBodyBuilder {
 						 readParameterAsObjects(
 								 ((WrapperParameter)parameter).getWrapperChildren(),
 								 requestPayloadJSON,
-								 context,skipListWrapper,listMapKey
+								 context,skipListWrapper,listMapKey,dateFormat
 						)
 				);
 			 }else{
@@ -190,13 +191,14 @@ public class MessageBodyBuilder {
 								String parameterName = parameter.getName().getLocalPart();
 								Object parameterValue = ((Map<?, ?>) requestPayloadJSON).get(parameterName);
 								if(parameterValue instanceof Map){
-									new JaxWsJSONPopulator(context,skipListWrapper,listMapKey).populateObject(val,(Map<?, ?>)parameterValue	);
+									new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,dateFormat
+											).populateObject(val,(Map<?, ?>)parameterValue	);
 								}else if(skipListWrapper && parameterValue instanceof List){
 									HashMap<String,Object> map = new HashMap<String, Object>();
 									String warperName = getWarpedListName(val.getClass());
 									if(warperName != null){
 										map.put(warperName, parameterValue);
-										new JaxWsJSONPopulator(context,skipListWrapper,listMapKey).populateObject(val,map);
+										new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,dateFormat).populateObject(val,map);
 									}
 								}
 							}catch(Throwable th){
