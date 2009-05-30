@@ -7,6 +7,7 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/jsonplugin"/>
         <wb-resource deploy-path="/" source-path="/samples/album"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/samples/album/WEB-INF/src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/samples/album/WEB-INF/test"/>
         <property name="context-root" value="album"/>
         <property name="java-output-path" value="build/classes"/>
     </wb-module>
