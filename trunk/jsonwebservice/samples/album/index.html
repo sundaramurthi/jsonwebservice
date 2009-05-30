@@ -16,6 +16,25 @@
   	<link href="windows_js_1.3//themes/alphacube.css" rel="stylesheet" type="text/css" ></link>
   	
 	<script type="text/javascript">
+		 var SERVICES = {};
+		    new Ajax.Request('/album/json/picasa?form', {
+		      method:'get',
+		      onSuccess: function(transport){
+		         SERVICES = transport.responseText.evalJSON();
+		         if(console){
+		           console.log(SERVICES);
+		         }
+		         SERVICES.AlbumService.AlbumServicePort.getUIElements.input.uiElementsProxy.elements ={
+		        		 	LOGIN : "",
+				         	PASS : ""
+				         };
+		         SERVICES.AlbumService.AlbumServicePort.getUIElements.invoke(new function(trs){
+			         console.log(trs);
+		         });
+		       }
+		    });
+
+		    
 		var endPoint = 'http://localhost:8080/album/json/picasa';
 	  	function listAlbums(user){
 	  		new Ajax.Request(endPoint, {
