@@ -30,11 +30,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ThumbnailType }
+     * Create an instance of {@link MediaGroup }
      * 
      */
-    public ThumbnailType createThumbnailType() {
-        return new ThumbnailType();
+    public MediaGroup createMediaGroup() {
+        return new MediaGroup();
     }
 
     /**
@@ -46,11 +46,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link MediaGroup }
+     * Create an instance of {@link ThumbnailType }
      * 
      */
-    public MediaGroup createMediaGroup() {
-        return new MediaGroup();
+    public ThumbnailType createThumbnailType() {
+        return new ThumbnailType();
     }
 
 }

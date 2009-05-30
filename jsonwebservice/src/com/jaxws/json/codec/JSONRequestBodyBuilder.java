@@ -26,12 +26,13 @@ public class JSONRequestBodyBuilder extends MessageBodyBuilder{
 								Map<String, Object> requestJSONObject,
 								JAXBContextImpl context) {
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
+		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
 		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		Collection<Object> parameterObjects = readParameterAsObjects(
 						methodImpl.getRequestParameters(),
 						requestJSONObject,
-						context,listWrapperSkip, listMapKey,JSONCodec.dateFormatType).values();
+						context,listWrapperSkip, listMapKey,listMapValue,JSONCodec.dateFormatType).values();
 		BodyBuilder bodyBuilder = getRequestBodyBuilder(methodImpl
 				.getRequestParameters());
 		return bodyBuilder.createMessage(parameterObjects.toArray());
@@ -46,11 +47,12 @@ public class JSONRequestBodyBuilder extends MessageBodyBuilder{
 	public Map<String,Object> createMap(JavaMethodImpl methodImpl,Message message) throws JAXBException, XMLStreamException{
 		
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
+		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
 		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		Map<String,Object> parameterObjects = readParameterAsObjects(
 				methodImpl.getRequestParameters(),
-				null,null,listWrapperSkip,listMapKey,JSONCodec.dateFormatType);
+				null,null,listWrapperSkip,listMapKey,listMapValue,JSONCodec.dateFormatType);
 		getResponseBuilder(methodImpl.getRequestParameters()).readResponse(message, parameterObjects.values().toArray());
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
 		//Remove Holder objects

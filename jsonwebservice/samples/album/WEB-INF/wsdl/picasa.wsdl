@@ -14,6 +14,14 @@
 		</xsd:schema>
 	</types>
 
+	<message name="uiElementsInput">
+		<part name="uiElementsProxy" type="atom:UIElements"></part>
+	</message>
+
+	<message name="uiElementsOutput">
+		<part name="uiElements" type="atom:UIElements"></part>
+	</message>
+	
 	<message name="clientLoginInput">
 		<part name="requestcontext" type="atom:LoginParameter"></part>
 	</message>
@@ -44,6 +52,11 @@
 	</message>
 
 	<portType name="Album">
+		<operation name="getUIElements">
+			<input name="uiElementsInput" message="tns:uiElementsInput" />
+			<output name="uiElementsOutput" message="tns:uiElementsOutput" />
+		</operation>
+		
 		<operation name="clientLogin">
 			<input name="clientLoginInput" message="tns:clientLoginInput" />
 			<output name="clientLoginOutput" message="tns:clientLoginOutput" />
@@ -63,6 +76,13 @@
 
 	<binding name="AlbumService" type="tns:Album">
 		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<operation name="getUIElements">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album/getUIElements"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
 		<operation name="clientLogin">
 			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
 				style="rpc" />
@@ -87,10 +107,10 @@
 		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
 		</operation>
 	</binding>
-
+	
 	<service name="AlbumService">
 		<port name="AlbumServicePort" binding="tns:AlbumService">
-			<json:address location="http://localhost/AlbumService" />
+			<json:address location="http://localhost:8080/album/json/picasa" />
 		</port>
 	</service>
 

@@ -193,8 +193,14 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				form.append("},");
 				form.append("\"invoke\":function(callback){");
 				/// AJAX invoker
+				String url = null;
+				if(endPoint.getPort().getAddress().getURL() ==null){
+					url = connection.getBaseAddress()+ adapter.getValidPath();
+				}else{
+					url = endPoint.getPort().getAddress().getURL().toExternalForm();
+				}
 				form.append(
-						"new Ajax.Request('"+endPoint.getPort().getAddress().getURL().toExternalForm()+"',{"+
+						"new Ajax.Request('"+url+"',{"+
 					 " method:'post',"+
 					 " requestHeaders: {Accept: 'application/json'},"+
 					 " postBody: '{\""+methodImpl.getOperationName()+"\":'+Object.toJSON(this.input)+'}',"+

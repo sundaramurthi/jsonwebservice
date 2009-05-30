@@ -37,26 +37,30 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 	private DateFormat dateFormat;
 
 	private Pattern listMapKey;
+	private Pattern listMapValue;
 	
-	public JaxWsJSONPopulator(boolean skipListWrapper,Pattern listMapKey,DateFormat dateFormat) {
+	public JaxWsJSONPopulator(boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,DateFormat dateFormat) {
 		super();
 		this.skipListWrapper 	= skipListWrapper;
 		this.listMapKey 		= listMapKey;
+		this.listMapValue		= listMapValue;
 		this.dateFormat			= dateFormat;
 	}
 
-	public JaxWsJSONPopulator(String dateFormat,boolean skipListWrapper,Pattern listMapKey,DateFormat dateFormatType) {
+	public JaxWsJSONPopulator(String dateFormat,boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,DateFormat dateFormatType) {
 		super(dateFormat);
 		this.skipListWrapper = skipListWrapper;
 		this.listMapKey 		= listMapKey;
+		this.listMapValue		= listMapValue;
 		this.dateFormat			= dateFormatType;
 	}
 	
-	public JaxWsJSONPopulator(JAXBContextImpl context,boolean skipListWrapper,Pattern listMapKey,DateFormat dateFormat) {
+	public JaxWsJSONPopulator(JAXBContextImpl context,boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,DateFormat dateFormat) {
 		super();
 		this.context = context;
 		this.skipListWrapper = skipListWrapper;
 		this.listMapKey 		= listMapKey;
+		this.listMapValue		= listMapValue;
 		this.dateFormat			= dateFormat;
 	}
 	
@@ -132,10 +136,30 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 			        		Map list = new HashMap();
 			        		if(meth.getName().startsWith("get")){
 			        			List lis = new ArrayList();
-			        			for(Object v :elements.values()){
-			        				lis.add(v);
+			        			if(skipListWrapper){// Map objects warper skiped
+				        			for(Object keyMap :elements.keySet()){
+				        				if(listMapValue !=null){
+				        					Map<String, Object> prop = new HashMap<String, Object>();
+				        					prop.put(meth.getName().replaceFirst("get", "").toLowerCase(), keyMap);// FIXME proper property
+				        					lis.add(prop);
+				        				}else{
+				        					lis.add(elements.get(keyMap));
+				        				}
+				        			}
+									list.put(key, lis);
+			        			}else{
+			        				Map warpedMap = (Map)elements.get(key);
+			        				for(Object keyMap :warpedMap.keySet()){
+			        					if(listMapValue !=null){
+			        						Map<String, Object> prop = new HashMap<String, Object>();
+			        						prop.put(meth.getName().replaceFirst("get", "").toLowerCase(), keyMap);// FIXME proper property
+			        						lis.add(prop);
+				        				}else{
+				        					lis.add(warpedMap.get(keyMap));
+				        				}
+				        			}
+									list.put(key, lis);
 			        			}
-								list.put(key, lis);
 								elements = list;
 								break;
 							}

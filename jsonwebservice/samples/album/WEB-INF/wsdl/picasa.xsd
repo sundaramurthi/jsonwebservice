@@ -6,6 +6,20 @@
 		xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
         jaxb:version="2.0" elementFormDefault="qualified">
         <xsd:import schemaLocation="picasa2.xsd" namespace="http://search.yahoo.com/mrss/"></xsd:import>
+        
+        <xsd:complexType name="UIElement">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="name"/>
+				<xsd:element type="xsd:string" name="value"/>
+			</xsd:sequence>
+		</xsd:complexType>		
+        
+        <xsd:complexType name="UIElements">
+			<xsd:sequence>
+				<xsd:element name="elements" type="dis:UIElement" minOccurs="1" maxOccurs="unbounded"></xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>	
+        
         <xsd:complexType name="LoginParameter">
 			<xsd:sequence>
 				<xsd:element type="xsd:string" name="accountType"/>

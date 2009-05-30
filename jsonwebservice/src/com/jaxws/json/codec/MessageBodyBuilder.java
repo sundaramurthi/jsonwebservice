@@ -144,7 +144,7 @@ public class MessageBodyBuilder {
 	
 	protected Map<String,Object> readParameterAsObjects(List<ParameterImpl> parameters,
 			Object requestPayloadJSON,JAXBContextImpl context,boolean skipListWrapper,
-			Pattern listMapKey,DateFormat dateFormat){
+			Pattern listMapKey,Pattern listMapValue,DateFormat dateFormat){
 		Map<String,Object> objects	= new LinkedHashMap<String,Object>();
 		 for (ParameterImpl parameter : parameters) {
 			 if(parameter.isWrapperStyle()) {
@@ -156,7 +156,7 @@ public class MessageBodyBuilder {
 						 readParameterAsObjects(
 								 ((WrapperParameter)parameter).getWrapperChildren(),
 								 requestPayloadJSON,
-								 context,skipListWrapper,listMapKey,dateFormat
+								 context,skipListWrapper,listMapKey,listMapValue,dateFormat
 						)
 				);
 			 }else{
@@ -191,14 +191,14 @@ public class MessageBodyBuilder {
 								String parameterName = parameter.getName().getLocalPart();
 								Object parameterValue = ((Map<?, ?>) requestPayloadJSON).get(parameterName);
 								if(parameterValue instanceof Map){
-									new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,dateFormat
+									new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,listMapValue,dateFormat
 											).populateObject(val,(Map<?, ?>)parameterValue	);
 								}else if(skipListWrapper && parameterValue instanceof List){
 									HashMap<String,Object> map = new HashMap<String, Object>();
 									String warperName = getWarpedListName(val.getClass());
 									if(warperName != null){
 										map.put(warperName, parameterValue);
-										new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,dateFormat).populateObject(val,map);
+										new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,listMapValue,dateFormat).populateObject(val,map);
 									}
 								}
 							}catch(Throwable th){

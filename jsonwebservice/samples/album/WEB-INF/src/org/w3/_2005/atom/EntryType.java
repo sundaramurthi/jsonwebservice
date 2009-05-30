@@ -66,7 +66,7 @@ public class EntryType {
     @XmlElement(required = true)
     protected String rights;
     protected List<LinkType> link;
-    @XmlElement(required = true,namespace="http://search.yahoo.com/mrss/")
+    @XmlElement(required = true)
     protected MediaGroup group;
 
     /**

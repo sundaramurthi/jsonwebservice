@@ -29,12 +29,13 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 								Map<String, Object> responseJSONObject,
 								JAXBContextImpl context) {
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
+		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
 		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		Collection<Object> parameterObjects = readParameterAsObjects(
 				methodImpl.getResponseParameters(),
 				responseJSONObject,context,listWrapperSkip,
-						listMapKey,JSONCodec.dateFormatType).values();
+						listMapKey,listMapValue,JSONCodec.dateFormatType).values();
 		assert parameterObjects.size() == 1;
 		ParameterImpl responseParameter = methodImpl.getResponseParameters().get(0);
 		if(responseParameter instanceof WrapperParameter &&
@@ -55,6 +56,7 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 	public Map<String,Object> createMap(JavaMethodImpl methodImpl,Message message) throws JAXBException, XMLStreamException{
 		
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
+		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
 		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		//Encode as Response
@@ -62,7 +64,7 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 		Map<String,Object> parameterObjects = readParameterAsObjects(
 											methodImpl.getResponseParameters(),
 											null,null,listWrapperSkip,
-													listMapKey,JSONCodec.dateFormatType);
+													listMapKey,listMapValue,JSONCodec.dateFormatType);
 		assert parameterObjects.size() == 1;
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
 		if(!parameterObjects.keySet().isEmpty()){	
