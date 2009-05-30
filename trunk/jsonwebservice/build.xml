@@ -24,7 +24,6 @@
 		<pathelement location="${buildroot}/classes"/>
 	</path>
 
-	<taskdef name="wsgen" classname="com.sun.tools.ws.ant.WsGen" classpathref="classpath"/>
 	<taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport" classpathref="classpath"/>
 	
 	<description>
@@ -92,6 +91,8 @@
     					  destdir="${buildroot}/samples/album/WEB-INF/classes"
     					  sourcedestdir="${basedir}/samples/album/WEB-INF/src"
     					  keep="true"
+    					  extension="true"
+    					  verbose="true"
     					  wsdllocation="http://picasa.com/wsdl">
     	</wsimport>
     </target>

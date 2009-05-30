@@ -17,15 +17,23 @@ import org.w3._2005.atom.Crediential;
 import org.w3._2005.atom.FeedType;
 import org.w3._2005.atom.LoginParameter;
 import org.w3._2005.atom.LoginResponse;
+import org.w3._2005.atom.UIElement;
+import org.w3._2005.atom.UIElements;
 
 import com.album.dispatcher.Album;
 import com.album.dispatcher.ClientLoginFault;
+import com.jaxws.json.feature.JSONWebService;
 
 /**
  * @author Sundaramurthi
  * @version 0.1
  */
-@WebService (name="AlbumService", targetNamespace="http://album.jsonplugin.com/json/")
+@WebService (name="AlbumService",
+		serviceName="AlbumService",
+		targetNamespace="http://album.com/dispatcher",
+		portName="AlbumServicePort",
+		wsdlLocation="WEB-INF/wsdl/picasa.wsdl",
+		endpointInterface="com.album.dispatcher.Album")
 public class AlbumImpl implements Album{
 	
 	static 	JAXBContext		context;
@@ -37,7 +45,27 @@ public class AlbumImpl implements Album{
 			//TODO log
 		}
 	}
-	
+	/**
+     * 
+     * @param uiElementsProxy
+     * @return
+     *     returns org.w3._2005.atom.UIElements
+     */
+    @WebMethod(action = "http://code.google.com/p/jsonwebservice/album/getUIElements")
+    @WebResult(name = "uiElements", partName = "uiElements")
+    @JSONWebService(listMapKey = "Name",listMapValue = "Value", skipListWrapper = false)
+    public UIElements getUIElements(
+        @WebParam(name = "uiElementsProxy", partName = "uiElementsProxy")
+        UIElements uiElementsProxy){
+    	for(UIElement elm :uiElementsProxy.getElements()){
+    		if(elm.getName().equals("LOGIN")){
+    			elm.setValue("Login");
+    		}else{
+    			elm.setValue("Password");
+    		}
+    	}
+    	return uiElementsProxy;
+    }
 	/**
 	 * Hard code test methid
 	 * @return

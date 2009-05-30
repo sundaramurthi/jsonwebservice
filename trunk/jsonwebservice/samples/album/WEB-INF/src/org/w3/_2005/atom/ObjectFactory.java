@@ -24,8 +24,8 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _Fault_QNAME = new QName("http://www.w3.org/2005/Atom", "fault");
     private final static QName _Feed_QNAME = new QName("http://www.w3.org/2005/Atom", "feed");
+    private final static QName _Fault_QNAME = new QName("http://www.w3.org/2005/Atom", "fault");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.w3._2005.atom
@@ -35,19 +35,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link LoginResponse }
+     * Create an instance of {@link UIElement }
      * 
      */
-    public LoginResponse createLoginResponse() {
-        return new LoginResponse();
+    public UIElement createUIElement() {
+        return new UIElement();
     }
 
     /**
-     * Create an instance of {@link Crediential }
+     * Create an instance of {@link UIElements }
      * 
      */
-    public Crediential createCrediential() {
-        return new Crediential();
+    public UIElements createUIElements() {
+        return new UIElements();
     }
 
     /**
@@ -59,11 +59,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link FeedType }
+     * Create an instance of {@link Crediential }
      * 
      */
-    public FeedType createFeedType() {
-        return new FeedType();
+    public Crediential createCrediential() {
+        return new Crediential();
     }
 
     /**
@@ -91,12 +91,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link LoginFault }{@code >}}
+     * Create an instance of {@link LoginResponse }
      * 
      */
-    @XmlElementDecl(namespace = "http://www.w3.org/2005/Atom", name = "fault")
-    public JAXBElement<LoginFault> createFault(LoginFault value) {
-        return new JAXBElement<LoginFault>(_Fault_QNAME, LoginFault.class, null, value);
+    public LoginResponse createLoginResponse() {
+        return new LoginResponse();
+    }
+
+    /**
+     * Create an instance of {@link FeedType }
+     * 
+     */
+    public FeedType createFeedType() {
+        return new FeedType();
     }
 
     /**
@@ -106,6 +113,15 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://www.w3.org/2005/Atom", name = "feed")
     public JAXBElement<FeedType> createFeed(FeedType value) {
         return new JAXBElement<FeedType>(_Feed_QNAME, FeedType.class, null, value);
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link LoginFault }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://www.w3.org/2005/Atom", name = "fault")
+    public JAXBElement<LoginFault> createFault(LoginFault value) {
+        return new JAXBElement<LoginFault>(_Fault_QNAME, LoginFault.class, null, value);
     }
 
 }

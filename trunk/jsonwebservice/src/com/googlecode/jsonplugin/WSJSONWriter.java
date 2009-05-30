@@ -50,11 +50,13 @@ public class WSJSONWriter {
     private boolean excludeNullProperties;
 	private boolean skipListWrapper  = false;
 	private Pattern listMapKey;
+	private Pattern listMapValue;
 	private com.jaxws.json.DateFormat dateFormat;
 
-    public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey,com.jaxws.json.DateFormat dateFormat){
+    public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,com.jaxws.json.DateFormat dateFormat){
     	this.skipListWrapper   	= skipListWrapper;
     	this.listMapKey			= listMapKey;
+    	this.listMapValue		= listMapValue;
     	this.dateFormat			= dateFormat;
     }
     
@@ -171,21 +173,43 @@ public class WSJSONWriter {
         	if(itr.hasNext()){
 	        	Object instance = itr.next();
 	        	Method[] methods = instance.getClass().getDeclaredMethods();
-	        	if(methods.length <=2){
+	        	
+	        	Method valueMethod = null;
+	        	if(listMapValue != null)
 		        	for(Method meth: methods){
-		        		if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
-		        			HashMap<String,Object> map = new HashMap<String,Object>();
-		        			try {
-		        				map.put(""+meth.invoke(instance, (Object[])null), instance);
-		        				while(itr.hasNext()){
-		        					instance = itr.next();
-		        					map.put(""+meth.invoke(instance, (Object[])null), instance);
-		        				}
-								object = map;
-								break;
-							} catch (Throwable e) {}
+		        		if(listMapValue.matcher(meth.getName().replaceFirst("get","")).matches()){
+		        			valueMethod = meth;
+		        			break;
 		        		}
 		        	}
+	        	// WARN Any object which has map key considred as map 
+	        	for(Method meth: methods){
+	        		if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
+	        			HashMap<String,Object> map = new HashMap<String,Object>();
+	        			try {
+	        				// PUT the first object
+	        				Object value;
+	        				if(valueMethod == null){
+	        					value = instance;
+	        				}else{
+	        					value = valueMethod.invoke(instance, (Object[])null);//
+	        				}
+	        					
+	        				map.put(""+meth.invoke(instance, (Object[])null), value);
+	        				//Iterate from second
+	        				while(itr.hasNext()){
+	        					instance = itr.next();
+	        					if(valueMethod == null){
+		        					value = instance;
+		        				}else{
+		        					value = valueMethod.invoke(instance, (Object[])null);//
+		        				}
+	        					map.put(""+meth.invoke(instance, (Object[])null), value);
+	        				}
+							object = map;
+							break;
+						} catch (Throwable e) {}
+	        		}
 	        	}
         	}
         } 

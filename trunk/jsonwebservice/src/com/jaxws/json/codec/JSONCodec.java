@@ -63,7 +63,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     static private SEIModel 			staticSeiModel;
     private static boolean				responsePayloadEnabled	= true;	
     private static boolean				excludeNullProperties	= false;
-    private static Pattern 				pattern = null;
+    private static Pattern 				pattern = null,valuePattern = null;
     private static boolean 				listWarperSkip = false;
     protected static DateFormat			dateFormatType = DateFormat.PLAIN;
     
@@ -95,6 +95,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.list.map.key")){
     			pattern = Pattern.compile(properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals("json.list.map.value")){
+    			valuePattern = Pattern.compile(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.response.list.wrapper.skip")){
     			listWarperSkip = Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals(com.jaxws.json.DateFormat.class.getName())){
@@ -231,6 +233,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			OutputStreamWriter sw = null;
 			try {
 				Pattern listMapKey		= null;
+				Pattern listMapValue	= null;
 				boolean listWrapperSkip = false;
 				Collection<Pattern> excludeProperties 	= this.excludeProperties;
 			    Collection<Pattern> includeProperties	= this.includeProperties;
@@ -279,6 +282,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						}
 						
 						listMapKey = getListMapKey(methodImpl);
+						listMapValue = getListMapValue(methodImpl);
 						listWrapperSkip	= isListWarperSkip(methodImpl);
 						if(methodImpl.getOperationName().equals(message.getPayloadLocalPart())){
 							// TEST HIT 1
@@ -307,7 +311,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
 				}
-				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,listMapKey,dateFormatType);
+				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,listMapKey,listMapValue,dateFormatType);
 				sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
@@ -343,6 +347,18 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		}
 		// default codec level
 		return pattern;
+	}
+	
+	public static Pattern getListMapValue(JavaMethodImpl methodImpl){
+		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
+		if(jsonService != null){
+			if(!jsonService.listMapValue().trim().equals("")){
+				// Performance down, TODO via singleton
+				return Pattern.compile(jsonService.listMapValue()); 
+			}
+		}
+		// default codec level
+		return valuePattern;
 	}
 	
 	public static String[][] getInExProperties(JavaMethodImpl methodImpl){
