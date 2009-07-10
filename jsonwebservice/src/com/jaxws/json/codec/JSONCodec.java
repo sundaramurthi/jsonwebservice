@@ -13,11 +13,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import javax.xml.namespace.QName;
+import javax.xml.soap.Detail;
+import javax.xml.soap.SOAPConstants;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPFactory;
+import javax.xml.soap.SOAPFault;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
@@ -47,6 +55,8 @@ import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.client.sei.SEIStub;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
+import com.sun.xml.ws.transport.http.WSHTTPConnection;
+import com.sun.xml.ws.util.ByteArrayBuffer;
 
 /**
  * @author Sundaramurthi
@@ -62,15 +72,17 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     private HttpMetadataPublisher 		metadataPublisher;
     static private SEIModel 			staticSeiModel;
     private static boolean				responsePayloadEnabled	= true;	
+    private static boolean				requestPayloadEnabled	= true;	
     private static boolean				excludeNullProperties	= false;
     private static Pattern 				pattern = null,valuePattern = null;
     private static boolean 				listWarperSkip = false;
     protected static DateFormat			dateFormatType = DateFormat.PLAIN;
     
-    private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
-    
     public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
     private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
+    static SOAPFactory soapFactory = null ;
+    
+    private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
 	
     static{
     	Properties properties = new Properties();
@@ -85,14 +97,16 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     	}
     	properties.put("json.exclude.serialVersionUID", "serialVersionUID");
     	for(Object key:properties.keySet()){
-    		if(key.toString().startsWith("json.exclude")){
-    			excludeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
+    		if(key.toString().equals("json.excludeNullProperties")){
+    			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().startsWith("json.include")){
     			includeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
     		}else if(key.toString().equals("json.response.enable.payloadname")){
     			responsePayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals("json.excludeNullProperties")){
-    			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals("json.request.enable.payloadname")){
+    			requestPayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().startsWith("json.exclude")){
+    			excludeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
     		}else if(key.toString().equals("json.list.map.key")){
     			pattern = Pattern.compile(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.list.map.value")){
@@ -102,8 +116,10 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     		}else if(key.toString().equals(com.jaxws.json.DateFormat.class.getName())){
     			dateFormatType	= Enum.valueOf(com.jaxws.json.DateFormat.class, properties.getProperty(key.toString()).trim());
     		}
-    		
     	}
+    	try {
+			soapFactory = SOAPFactory.newInstance();
+		} catch (SOAPException e) {}
     }
     
 	public JSONCodec(WSBinding binding) {
@@ -167,18 +183,32 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		Message message = null;
 		Object inputJSON;
 		try {
+			String operationName = null;
+			//TODO code clean
+			if((!requestPayloadEnabled) && packet.webServiceContextDelegate != null && packet.webServiceContextDelegate instanceof WSHTTPConnection){
+				operationName = ((WSHTTPConnection)packet.webServiceContextDelegate).getQueryString();
+			}
+			if((!requestPayloadEnabled) && operationName == null){
+				throw new Exception("Invalid Operation name in query parameter.(Please make payload name enabled or pass valid opeartion name as query parameter)");
+			}
 			SEIModel 			seiModel 	= getSEIModel(packet);
 			JAXBContextImpl 	context 	= (JAXBContextImpl)seiModel.getJAXBContext();
 			//read content
 	        BufferedReader bufferReader = new BufferedReader(new InputStreamReader(in));
 	        String line = null;
 	        StringBuilder buffer = new StringBuilder();
+	        if(!requestPayloadEnabled){
+	        	buffer.append("{\""+operationName+"\":");
+	        }
 	        try {
 	            while ((line = bufferReader.readLine()) != null) {
 	                buffer.append(line);
 	            }
 	        } catch (IOException e) {
 	            throw new JSONException(e);
+	        }
+	        if(!requestPayloadEnabled){
+	        	buffer.append("}");
 	        }
 	        inputJSON =  new WSJSONReader().read(buffer.toString());
 			if(inputJSON != null && inputJSON instanceof Map){
@@ -192,6 +222,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 					requestPayloadJSONMap.remove(STATUS_STRING_RESERVED);
 				}
 				for(Object payload : requestPayloadJSONMap.keySet()){
+					if(payload.equals(MessageContext.MESSAGE_OUTBOUND_PROPERTY))
+						continue;
 					JavaMethodImpl methodImpl = getJavaMethodUsingPayloadName(seiModel,payload.toString());
 					if(methodImpl != null){
 						if(methodImpl.getOperationName().equals(payload)){
@@ -214,11 +246,44 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			}else{
 				throw new JSONException("No method/payload name found");
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (Throwable e) {
+			packet.put(MessageContext.HTTP_RESPONSE_CODE, new Integer(400)); //BAD request
+			SOAPFault faultOb;
+			try {
+				faultOb = soapFactory.createFault("Client",new QName(SOAPConstants.URI_NS_SOAP_ENVELOPE));
+				faultOb.setFaultActor(this.getClass().getName());
+				
+				if(e instanceof JSONException){
+					faultOb.setFaultCode("Client.Invalid.structure");
+					faultOb.setFaultString("Invalid json input");
+				}else{
+					faultOb.setFaultCode("Client");
+					faultOb.setFaultString("Invalid input");
+				}
+				Detail detail = faultOb.addDetail();
+				detail.addChildElement("exception").setTextContent(e.getMessage());
+				packet.setMessage(Messages.create(faultOb));
+				if (packet.webServiceContextDelegate != null
+						&& packet.webServiceContextDelegate instanceof WSHTTPConnection) {
+					WSHTTPConnection con = (WSHTTPConnection) packet.webServiceContextDelegate;
+					ByteArrayBuffer buf = new ByteArrayBuffer();
+					con.setContentTypeResponseHeader(encode(packet, buf)
+							.getContentType());
+					//TODO disable option
+					dump(buf, "HTTP response " + con.getStatus(), con.getResponseHeaders());
+					 
+					OutputStream os = con.getOutput();
+					buf.writeTo(os);
+					os.close();
+					con.close();
+				}
+			} catch (SOAPException e1) {/*Out of control go with empty message*/}
+		} 
+		if(message == null){
+			//TODO log
 			packet.put(MessageContext.HTTP_RESPONSE_CODE, new Integer(400)); //BAD request
 			message = Messages.createEmpty(soapVersion);
-		} 
+		}
 		packet.setMessage(message);
 	}
 
@@ -247,18 +312,22 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				}
 				if (message.isFault()) {
 					result.put(STATUS_STRING_RESERVED, false);
-					result.put("message", message.readAsSOAPMessage().getSOAPBody().getFault().getFaultString());
+					SOAPFault faultObj = message.readAsSOAPMessage().getSOAPBody().getFault();
 					HashMap<String,String> detail = new HashMap<String, String>(); 
 					try {
-						for (Iterator<Element> iterator = message
-								.readAsSOAPMessage().getSOAPBody().getFault()
+						for (Iterator<Element> iterator = faultObj
 								.getDetail().getChildElements(); iterator
 								.hasNext();) {
 							Element type = iterator.next();
 							detail.put(type.getLocalName(), type.getTextContent());
 						}
 					} catch(Throwable th){/*Dont mind about custom message set fail*/}
-					result.put("detail", detail);
+					HashMap<String,Object> exception = new HashMap<String, Object>(); 
+					exception.put("code", faultObj.getFaultCodeAsQName().getLocalPart().toUpperCase());
+					exception.put("message", faultObj.getFaultString());
+					exception.put("actor", faultObj.getFaultActor());
+					exception.put("cause", detail);
+					result.put("exception", exception);
 				} else {// Not fault
 					result.put(STATUS_STRING_RESERVED, true);
 					JavaMethodImpl methodImpl = (JavaMethodImpl)message.getMethod(seiModel);
@@ -390,4 +459,23 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		}
 		return null;
 	}
+	
+	 private void dump(ByteArrayBuffer buf, String caption, Map<String, List<String>> headers) throws IOException {
+	        System.out.println("---["+caption +"]---");
+	        if (headers != null) {
+	            for (Entry<String, List<String>> header : headers.entrySet()) {
+	                if (header.getValue().isEmpty()) {
+	                    // I don't think this is legal, but let's just dump it,
+	                    // as the point of the dump is to uncover problems.
+	                    System.out.println(header.getValue());
+	                } else {
+	                    for (String value : header.getValue()) {
+	                        System.out.println(header.getKey() + ": " + value);
+	                    }
+	                }
+	            }
+	        }
+	        buf.writeTo(System.out);
+	        System.out.println("--------------------");
+	    }
 }
