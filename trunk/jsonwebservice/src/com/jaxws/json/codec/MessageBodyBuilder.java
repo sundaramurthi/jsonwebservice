@@ -173,18 +173,24 @@ public class MessageBodyBuilder {
 	         	}
 				if (val != null && requestPayloadJSON != null && context != null) {
 					if(JaxWsJSONPopulator.isJSONPrimitive(type) || type.isEnum()){
-						CompositeStructure str = new CompositeStructure();
-						str.bridges = new Bridge[1];
-						str.bridges[0] = context.createBridge(parameter.getTypeReference());
-						str.values = new Object[1];
-						if(requestPayloadJSON instanceof Map){
-							requestPayloadJSON =((Map<?,?>)requestPayloadJSON).get(parameter.getName().getLocalPart());
+						if(parameters.size() == 1){
+							CompositeStructure str = new CompositeStructure();
+							str.bridges = new Bridge[1];
+							str.bridges[0] = context.createBridge(parameter.getTypeReference());
+							str.values = new Object[1];
+							if(requestPayloadJSON instanceof Map){
+								requestPayloadJSON =((Map<?,?>)requestPayloadJSON).get(parameter.getName().getLocalPart());
+							}
+							if(type.isEnum()){
+								requestPayloadJSON = Enum.valueOf((Class<Enum>)type, requestPayloadJSON.toString());
+							}
+							str.values[0] = requestPayloadJSON;
+							val = str;
+						}else{
+							if(requestPayloadJSON instanceof Map){
+								val =((Map<?,?>)requestPayloadJSON).get(parameter.getName().getLocalPart());
+							}
 						}
-						if(type.isEnum()){
-							requestPayloadJSON = Enum.valueOf((Class<Enum>)type, requestPayloadJSON.toString());
-						}
-						str.values[0] = requestPayloadJSON;
-						val = str;
 					}else if (requestPayloadJSON instanceof Map) {
 						try {
 							try{
