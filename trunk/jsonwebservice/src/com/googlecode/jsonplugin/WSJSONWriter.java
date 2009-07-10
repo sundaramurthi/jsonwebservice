@@ -71,7 +71,7 @@ public class WSJSONWriter {
      * @see
      */
     static public String Date2ISO(Date date) {
-        String timePattern = "yyyyMMdd'T'HHmmssz";
+        String timePattern = "yyyy-MM-dd'T'HH:mm:ssZ";
         SimpleDateFormat formatter = new SimpleDateFormat(timePattern);
 
         return formatter.format(date);
@@ -268,6 +268,15 @@ public class WSJSONWriter {
                 PropertyDescriptor prop = props[i];
                 String name = prop.getName();
                 Method accessor = prop.getReadMethod();
+                
+                if(accessor == null && prop.getPropertyType().isAssignableFrom(Boolean.class)){
+                	// for Boolean Objet is method issue
+                	try{
+                	accessor = clazz.getMethod("is"+name.substring(0, 1).toUpperCase()+name.substring(1),((Class[])null));
+                	}catch(Throwable th){
+                		//Not an issue if not read method
+                	}
+                }
                 Method baseAccessor = null;
                 if (clazz.getName().indexOf("$$EnhancerByCGLIB$$") > -1) {
                     try {
