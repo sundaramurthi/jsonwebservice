@@ -12,6 +12,7 @@ import javax.xml.stream.XMLStreamException;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.SOAPVersion;
 import com.sun.xml.ws.api.message.Message;
+import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.message.jaxb.JAXBMessage;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.model.ParameterImpl;
@@ -36,8 +37,13 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 				methodImpl.getResponseParameters(),
 				responseJSONObject,context,listWrapperSkip,
 						listMapKey,listMapValue,JSONCodec.dateFormatType).values();
-		assert parameterObjects.size() == 1;
 		ParameterImpl responseParameter = methodImpl.getResponseParameters().get(0);
+		
+		if(parameterObjects.size() ==0){
+			//VOID response
+			return JAXBMessage.create(responseParameter.getBridge(), null, soapVersion);
+		}
+		
 		if(responseParameter instanceof WrapperParameter &&
 					((WrapperParameter)responseParameter).getTypeReference().type!= com.sun.xml.bind.api.CompositeStructure.class){
 			WrapperParameter responseWarper = (WrapperParameter)responseParameter;
@@ -65,7 +71,7 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 											methodImpl.getResponseParameters(),
 											null,null,listWrapperSkip,
 													listMapKey,listMapValue,JSONCodec.dateFormatType);
-		assert parameterObjects.size() == 1;
+		assert parameterObjects.size() <= 1;
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
 		if(!parameterObjects.keySet().isEmpty()){	
 			parameters.put(parameterObjects.keySet().toArray()[0].toString(), 
