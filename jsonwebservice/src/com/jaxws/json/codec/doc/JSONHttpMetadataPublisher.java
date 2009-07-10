@@ -1,10 +1,6 @@
 package com.jaxws.json.codec.doc;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
@@ -41,6 +37,8 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  */
 public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	private static final Properties  templates = new Properties();
+	MetaDataModelServer	metaDataModelServer = null;
+	JsClientServer jsClientServer = null;
 	static{
 		try {
 			templates.load(JSONHttpMetadataPublisher.class.getResourceAsStream("codec.properties"));
@@ -158,14 +156,33 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			
 			out.write(templateMain.getBytes());
 			return true;
-		}else if(queryString.startsWith("model") || queryString.startsWith("client")){
-			StringBuffer model = new StringBuffer();
+		}else if(queryString.startsWith("model")){
+			//if(metaDataModelServer == null )
+				metaDataModelServer = new MetaDataModelServer(endPoint,queryString.indexOf("&all") > -1,true);
+			
+			connection.setStatus(HttpURLConnection.HTTP_OK);
+			connection.setContentTypeResponseHeader("text/javascript;charset=\"utf-8\"");
+			metaDataModelServer.doResponse(connection.getOutput());
+			return true;
+		}else if(queryString.startsWith("jsonmodel")){
+			//if(metaDataModelServer == null )
+			metaDataModelServer = new MetaDataModelServer(endPoint,queryString.indexOf("&all") > -1,false);
+		
 			connection.setStatus(HttpURLConnection.HTTP_OK);
 			connection.setContentTypeResponseHeader("application/json;charset=\"utf-8\"");
-	        
-			OutputStream out = connection.getOutput();
+			metaDataModelServer.doResponse(connection.getOutput());
+			return true;
+		}else if(queryString.startsWith("client")){
+			if(jsClientServer == null)
+				jsClientServer	= new JsClientServer(endPoint);
 			
-			model.append("{\""+endPoint.getServiceName().getLocalPart()+"\":{");
+			StringBuffer model = new StringBuffer();
+			connection.setStatus(HttpURLConnection.HTTP_OK);
+			connection.setContentTypeResponseHeader("text/javascript;charset=\"utf-8\"");
+			jsClientServer.doResponse(connection.getOutput());
+			return true;
+			
+			/*model.append("{\""+endPoint.getServiceName().getLocalPart()+"\":{");
 			
 			model.append("\""+endPoint.getPortName().getLocalPart()+"\":{");
 			byte count 	= 0;
@@ -177,99 +194,38 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				count++;
 				model.append("\""+methodImpl.getOperationName()+"\":{");
 				
-				if(queryString.startsWith("client")){
-					model.append("\"input\":{");
-					int countParam = 0;
-					for(ParameterImpl param:methodImpl.getRequestParameters()){
-						if(param instanceof WrapperParameter){
-							WrapperParameter wparam =(WrapperParameter)param;
-							for(ParameterImpl paramChild :wparam.getWrapperChildren()){
-								if(countParam >0){
-									model.append(",");
-								}
-								model.append("\""+paramChild.getName().getLocalPart()+"\":");
-								serializeBean((Class<?>) paramChild.getTypeReference().type,model,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
-								countParam ++;
+				model.append("\"input\":{");
+				int countParam = 0;
+				for(ParameterImpl param:methodImpl.getRequestParameters()){
+					if(param instanceof WrapperParameter){
+						WrapperParameter wparam =(WrapperParameter)param;
+						for(ParameterImpl paramChild :wparam.getWrapperChildren()){
+							if(countParam >0){
+								model.append(",");
 							}
-						}else{
-							model.append("\""+param.getName().getLocalPart()+"\":");
-							serializeBean((Class<?>) param.getTypeReference().type,model,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
+							model.append("\""+paramChild.getName().getLocalPart()+"\":");
+							serializeBean((Class<?>) paramChild.getTypeReference().type,model,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
 							countParam ++;
 						}
+					}else{
+						model.append("\""+param.getName().getLocalPart()+"\":");
+						serializeBean((Class<?>) param.getTypeReference().type,model,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
+						countParam ++;
 					}
-					model.append("}");
-				}else{
-					/// Type metadata
-					model.append("\"input\":{");
-					int countParam = 0;
-					for(ParameterImpl param:methodImpl.getRequestParameters()){
-						if(param instanceof WrapperParameter){
-							WrapperParameter wparam =(WrapperParameter)param;
-							for(ParameterImpl paramChild :wparam.getWrapperChildren()){
-								if(countParam >0){
-									model.append(",");
-								}
-								model.append("\""+paramChild.getName().getLocalPart()+"\":");
-								serializeMetaDtata((Class<?>) paramChild.getTypeReference().type,model,new ArrayList<Class<?>>());
-								countParam ++;
-							}
-						}else{
-							model.append("\""+param.getName().getLocalPart()+"\":");
-							serializeMetaDtata((Class<?>) param.getTypeReference().type,model,new ArrayList<Class<?>>());
-							countParam ++;
-						}
-					}
-					model.append("},");
-					model.append("\"config\":{");
-					model.append("\"endPoint\":\""+endPoint.getPort().getAddress().getURL().getPath()+"\",");
-					model.append("\"requestContentType\":\"application/json\",");//TODO read from codec config
-					model.append("\"responseContentType\":\"application/json\",");//TODO read from method config
-					model.append("\"zipedResponse\":\"false\",");
-					model.append("\"statusAware\":\"false\",");//TODO read from method config
-					model.append("\"statusUrl\":\"null\",");//TODO read from method config
-					model.append("\"featureUrl\":\"null\",");//TODO read from method config
-					model.append("\"requestPayload\":\""+methodImpl.getOperationName()+"\"");//TODO read from method config
-					model.append("}");
 				}
+				model.append("}");
+				
 				//
-				if(queryString.startsWith("client")){
-					model.append(",\"output\":\"TODO?? MAy be place holder for result\"");
-				//Outmeta data
-				}else {
-					model.append(",\"output\":{");
-					int countParam = 0;
-					for(ParameterImpl param:methodImpl.getResponseParameters()){
-						if(param instanceof WrapperParameter){
-							WrapperParameter wparam =(WrapperParameter)param;
-							for(ParameterImpl paramChild :wparam.getWrapperChildren()){
-								if(countParam >0){
-									model.append(",");
-								}
-								model.append("\""+paramChild.getName().getLocalPart()+"\":");
-								serializeMetaDtata((Class<?>) paramChild.getTypeReference().type,model,new ArrayList<Class<?>>());
-								countParam ++;
-							}
-						}else{
-							model.append("\""+param.getName().getLocalPart()+"\":");
-							serializeMetaDtata((Class<?>) param.getTypeReference().type,model,new ArrayList<Class<?>>());
-							countParam ++;
-						}
-					}
-					model.append("}");
-				}
+				model.append(",\"output\":\"TODO?? MAy be place holder for result\"");
 				//Type metadata
 				//Method close
 				model.append("}");
 			}
 			model.append("}"); // Port end	
-			if(queryString.startsWith("client")){
-				model.append(convertStreamToString(getClass().getResourceAsStream("client.js")));
-			}
 			model.append("}");// Service end
 			model.append("}");
 			//serializeBean(endPoint.getImplementationClass(),form,new ArrayList<Class<?>>());
-			out.write(model.toString().getBytes());
-			return true;
+			return true;*/
 		}
 		return false;
 	}
@@ -486,33 +442,4 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		}
 		out.append('"');
 	}
-	
-	public String convertStreamToString(InputStream is) {
-        /*
-         * To convert the InputStream to String we use the BufferedReader.readLine()
-         * method. We iterate until the BufferedReader return null which means
-         * there's no more data to read. Each line will appended to a StringBuilder
-         * and returned as String.
-         */
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
-
-        String line = null;
-        try {
-            while ((line = reader.readLine()) != null) {
-                sb.append(line + "\n");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return sb.toString();
-    }
-
 }
