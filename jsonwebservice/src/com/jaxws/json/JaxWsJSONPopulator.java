@@ -67,6 +67,7 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 
 	public static boolean isJSONPrimitive(Class<?> clazz) {
 		return clazz.isPrimitive() || clazz.equals(String.class)
+				|| clazz.equals(Timestamp.class) 
 				|| clazz.equals(Date.class) || clazz.equals(Boolean.class)
 				|| clazz.equals(Byte.class) || clazz.equals(Character.class)
 				|| clazz.equals(Double.class) || clazz.equals(Float.class)
@@ -98,7 +99,10 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 			}
 		}else if (value !=null && (clazz.equals(Date.class) || clazz.equals(Timestamp.class))){
 				if(dateFormat == DateFormat.ISO){
-					return new Timestamp(ISO2Date(value.toString()).getTime());
+					Date dateObj = ISO2Date(value.toString());
+					if(dateObj == null)
+						return null;
+					return new Timestamp(dateObj.getTime());
 				}else if(dateFormat == DateFormat.PLAIN){
 					return new Timestamp(new Long(value.toString()));
 				}
@@ -132,6 +136,8 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 		        	Type ob = ((java.lang.reflect.ParameterizedType)meth1.getGenericReturnType()).getActualTypeArguments()[0];
 		        	Method[]  methods =  ((Class)ob).getMethods();
 		        	 for(Method meth: methods){
+		        		String charStartOb = ""+meth.getName().charAt(3);
+						String keyObj = charStartOb.toLowerCase()+meth.getName().substring(4);
 			        	if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
 			        		Map list = new HashMap();
 			        		if(meth.getName().startsWith("get")){
@@ -140,7 +146,8 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 				        			for(Object keyMap :elements.keySet()){
 				        				if(listMapValue !=null){
 				        					Map<String, Object> prop = new HashMap<String, Object>();
-				        					prop.put(meth.getName().replaceFirst("get", "").toLowerCase(), keyMap);// FIXME proper property
+				        					
+				        					prop.put(keyObj, keyMap);// FIXME proper property
 				        					lis.add(prop);
 				        				}else{
 				        					lis.add(elements.get(keyMap));
@@ -152,7 +159,7 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 			        				for(Object keyMap :warpedMap.keySet()){
 			        					if(listMapValue !=null){
 			        						Map<String, Object> prop = new HashMap<String, Object>();
-			        						prop.put(meth.getName().replaceFirst("get", "").toLowerCase(), keyMap);// FIXME proper property
+			        						prop.put(keyObj, keyMap);// FIXME proper property
 			        						lis.add(prop);
 				        				}else{
 				        					lis.add(warpedMap.get(keyMap));
@@ -219,35 +226,31 @@ public class JaxWsJSONPopulator extends JSONPopulator {
     static public Date ISO2Date(String dateStr) {
 
         String timePattern = "";
-
         // select the time pattern to use:
-        if (dateStr.length() == 8) {
-            timePattern = "yyyyMMdd";
-        } else if (dateStr.length() == 12) {
-            timePattern = "yyyyMMddHHmm";
-        } else if (dateStr.length() == 13) {
-            timePattern = "yyyyMMdd'T'HHmm";
-        } else if (dateStr.length() == 14) {
-            timePattern = "yyyyMMddHHmmss";
+        if (dateStr.length() == 10) {
+            timePattern = "yyyy-MM-dd";
         } else if (dateStr.length() == 15) {
-            timePattern = "yyyyMMdd'T'HHmmss";
-        } else if (dateStr.length() > 8 && dateStr.charAt(8) == 'T') {
-            timePattern = "yyyyMMdd'T'HHmmssz";
+            timePattern = "yyyy-MM-ddHH:mm";
+        } else if (dateStr.length() == 16) {
+            timePattern = "yyyy-MM-dd'T'HH:mm";
+        } else if (dateStr.length() == 18) {
+            timePattern = "yyyy-MM-ddHH:mm:ss";
+        } else if (dateStr.length() == 19) {
+            timePattern = "yyyy-MM-dd'T'HH:mm:ss";
+        } else if (dateStr.length() > 10 && dateStr.charAt(10) == 'T') {
+            timePattern = "yyyy-MM-dd'T'HH:mm:ssz";
         } else {
-            timePattern = "yyyyMMddHHmmssz";
+            timePattern = "yyyy-MM-ddHH:mm:ssz";
         }
-
         // Format the current time.
         SimpleDateFormat formatter = new SimpleDateFormat(timePattern);
 
         Date d = null;
-
         try {
             d = formatter.parse(dateStr, new ParsePosition(0));
         } catch (NullPointerException e) {
           //  LOG.error("constructor failed for" + dateStr);
         }
-
         return d;
     }
 }
