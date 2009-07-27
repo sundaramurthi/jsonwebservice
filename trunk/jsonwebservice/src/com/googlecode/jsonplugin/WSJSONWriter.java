@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jsonplugin.annotations.JSON;
+import com.jaxws.json.serializer.CustomSerializer;
 
 public class WSJSONWriter {
     private static final Log log = LogFactory.getLog(JSONWriter.class);
@@ -52,12 +53,16 @@ public class WSJSONWriter {
 	private Pattern listMapKey;
 	private Pattern listMapValue;
 	private com.jaxws.json.DateFormat dateFormat;
+	private Map<Class<? extends Object>,CustomSerializer> customCodecs;
 
-    public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,com.jaxws.json.DateFormat dateFormat){
+    public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,
+    		com.jaxws.json.DateFormat dateFormat,
+    		Map<Class<? extends Object>,CustomSerializer> customCodecs){
     	this.skipListWrapper   	= skipListWrapper;
     	this.listMapKey			= listMapKey;
     	this.listMapValue		= listMapValue;
     	this.dateFormat			= dateFormat;
+    	this.customCodecs		= customCodecs;
     }
     
     /**
@@ -91,13 +96,18 @@ public class WSJSONWriter {
      * @return JSON string for object
      * @throws JSONException
      */
-    public String write(Object object, Collection<Pattern> excludeProperties, Collection<Pattern> includeProperties, boolean excludeNullProperties)
+    public String write(Object object, Collection<Pattern> excludeProperties, 
+    		Collection<Pattern> includeProperties, 
+    		boolean excludeNullProperties)
             throws JSONException {
         this.excludeNullProperties = excludeNullProperties;
         this.buf.setLength(0);
         this.root = object;
         this.exprStack = "";
-        this.buildExpr = ((excludeProperties != null) && !excludeProperties.isEmpty()) || ((includeProperties != null) && !includeProperties.isEmpty());
+        this.buildExpr = ((excludeProperties != null) && 
+        		!excludeProperties.isEmpty()) || 
+        		((includeProperties != null) && 
+        				!includeProperties.isEmpty());
         this.excludeProperties = excludeProperties;
         this.includeProperties = includeProperties;
         this.value(object, null);
@@ -215,7 +225,9 @@ public class WSJSONWriter {
         } 
         //Codc
 
-        if (object instanceof Class) {
+        if(customCodecs.containsKey(object.getClass()) && customCodecs.get(object.getClass()).canBeHandled(method)){
+        	customCodecs.get(object.getClass()).encode(buf, object);
+        }else if (object instanceof Class) {
             this.string(object);
         } else if (object instanceof Boolean) {
             this.bool(((Boolean) object).booleanValue());
