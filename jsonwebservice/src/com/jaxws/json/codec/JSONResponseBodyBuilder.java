@@ -9,18 +9,19 @@ import java.util.regex.Pattern;
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 
+import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.SOAPVersion;
 import com.sun.xml.ws.api.message.Message;
-import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.message.jaxb.JAXBMessage;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.model.ParameterImpl;
 import com.sun.xml.ws.model.WrapperParameter;
 
 public class JSONResponseBodyBuilder extends MessageBodyBuilder{
-	public JSONResponseBodyBuilder(SOAPVersion soapVersion) {// SHould be JSON version
-		super(soapVersion);
+	private JSONCodec codec;
+	public JSONResponseBodyBuilder(@NotNull JSONCodec codec) {
+		super(codec);
+		this.codec = codec;
 	}
 	
 	/**
@@ -31,26 +32,24 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 								JAXBContextImpl context) {
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
 		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
-		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		Collection<Object> parameterObjects = readParameterAsObjects(
 				methodImpl.getResponseParameters(),
-				responseJSONObject,context,listWrapperSkip,
-						listMapKey,listMapValue,JSONCodec.dateFormatType).values();
+				responseJSONObject,context,listMapKey,listMapValue).values();
 		ParameterImpl responseParameter = methodImpl.getResponseParameters().get(0);
 		
 		if(parameterObjects.size() ==0){
 			//VOID response
-			return JAXBMessage.create(responseParameter.getBridge(), null, soapVersion);
+			return JAXBMessage.create(responseParameter.getBridge(), null, codec.soapVersion);
 		}
 		
 		if(responseParameter instanceof WrapperParameter &&
 					((WrapperParameter)responseParameter).getTypeReference().type!= com.sun.xml.bind.api.CompositeStructure.class){
 			WrapperParameter responseWarper = (WrapperParameter)responseParameter;
 			return JAXBMessage.create(responseWarper.getWrapperChildren().get(0).getBridge(),
-					responseWarper.getWrapperChildren().get(0), soapVersion);
+					responseWarper.getWrapperChildren().get(0), codec.soapVersion);
 		}else{
-			return JAXBMessage.create(responseParameter.getBridge(), parameterObjects.toArray()[0], soapVersion);
+			return JAXBMessage.create(responseParameter.getBridge(), parameterObjects.toArray()[0], codec.soapVersion);
 		}
 	}
 
@@ -63,14 +62,10 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 		
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
 		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
-		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
-		
 		//Encode as Response
-		
 		Map<String,Object> parameterObjects = readParameterAsObjects(
 											methodImpl.getResponseParameters(),
-											null,null,listWrapperSkip,
-													listMapKey,listMapValue,JSONCodec.dateFormatType);
+											null,null,listMapKey,listMapValue);
 		assert parameterObjects.size() <= 1;
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
 		if(!parameterObjects.keySet().isEmpty()){	

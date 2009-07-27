@@ -2,7 +2,6 @@ package com.jaxws.json.codec;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +11,6 @@ import java.util.regex.Pattern;
 import javax.jws.WebParam.Mode;
 import javax.xml.ws.Holder;
 
-import com.jaxws.json.DateFormat;
 import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.builder.BodyBuilder;
 import com.jaxws.json.builder.ResponseBuilder;
@@ -22,17 +20,16 @@ import com.jaxws.json.builder.ValueSetterFactory;
 import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.bind.api.CompositeStructure;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.SOAPVersion;
 import com.sun.xml.ws.model.ParameterImpl;
 import com.sun.xml.ws.model.WrapperParameter;
 
 public class MessageBodyBuilder {
-	final protected SOAPVersion 	soapVersion;
+	final protected JSONCodec 	codec;
 	private static Logger LOG	= Logger.getLogger(JSONCodec.class.getName());
 
-	public MessageBodyBuilder(SOAPVersion soapVersion) {
+	public MessageBodyBuilder(JSONCodec codec) {
 		super();
-		this.soapVersion = soapVersion;
+		this.codec = codec;
 	}
 
 	protected final BodyBuilder getRequestBodyBuilder(List<ParameterImpl> parameters) {
@@ -46,12 +43,12 @@ public class MessageBodyBuilder {
 					WrapperParameter wrappedParam = (WrapperParameter) param;
 					if (param.getParent().getBinding().isRpcLit())
 						bodyBuilder = new BodyBuilder.RpcLit(wrappedParam,
-								soapVersion, ValueGetterFactory.SYNC);
+								codec.soapVersion, ValueGetterFactory.SYNC);
 					else
 						bodyBuilder = new BodyBuilder.DocLit(wrappedParam,
-								soapVersion, ValueGetterFactory.SYNC);
+								codec.soapVersion, ValueGetterFactory.SYNC);
 				} else {
-					bodyBuilder = new BodyBuilder.Bare(param, soapVersion,
+					bodyBuilder = new BodyBuilder.Bare(param, codec.soapVersion,
 							getter);
 				}
 				break;
@@ -71,7 +68,7 @@ public class MessageBodyBuilder {
 
 		if (bodyBuilder == null) {
 			// no parameter binds to body. we create an empty message
-			switch (soapVersion) {
+			switch (codec.soapVersion) {
 			case SOAP_11:
 				bodyBuilder = BodyBuilder.EMPTY_SOAP11;
 				break;
@@ -108,7 +105,7 @@ public class MessageBodyBuilder {
 				break;
 			case HEADER:
 				setter = ValueSetterFactory.SYNC.get(param);
-				builders.add(new ResponseBuilder.Header(soapVersion, param,
+				builders.add(new ResponseBuilder.Header(codec.soapVersion, param,
 						setter));
 				break;
 			case ATTACHMENT:
@@ -143,8 +140,8 @@ public class MessageBodyBuilder {
 
 	
 	protected Map<String,Object> readParameterAsObjects(List<ParameterImpl> parameters,
-			Object requestPayloadJSON,JAXBContextImpl context,boolean skipListWrapper,
-			Pattern listMapKey,Pattern listMapValue,DateFormat dateFormat){
+			Object requestPayloadJSON,JAXBContextImpl context,
+			Pattern listMapKey,Pattern listMapValue){
 		Map<String,Object> objects	= new LinkedHashMap<String,Object>();
 		 for (ParameterImpl parameter : parameters) {
 			 if(parameter.isWrapperStyle()) {
@@ -156,7 +153,7 @@ public class MessageBodyBuilder {
 						 readParameterAsObjects(
 								 ((WrapperParameter)parameter).getWrapperChildren(),
 								 requestPayloadJSON,
-								 context,skipListWrapper,listMapKey,listMapValue,dateFormat
+								 context,listMapKey,listMapValue
 						)
 				);
 			 }else{
@@ -197,15 +194,8 @@ public class MessageBodyBuilder {
 								String parameterName = parameter.getName().getLocalPart();
 								Object parameterValue = ((Map<?, ?>) requestPayloadJSON).get(parameterName);
 								if(parameterValue instanceof Map){
-									new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,listMapValue,dateFormat
+									new JaxWsJSONPopulator(context,listMapKey,listMapValue,codec
 											).populateObject(val,(Map<?, ?>)parameterValue	);
-								}else if(skipListWrapper && parameterValue instanceof List){
-									HashMap<String,Object> map = new HashMap<String, Object>();
-									String warperName = getWarpedListName(val.getClass());
-									if(warperName != null){
-										map.put(warperName, parameterValue);
-										new JaxWsJSONPopulator(context,skipListWrapper,listMapKey,listMapValue,dateFormat).populateObject(val,map);
-									}
 								}
 							}catch(Throwable th){
 								th.printStackTrace();

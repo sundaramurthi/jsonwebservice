@@ -37,6 +37,7 @@ import com.googlecode.jsonplugin.WSJSONWriter;
 import com.jaxws.json.DateFormat;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.jaxws.json.feature.JSONWebService;
+import com.jaxws.json.serializer.CustomSerializer;
 import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -57,6 +58,7 @@ import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 import com.sun.xml.ws.util.ByteArrayBuffer;
+import com.sun.xml.ws.util.ServiceFinder;
 
 /**
  * @author Sundaramurthi
@@ -75,14 +77,14 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     private static boolean				requestPayloadEnabled	= true;	
     private static boolean				excludeNullProperties	= false;
     private static Pattern 				pattern = null,valuePattern = null;
-    private static boolean 				listWarperSkip = false;
-    protected static DateFormat			dateFormatType = DateFormat.PLAIN;
+    protected static DateFormat			dateFormat = DateFormat.PLAIN;
     
     public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
     private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
     static SOAPFactory soapFactory = null ;
     
     private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
+    private Map<Class<? extends Object>,CustomSerializer> customCodecs;
 	
     static{
     	Properties properties = new Properties();
@@ -111,10 +113,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     			pattern = Pattern.compile(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.list.map.value")){
     			valuePattern = Pattern.compile(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals("json.response.list.wrapper.skip")){
-    			listWarperSkip = Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals(com.jaxws.json.DateFormat.class.getName())){
-    			dateFormatType	= Enum.valueOf(com.jaxws.json.DateFormat.class, properties.getProperty(key.toString()).trim());
+    			dateFormat	= Enum.valueOf(com.jaxws.json.DateFormat.class, properties.getProperty(key.toString()).trim());
     		}
     	}
     	try {
@@ -125,12 +125,26 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	public JSONCodec(WSBinding binding) {
 		this.binding = binding;
 		this.soapVersion = binding.getSOAPVersion();
+		initCustom();
 	}
 	
 	public JSONCodec(JSONCodec that) {
         this(that.binding);
         this.endpoint = that.endpoint;
+        this.customCodecs = that.customCodecs;
     }
+	
+	private void initCustom() {
+		customCodecs = new HashMap<Class<? extends Object>, CustomSerializer>();
+		for (CustomSerializer serializer : ServiceFinder
+				.find(CustomSerializer.class)) {
+			customCodecs.put(serializer.getAcceptClass(), serializer);
+		}
+	}
+	
+	public Map<Class<? extends Object>, CustomSerializer> getCustomSerializer(){
+		return customCodecs;
+	}
 
 	public void setEndpoint(WSEndpoint endpoint) {
 		this.endpoint = endpoint;
@@ -230,13 +244,13 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 							// TEST HIT 2
 							// PRODUCTION HIT 1
 							// Decode as Request
-							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(soapVersion);
+							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(this);
 							message = jsonRequestBodyBuilder.createMessage(methodImpl,requestPayloadJSONMap,context);
 						}else{
 							// TEST HIT 4 END
 							//Decode as Response
 							// Should happen only in TEST decoder
-							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(soapVersion);
+							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(this);
 							message = jsonResponseBodyBuilder.createMessage(methodImpl,requestPayloadJSONMap,context);
 						}
 					}else{
@@ -352,11 +366,10 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						
 						listMapKey = getListMapKey(methodImpl);
 						listMapValue = getListMapValue(methodImpl);
-						listWrapperSkip	= isListWarperSkip(methodImpl);
 						if(methodImpl.getOperationName().equals(message.getPayloadLocalPart())){
 							// TEST HIT 1
 							// Encode as Request For testing
-							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(soapVersion);
+							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(this);
 							Map<String, Object> parameters = jsonRequestBodyBuilder.createMap(methodImpl,message);
 							//end remove holder
 							// When request use "methodName":{"param1":{},"param2":{}}
@@ -364,7 +377,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						}else{
 							// TEST HIT 3
 							// PRODUCTION HIT 2
-							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(soapVersion);
+							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(this);
 							if(!methodImpl.getMEP().isOneWay()){
 								Map<String, Object> parameters = jsonResponseBodyBuilder.createMap(methodImpl,message);
 								if(responsePayloadEnabled){
@@ -380,7 +393,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
 				}
-				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,listMapKey,listMapValue,dateFormatType);
+				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,
+						listMapKey,
+						listMapValue,
+						dateFormat,
+						customCodecs
+						);
 				sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
@@ -397,14 +415,14 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return jsonContentType;
 	}
 	
-	public static boolean isListWarperSkip(JavaMethodImpl methodImpl){
+	/*public static boolean isListWarperSkip(JavaMethodImpl methodImpl){
 		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
 		if(jsonService != null){
 			return jsonService.skipListWrapper();
 		}
 		// default codec level
 		return listWarperSkip;
-	}
+	}*/
 	
 	public static Pattern getListMapKey(JavaMethodImpl methodImpl){
 		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
@@ -460,7 +478,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return null;
 	}
 	
-	 private void dump(ByteArrayBuffer buf, String caption, Map<String, List<String>> headers) throws IOException {
+	public DateFormat getDateFormat() {
+		return dateFormat;
+	}
+
+	private void dump(ByteArrayBuffer buf, String caption, Map<String, List<String>> headers) throws IOException {
 	        System.out.println("---["+caption +"]---");
 	        if (headers != null) {
 	            for (Entry<String, List<String>> header : headers.entrySet()) {
@@ -477,5 +499,5 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	        }
 	        buf.writeTo(System.out);
 	        System.out.println("--------------------");
-	    }
+	 }
 }

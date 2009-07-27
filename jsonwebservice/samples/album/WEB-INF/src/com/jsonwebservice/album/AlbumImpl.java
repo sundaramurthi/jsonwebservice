@@ -53,7 +53,7 @@ public class AlbumImpl implements Album{
      */
     @WebMethod(action = "http://code.google.com/p/jsonwebservice/album/getUIElements")
     @WebResult(name = "uiElements", partName = "uiElements")
-    @JSONWebService(listMapKey = "Name",listMapValue = "Value", skipListWrapper = false)
+    @JSONWebService(listMapKey = "Name",listMapValue = "Value")
     public UIElements getUIElements(
         @WebParam(name = "uiElementsProxy", partName = "uiElementsProxy")
         UIElements uiElementsProxy){

@@ -25,43 +25,50 @@ import javax.xml.bind.annotation.XmlElementRef;
 
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONPopulator;
-import com.jaxws.json.codec.JSONRequestBodyBuilder;
+import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.serializer.CustomSerializer;
+import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 
 public class JaxWsJSONPopulator extends JSONPopulator {
 	
 	private JAXBContextImpl context;
+	
+	@NotNull
+	JSONCodec codec;
 
-	private boolean skipListWrapper = false;
 	private DateFormat dateFormat;
 
 	private Pattern listMapKey;
 	private Pattern listMapValue;
-	
-	public JaxWsJSONPopulator(boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,DateFormat dateFormat) {
+	Map<Class<? extends Object>,CustomSerializer> customCodecs;
+	public JaxWsJSONPopulator(Pattern listMapKey,Pattern listMapValue,
+			@NotNull JSONCodec codec) {
 		super();
-		this.skipListWrapper 	= skipListWrapper;
 		this.listMapKey 		= listMapKey;
 		this.listMapValue		= listMapValue;
-		this.dateFormat			= dateFormat;
+		this.dateFormat			= codec.getDateFormat();
+		this.customCodecs		= codec.getCustomSerializer();
 	}
 
-	public JaxWsJSONPopulator(String dateFormat,boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,DateFormat dateFormatType) {
+	public JaxWsJSONPopulator(String dateFormat,Pattern listMapKey,Pattern listMapValue,
+			@NotNull JSONCodec codec) {
 		super(dateFormat);
-		this.skipListWrapper = skipListWrapper;
 		this.listMapKey 		= listMapKey;
 		this.listMapValue		= listMapValue;
-		this.dateFormat			= dateFormatType;
+		this.dateFormat			= codec.getDateFormat();
+		this.customCodecs		= codec.getCustomSerializer();
 	}
 	
-	public JaxWsJSONPopulator(JAXBContextImpl context,boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,DateFormat dateFormat) {
+	public JaxWsJSONPopulator(JAXBContextImpl context,Pattern listMapKey,Pattern listMapValue,
+			@NotNull JSONCodec codec) {
 		super();
 		this.context = context;
-		this.skipListWrapper = skipListWrapper;
 		this.listMapKey 		= listMapKey;
 		this.listMapValue		= listMapValue;
-		this.dateFormat			= dateFormat;
+		this.dateFormat			= codec.getDateFormat();
+		this.customCodecs			= codec.getCustomSerializer();
 	}
 	
 
@@ -77,8 +84,13 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Object convert(Class clazz, Type type, Object value, Method method) throws IllegalArgumentException, JSONException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, IntrospectionException {
-		if(clazz.equals(JAXBElement.class)){
+	public Object convert(Class clazz, Type type, Object value, Method method) throws IllegalArgumentException, 
+					JSONException, IllegalAccessException, 
+					InvocationTargetException, InstantiationException, 
+					NoSuchMethodException, IntrospectionException {
+		if(customCodecs.containsKey(clazz) && customCodecs.get(clazz).canBeHandled(method)){
+			return customCodecs.get(clazz).decode(value);
+		}else if(clazz.equals(JAXBElement.class)){
 			if(clazz.getGenericInterfaces().length == 1 && clazz.getGenericInterfaces()[0].equals(Serializable.class)){
 				XmlElementRef elmRef = method.getAnnotation(XmlElementRef.class);
 				String elementName = null;
@@ -110,14 +122,6 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 		if(value != null && value.equals("") && isJSONPrimitive(clazz)){
 			value = null; // Bug with number conversion
 		}
-		if(skipListWrapper && value instanceof List ){
-			String name = JSONRequestBodyBuilder.getWarpedListName(clazz);
-			if(name != null){
-				HashMap map = new HashMap();
-				map.put(name, value);
-				value = map;
-			}
-		}
 		return super.convert(clazz, type, value, method);
 	}
 
@@ -142,31 +146,17 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 			        		Map list = new HashMap();
 			        		if(meth.getName().startsWith("get")){
 			        			List lis = new ArrayList();
-			        			if(skipListWrapper){// Map objects warper skiped
-				        			for(Object keyMap :elements.keySet()){
-				        				if(listMapValue !=null){
-				        					Map<String, Object> prop = new HashMap<String, Object>();
-				        					
-				        					prop.put(keyObj, keyMap);// FIXME proper property
-				        					lis.add(prop);
-				        				}else{
-				        					lis.add(elements.get(keyMap));
-				        				}
-				        			}
-									list.put(key, lis);
-			        			}else{
-			        				Map warpedMap = (Map)elements.get(key);
-			        				for(Object keyMap :warpedMap.keySet()){
-			        					if(listMapValue !=null){
-			        						Map<String, Object> prop = new HashMap<String, Object>();
-			        						prop.put(keyObj, keyMap);// FIXME proper property
-			        						lis.add(prop);
-				        				}else{
-				        					lis.add(warpedMap.get(keyMap));
-				        				}
-				        			}
-									list.put(key, lis);
+		        				Map warpedMap = (Map)elements.get(key);
+		        				for(Object keyMap :warpedMap.keySet()){
+		        					if(listMapValue !=null){
+		        						Map<String, Object> prop = new HashMap<String, Object>();
+		        						prop.put(keyObj, keyMap);// FIXME proper property
+		        						lis.add(prop);
+			        				}else{
+			        					lis.add(warpedMap.get(keyMap));
+			        				}
 			        			}
+								list.put(key, lis);
 								elements = list;
 								break;
 							}

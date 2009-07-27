@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBElement;
@@ -30,6 +31,8 @@ import org.xml.sax.InputSource;
 import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.JSONBindingID;
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.serializer.CustomSerializer;
+import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.wsdl.WSDLInput;
@@ -45,14 +48,18 @@ import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.model.wsdl.WSDLPartDescriptorImpl;
 
 public class MetaDataModelServer {
-	StringBuffer model = new StringBuffer();
+	StringBuilder model = new StringBuilder();
 	
 	JAXBContextImpl context;// Should use wsdl TODO
 	HashSet<Class<?>> reusableObjects;
 	ArrayList<Class<?>> stack = new ArrayList<Class<?>>();
 	org.exolab.castor.xml.schema.Schema schema;
-	String serviceName ="UNDEFINDED";// dirty hack
-	public MetaDataModelServer(WSEndpoint<?> endPoint,boolean all,boolean jsRoot) {
+	String serviceName ="UNDEFINDED";
+	Map<Class<? extends Object>,CustomSerializer> customCodecs;
+	public MetaDataModelServer(WSEndpoint<?> endPoint,
+			boolean all,boolean jsRoot,@NotNull
+			JSONCodec codec) {
+		this.customCodecs = codec.getCustomSerializer();
 		SchemaFactory sf = SchemaFactory.newInstance(
 			      javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		try {
@@ -69,7 +76,7 @@ public class MetaDataModelServer {
 
 	public void createMetaDataModel(WSEndpoint<?> endPoint,boolean all,boolean jsRoot) {
 		context = (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
-		model = new StringBuffer();
+		model = new StringBuilder();
 		serviceName 	= endPoint.getServiceName().getLocalPart();
 		if(!jsRoot){
 			model.append("{");
@@ -203,15 +210,13 @@ public class MetaDataModelServer {
 				}
 			}
 		}
-		if(bean.isEnum()){
+		if(customCodecs.containsKey(bean) && customCodecs.get(bean).canBeHandled(null)){
+        	customCodecs.get(bean).metaData(model);
+        }else if(bean.isEnum()){
 			createMetaDataEnum(bean);
-			return;
-		}
-		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
+		}else if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
 			createMetaDataPrimitive(bean,null,null);
-			return;
-		}
-		if(bean != null){
+		}else if(bean != null){
 			try{
 				if(reusableObjects.contains(bean)){
 					model.append("{");

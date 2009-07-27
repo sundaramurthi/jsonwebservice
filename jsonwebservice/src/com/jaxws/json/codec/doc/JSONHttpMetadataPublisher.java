@@ -18,6 +18,7 @@ import javax.xml.namespace.QName;
 import com.googlecode.jsonplugin.JSONPopulator;
 import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.JSONCodec;
+import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.JavaMethod;
@@ -39,6 +40,8 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	private static final Properties  templates = new Properties();
 	MetaDataModelServer	metaDataModelServer = null;
 	JsClientServer jsClientServer = null;
+	@NotNull 
+	JSONCodec codec;
 	static{
 		try {
 			templates.load(JSONHttpMetadataPublisher.class.getResourceAsStream("codec.properties"));
@@ -51,6 +54,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 
 	public JSONHttpMetadataPublisher(WSEndpoint<?> endPoint) {
 		this.endPoint = endPoint;
+		codec = (JSONCodec) endPoint.createCodec();
 	}
 
 	@Override
@@ -157,16 +161,16 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			out.write(templateMain.getBytes());
 			return true;
 		}else if(queryString.startsWith("model")){
-			//if(metaDataModelServer == null )
-				metaDataModelServer = new MetaDataModelServer(endPoint,queryString.indexOf("&all") > -1,true);
+			//TODO perform if(metaDataModelServer == null )
+				metaDataModelServer = new MetaDataModelServer(endPoint,queryString.indexOf("&all") > -1,true,codec);
 			
 			connection.setStatus(HttpURLConnection.HTTP_OK);
 			connection.setContentTypeResponseHeader("text/javascript;charset=\"utf-8\"");
 			metaDataModelServer.doResponse(connection.getOutput());
 			return true;
 		}else if(queryString.startsWith("jsonmodel")){
-			//if(metaDataModelServer == null )
-			metaDataModelServer = new MetaDataModelServer(endPoint,queryString.indexOf("&all") > -1,false);
+			//TODO perform if(metaDataModelServer == null )
+				metaDataModelServer = new MetaDataModelServer(endPoint,queryString.indexOf("&all") > -1,false,codec);
 		
 			connection.setStatus(HttpURLConnection.HTTP_OK);
 			connection.setContentTypeResponseHeader("application/json;charset=\"utf-8\"");

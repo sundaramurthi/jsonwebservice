@@ -12,14 +12,13 @@ import javax.xml.ws.Holder;
 
 import com.jaxws.json.builder.BodyBuilder;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.SOAPVersion;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.model.JavaMethodImpl;
 
 public class JSONRequestBodyBuilder extends MessageBodyBuilder{
 	
-	public JSONRequestBodyBuilder(SOAPVersion soapVersion) {// SHould be JSON version
-		super(soapVersion);
+	public JSONRequestBodyBuilder(JSONCodec codec) {
+		super(codec);
 	}
 	
 	public Message createMessage(JavaMethodImpl methodImpl, 
@@ -27,12 +26,11 @@ public class JSONRequestBodyBuilder extends MessageBodyBuilder{
 								JAXBContextImpl context) {
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
 		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
-		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		Collection<Object> parameterObjects = readParameterAsObjects(
 						methodImpl.getRequestParameters(),
 						requestJSONObject,
-						context,listWrapperSkip, listMapKey,listMapValue,JSONCodec.dateFormatType).values();
+						context,listMapKey,listMapValue).values();
 		BodyBuilder bodyBuilder = getRequestBodyBuilder(methodImpl
 				.getRequestParameters());
 		return bodyBuilder.createMessage(parameterObjects.toArray());
@@ -48,11 +46,10 @@ public class JSONRequestBodyBuilder extends MessageBodyBuilder{
 		
 		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
 		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
-		boolean listWrapperSkip = JSONCodec.isListWarperSkip(methodImpl);
 		
 		Map<String,Object> parameterObjects = readParameterAsObjects(
 				methodImpl.getRequestParameters(),
-				null,null,listWrapperSkip,listMapKey,listMapValue,JSONCodec.dateFormatType);
+				null,null,listMapKey,listMapValue);
 		getResponseBuilder(methodImpl.getRequestParameters()).readResponse(message, parameterObjects.values().toArray());
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
 		//Remove Holder objects

@@ -6,7 +6,6 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(value=RetentionPolicy.RUNTIME)
 @java.lang.annotation.Target(value= ElementType.METHOD)
 public @interface JSONWebService {
-	boolean skipListWrapper() default true;
 	String	listMapKey() default "";
 	String	listMapValue() default "";
 	String[] includeProperties() default {};
