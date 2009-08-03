@@ -26,6 +26,8 @@ import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFactory;
 import javax.xml.soap.SOAPFault;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
@@ -37,6 +39,7 @@ import com.googlecode.jsonplugin.WSJSONWriter;
 import com.jaxws.json.DateFormat;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.jaxws.json.feature.JSONWebService;
+import com.jaxws.json.packet.handler.ResponsePacketHandler;
 import com.jaxws.json.serializer.CustomSerializer;
 import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
@@ -50,10 +53,14 @@ import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.pipe.Codec;
 import com.sun.xml.ws.api.pipe.ContentType;
+import com.sun.xml.ws.api.server.BoundEndpoint;
 import com.sun.xml.ws.api.server.EndpointAwareCodec;
 import com.sun.xml.ws.api.server.EndpointComponent;
+import com.sun.xml.ws.api.server.Module;
 import com.sun.xml.ws.api.server.WSEndpoint;
+import com.sun.xml.ws.api.streaming.XMLStreamWriterFactory;
 import com.sun.xml.ws.client.sei.SEIStub;
+import com.sun.xml.ws.encoding.xml.XMLCodec;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -85,6 +92,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     
     private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
     private Map<Class<? extends Object>,CustomSerializer> customCodecs;
+    private Map<String,ResponsePacketHandler> customResponsePacketHandler;
 	
     static{
     	Properties properties = new Properties();
@@ -139,6 +147,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		for (CustomSerializer serializer : ServiceFinder
 				.find(CustomSerializer.class)) {
 			customCodecs.put(serializer.getAcceptClass(), serializer);
+		}
+		customResponsePacketHandler = new HashMap<String, ResponsePacketHandler>();
+		for (ResponsePacketHandler handler : ServiceFinder
+				.find(ResponsePacketHandler.class)) {
+			customResponsePacketHandler.put(handler.responseContentType().getContentType(), handler);
 		}
 	}
 	
@@ -200,7 +213,13 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			String operationName = null;
 			//TODO code clean
 			if((!requestPayloadEnabled) && packet.webServiceContextDelegate != null && packet.webServiceContextDelegate instanceof WSHTTPConnection){
-				operationName = ((WSHTTPConnection)packet.webServiceContextDelegate).getQueryString();
+				String queryString = ((WSHTTPConnection)packet.webServiceContextDelegate).getQueryString();
+				String params[] = queryString.split("&");
+				operationName = params[0];
+				if(params.length >1 && params[1].startsWith("accept")){
+					// Respone decode in difrent format. Redirect Required.
+					packet.invocationProperties.put("accept", params[1].split("=")[1]);
+				}
 			}
 			if((!requestPayloadEnabled) && operationName == null){
 				throw new Exception("Invalid Operation name in query parameter.(Please make payload name enabled or pass valid opeartion name as query parameter)");
@@ -305,7 +324,44 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		throw new UnsupportedOperationException();
 	}
 
+	private static final ContentType xmlType = new ContentType(){
+		static final String XML_MIME_TYPE 		= "text/xml";
+
+	    public String getContentType() {
+	        return XML_MIME_TYPE;
+	    }
+
+	    public String getSOAPActionHeader() {
+	        return null;
+	    }
+
+	    public String getAcceptHeader() {
+	        return XML_MIME_TYPE;
+	    }
+	};
+	
 	public ContentType encode(Packet packet, OutputStream out) throws IOException {
+		if(packet != null && packet.invocationProperties != null && packet.invocationProperties.containsKey("accept")
+				&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
+			/*// Try is it handled by packet handler
+			if(customResponsePacketHandler.containsKey(packet.invocationProperties.get("accept"))){
+				return customResponsePacketHandler.get(packet.invocationProperties.get("accept")).encode(getSEIModel(packet),packet, out);
+			}
+			//end
+*/			
+			//FIXME use cached one
+			Module modules = endpoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
+			for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
+				if(endPointObj.getEndpoint().getImplementationClass().equals(endpoint.getImplementationClass())
+						&& endPointObj.getEndpoint().getBinding().getBindingId() != binding.getBindingId()){
+					Codec codec =endPointObj.getEndpoint().createCodec();
+					ContentType contentType = codec.getStaticContentType(packet);
+					if(contentType != null && contentType.getContentType().startsWith(packet.invocationProperties.get("accept").toString())){
+						return endPointObj.getEndpoint().createCodec().encode(packet, out);
+					}
+				}
+			}
+		}
 		Message message = packet.getMessage();
 		if (message != null) {
 			SEIModel seiModel = getSEIModel(packet);
@@ -393,13 +449,22 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						throw new Error("Unknown payload "+message.getPayloadLocalPart());
 					}
 				}
-				WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,
-						listMapKey,
-						listMapValue,
-						dateFormat,
-						customCodecs
-						);
-				sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
+				
+				if(packet.invocationProperties != null && packet.invocationProperties.containsKey("accept")
+						&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
+					// Try is it handled by packet handler
+					if(customResponsePacketHandler.containsKey(packet.invocationProperties.get("accept"))){
+						return customResponsePacketHandler.get(packet.invocationProperties.get("accept")).encode(result, out);
+					}
+				}else{
+					WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,
+							listMapKey,
+							listMapValue,
+							dateFormat,
+							customCodecs
+							);
+					sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
+				}
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
 			} finally {
@@ -414,15 +479,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		}
 		return jsonContentType;
 	}
-	
-	/*public static boolean isListWarperSkip(JavaMethodImpl methodImpl){
-		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
-		if(jsonService != null){
-			return jsonService.skipListWrapper();
-		}
-		// default codec level
-		return listWarperSkip;
-	}*/
 	
 	public static Pattern getListMapKey(JavaMethodImpl methodImpl){
 		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
@@ -465,7 +521,25 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return JSONContentType.JSON_MIME_TYPE;
 	}
 
-	public ContentType getStaticContentType(Packet arg0) {
+	public ContentType getStaticContentType(Packet packet) {
+		if(packet != null && packet.invocationProperties != null && packet.invocationProperties.containsKey("accept")
+				&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
+			if(customResponsePacketHandler.containsKey(packet.invocationProperties.get("accept"))){
+				return customResponsePacketHandler.get(packet.invocationProperties.get("accept")).responseContentType();
+			}
+			//Worst perform
+			Module modules = endpoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
+			for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
+				if(endPointObj.getEndpoint().getImplementationClass().equals(endpoint.getImplementationClass())
+						&& endPointObj.getEndpoint().getBinding().getBindingId() != binding.getBindingId()){
+					Codec codec =endPointObj.getEndpoint().createCodec();
+					ContentType contentType = codec.getStaticContentType(packet);
+					if(contentType != null && contentType.getContentType().startsWith(packet.invocationProperties.get("accept").toString())){
+						return endPointObj.getEndpoint().createCodec().getStaticContentType(packet);
+					}
+				}
+			}
+		}
 		return jsonContentType;
 	}
 
