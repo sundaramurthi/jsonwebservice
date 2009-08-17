@@ -378,6 +378,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				for (Iterator iterator = packet.invocationProperties.keySet().iterator(); iterator
 						.hasNext();) {
 					Object type = iterator.next();
+					if(MessageContext.MESSAGE_OUTBOUND_PROPERTY.equals(type))
+						continue;
 					result.put(type.toString(),packet.invocationProperties.get(type));
 				}
 				if (message.isFault()) {
