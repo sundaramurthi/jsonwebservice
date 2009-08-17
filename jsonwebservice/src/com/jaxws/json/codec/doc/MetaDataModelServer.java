@@ -305,7 +305,7 @@ public class MetaDataModelServer {
 				if(xmlElemnt == null || xmlElemnt.defaultValue() == null || xmlElemnt.defaultValue().charAt(0) == '\0' ){
 					defaultValue = "null"; // Not defined in xsd
 				}else
-					defaultValue = xmlElemnt.defaultValue();
+					defaultValue = "\""+xmlElemnt.defaultValue()+"\"";
 				type	= "dateTime";// Make it  primitive even for Object
 			}else{
 				defaultValue = "\"PleaseReportBug"+bean+"\"";
