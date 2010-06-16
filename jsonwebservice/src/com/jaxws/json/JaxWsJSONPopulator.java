@@ -21,7 +21,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElements;
 
 import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONPopulator;
@@ -199,6 +201,36 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 						e.printStackTrace();
 					}
                 }
+            }else{
+	    		java.lang.reflect.Field f = null;
+				try {
+					f = clazz.getDeclaredField(name);
+				} catch (Throwable e) {
+					try {
+						f = clazz.getSuperclass().getDeclaredField(name);
+					} catch (Throwable e1) {}
+				}
+				if(f != null){
+					XmlElements ann = f.getAnnotation(XmlElements.class);
+					if(ann != null){
+						XmlElement[] xmlElements = ann.value();
+						for(XmlElement elm : xmlElements){
+							if(elements.containsKey(elm.name())){
+								try{
+									Object ob = elm.type().newInstance();
+									super.populateObject(ob, (Map) elements.get(elm.name()));
+									if(prop.getReadMethod() != null){
+										Method readMethod = prop.getReadMethod();
+										Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
+										if(objectList != null){
+											objectList.add(ob);
+										}
+									}
+								}catch(Throwable th){}
+							}
+						}
+					}
+				}
             }
         }
     }
