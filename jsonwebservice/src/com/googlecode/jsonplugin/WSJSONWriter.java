@@ -3,6 +3,11 @@ package com.googlecode.jsonplugin;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -38,7 +43,7 @@ public class WSJSONWriter {
     public static final boolean ENUM_AS_BEAN_DEFAULT = false;
 
     static char[] hex = "0123456789ABCDEF".toCharArray();
-    private StringBuilder buf = new StringBuilder();
+    private Writer out;
     private Stack stack = new Stack();
     private boolean ignoreHierarchy = true;
     private Object root;
@@ -100,8 +105,8 @@ public class WSJSONWriter {
     		Collection<Pattern> includeProperties, 
     		boolean excludeNullProperties)
             throws JSONException {
+    	this.out = new StringWriter();
         this.excludeNullProperties = excludeNullProperties;
-        this.buf.setLength(0);
         this.root = object;
         this.exprStack = "";
         this.buildExpr = ((excludeProperties != null) && 
@@ -111,10 +116,25 @@ public class WSJSONWriter {
         this.excludeProperties = excludeProperties;
         this.includeProperties = includeProperties;
         this.value(object, null);
-
-        return this.buf.toString();
+        return this.out.toString();
     }
 
+    public void write(OutputStream out, Object object, Collection<Pattern> excludeProperties, 
+    		Collection<Pattern> includeProperties, 
+    		boolean excludeNullProperties) throws IOException, JSONException {
+    	this.excludeNullProperties = excludeNullProperties;
+        this.root = object;
+        this.exprStack = "";
+        this.buildExpr = ((excludeProperties != null) && 
+        		!excludeProperties.isEmpty()) || 
+        		((includeProperties != null) && 
+        				!includeProperties.isEmpty());
+        this.excludeProperties = excludeProperties;
+        this.includeProperties = includeProperties;
+        this.out = new OutputStreamWriter(out);
+        this.value(object, null);
+        this.out.close();
+	}
     /**
      * Detect cyclic references
      */
@@ -226,7 +246,7 @@ public class WSJSONWriter {
         //Codc
 
         if(customCodecs.containsKey(object.getClass()) && customCodecs.get(object.getClass()).canBeHandled(method)){
-        	customCodecs.get(object.getClass()).encode(buf, object);
+        	customCodecs.get(object.getClass()).encode(out, object);
         }else if (object instanceof Class) {
             this.string(object);
         } else if (object instanceof Boolean) {
@@ -638,14 +658,22 @@ public class WSJSONWriter {
      * Add object to buffer
      */
     private void add(Object obj) {
-        this.buf.append(obj);
+        try {
+			this.out.write(String.valueOf(obj));
+		} catch (IOException e) {
+			throw new RuntimeException(e.getMessage());
+		}
     }
 
     /**
      * Add char to buffer
      */
     private void add(char c) {
-        this.buf.append(c);
+        try {
+			this.out.append(c);
+		} catch (IOException e) {
+			throw new RuntimeException(e.getMessage());
+		}
     }
 
     /**
