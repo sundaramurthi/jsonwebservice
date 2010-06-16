@@ -1,5 +1,6 @@
 package com.jaxws.json.serializer;
 
+import java.io.Writer;
 import java.lang.reflect.Method;
 
 
@@ -18,7 +19,7 @@ public interface CustomSerializer {
 	/**
 	 * To Json
 	 */
-	public void encode(StringBuilder buf,Object object);
+	public void encode(Writer buf,Object object);
 	
 	/**
 	 * To Json
