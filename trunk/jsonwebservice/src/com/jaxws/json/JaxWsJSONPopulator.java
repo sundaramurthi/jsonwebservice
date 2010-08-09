@@ -12,6 +12,7 @@ import java.sql.Timestamp;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -77,6 +78,7 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 	public static boolean isJSONPrimitive(Class<?> clazz) {
 		return clazz.isPrimitive() || clazz.equals(String.class)
 				|| clazz.equals(Timestamp.class) 
+				|| clazz.equals(Calendar.class)
 				|| clazz.equals(Date.class) || clazz.equals(Boolean.class)
 				|| clazz.equals(Byte.class) || clazz.equals(Character.class)
 				|| clazz.equals(Double.class) || clazz.equals(Float.class)
@@ -217,13 +219,23 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 						for(XmlElement elm : xmlElements){
 							if(elements.containsKey(elm.name())){
 								try{
-									Object ob = elm.type().newInstance();
-									super.populateObject(ob, (Map) elements.get(elm.name()));
-									if(prop.getReadMethod() != null){
-										Method readMethod = prop.getReadMethod();
-										Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
-										if(objectList != null){
-											objectList.add(ob);
+									
+									Object jsonValue = elements.get(elm.name());
+									List<Map> objects = new ArrayList<Map>();
+									if(jsonValue instanceof Map){
+										objects.add((Map)jsonValue);
+									}else if(jsonValue instanceof List){
+										objects.addAll((List)jsonValue);
+									}
+									for(Map v:  objects){
+										Object ob = elm.type().newInstance();
+										populateObject(ob, v);
+										if(prop.getReadMethod() != null){
+											Method readMethod = prop.getReadMethod();
+											Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
+											if(objectList != null){
+												objectList.add(ob);
+											}
 										}
 									}
 								}catch(Throwable th){}

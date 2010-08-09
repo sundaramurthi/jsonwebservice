@@ -27,6 +27,7 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElements;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -375,6 +376,26 @@ public class WSJSONWriter {
 	                        	}
 	                        }
 	                    }catch(Throwable th){}
+                    }else if(accessor.getDeclaringClass().getDeclaredField(name) != null){
+                    	Field declaredField = accessor.getDeclaringClass().getDeclaredField(name);
+                    	// XML choice list
+                    	XmlElements xmlElms =  declaredField.getAnnotation(XmlElements.class);
+                    	if(xmlElms != null && Collection.class.isAssignableFrom(declaredField.getType())
+                    			&& value instanceof Collection){
+                    		Collection<?> valueList = (Collection<?>)value;
+                    		if(!valueList.isEmpty()){
+                    			// use first object to identify type
+                    			Object firstObject = valueList.toArray()[0];
+                    			for(XmlElement elm : xmlElms.value()){
+									Class<?> elType = elm.type();
+                    				if(firstObject.getClass().equals(elType) ){
+                    					name = elm.name();
+                    					//
+                    					break;
+                    				}
+                    			}
+                    		}
+                    	}
                     }
                     //CODEC
                     boolean propertyPrinted = this.add(name, value, accessor, hasData);
