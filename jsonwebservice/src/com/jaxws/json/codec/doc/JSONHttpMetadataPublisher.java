@@ -3,10 +3,13 @@ package com.jaxws.json.codec.doc;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -180,64 +183,21 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			if(jsClientServer == null)
 				jsClientServer	= new JsClientServer(endPoint);
 			
-			StringBuffer model = new StringBuffer();
 			connection.setStatus(HttpURLConnection.HTTP_OK);
 			connection.setContentTypeResponseHeader("text/javascript;charset=\"utf-8\"");
 			jsClientServer.doResponse(connection.getOutput());
 			return true;
-			
-			/*model.append("{\""+endPoint.getServiceName().getLocalPart()+"\":{");
-			
-			model.append("\""+endPoint.getPortName().getLocalPart()+"\":{");
-			byte count 	= 0;
-			for(JavaMethod method:endPoint.getSEIModel().getJavaMethods()){
-				JavaMethodImpl methodImpl = (JavaMethodImpl) method;
-				if(count != 0){
-					model.append(",");
-				}
-				count++;
-				model.append("\""+methodImpl.getOperationName()+"\":{");
-				
-				model.append("\"input\":{");
-				int countParam = 0;
-				for(ParameterImpl param:methodImpl.getRequestParameters()){
-					if(param instanceof WrapperParameter){
-						WrapperParameter wparam =(WrapperParameter)param;
-						for(ParameterImpl paramChild :wparam.getWrapperChildren()){
-							if(countParam >0){
-								model.append(",");
-							}
-							model.append("\""+paramChild.getName().getLocalPart()+"\":");
-							serializeBean((Class<?>) paramChild.getTypeReference().type,model,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
-							countParam ++;
-						}
-					}else{
-						model.append("\""+param.getName().getLocalPart()+"\":");
-						serializeBean((Class<?>) param.getTypeReference().type,model,new ArrayList<Class<?>>(),queryString.indexOf("autoBind") > 0);
-						countParam ++;
-					}
-				}
-				model.append("}");
-				
-				//
-				model.append(",\"output\":\"TODO?? MAy be place holder for result\"");
-				//Type metadata
-				//Method close
-				model.append("}");
-			}
-			model.append("}"); // Port end	
-			model.append("}");// Service end
-			model.append("}");
-			//serializeBean(endPoint.getImplementationClass(),form,new ArrayList<Class<?>>());
-			return true;*/
+		}else{
+			adapter.invokeAsync(connection);
+			// TODO respond with options document 
+			return true;
 		}
-		return false;
 	}
 	
 	private void serializeBean(Class<?> bean,StringBuffer out,List<Class<?>> stack,boolean autoBind) throws IOException{
 		for(Class<?> stackBean : stack ){
 			if(stackBean.equals(bean)){//Recursion deducted
-				out.append("null");
+				out.append(bean.getCanonicalName());
 				return;
 			}
 		}
@@ -246,7 +206,11 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			return;
 		}
 		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
-			out.append("\""+bean.getSimpleName()+"\"");
+			Object defaultval = null;
+			try {
+				defaultval = bean.newInstance().toString();
+			} catch (Throwable e) {}
+			out.append("\""+ (defaultval == null ?bean.getSimpleName():String.valueOf(defaultval))+"\"");
 			return;
 		}
 		try{
@@ -277,7 +241,28 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 								//TODO serialize element
 								//serializeBean(field.getType(), out);
 								out.append("null");
-							}else{
+							}else if(Collection.class.isAssignableFrom(field.getType())){
+								Type type = field.getGenericType();
+								Class<?> itemClass = Object.class;
+					            Type itemType = null;
+					            if (type != null && type instanceof ParameterizedType) {
+					                ParameterizedType ptype = (ParameterizedType) type;
+					                itemType = ptype.getActualTypeArguments()[0];
+					                if (itemType.getClass().equals(Class.class)) {
+					                    itemClass = (Class) itemType;
+					                } else if(itemType instanceof ParameterizedType){
+					                    itemClass = (Class) ((ParameterizedType) itemType).getRawType();
+					                }
+					                out.append("[");
+					                stack.add(itemClass);
+					                serializeBean(itemClass, out,stack,autoBind);
+					                stack.remove(itemClass);
+					                out.append("]");
+					            }else{
+					            	out.append("[]");
+					            }
+					            
+							} else{
 								stack.add(bean);
 								serializeBean(field.getType(), out,stack,autoBind);
 								stack.remove(bean);
@@ -288,7 +273,12 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 								//out.append("\""+escapeString(field.getName())+"\":function(){try{return $(\""+escapeString(field.getName())+"\").getValue().toJSON();}catch(e){}}");
 								out.append("\""+escapeString(field.getName())+"\":function(){try{return JSON_BIND_ACTIVE_FORM."+escapeString(field.getName())+".value}catch(e){return null;}}");
 							}else{
-								out.append("\""+escapeString(field.getName())+"\":\""+(xmlElemnt != null?xmlElemnt.defaultValue() != null ?xmlElemnt.defaultValue().trim():"":"") +"\"");
+								out.append("\""+escapeString(field.getName())+"\":");
+								if(xmlElemnt != null && xmlElemnt.defaultValue() != null && !xmlElemnt.defaultValue().trim().isEmpty()){
+									out.append("\"" + xmlElemnt.defaultValue().trim() + "\"");
+								}else{
+									serializeBean(field.getType(), out,stack,autoBind);
+								}
 							}
 						}
 					}

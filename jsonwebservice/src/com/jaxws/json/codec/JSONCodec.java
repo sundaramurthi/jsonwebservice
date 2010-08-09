@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
@@ -19,21 +20,24 @@ import java.util.Properties;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 import javax.xml.soap.Detail;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFactory;
 import javax.xml.soap.SOAPFault;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import com.googlecode.jsonplugin.JSONException;
+import com.googlecode.jsonplugin.JSONUtil;
 import com.googlecode.jsonplugin.WSJSONReader;
 import com.googlecode.jsonplugin.WSJSONWriter;
 import com.jaxws.json.DateFormat;
@@ -43,6 +47,7 @@ import com.jaxws.json.packet.handler.ResponsePacketHandler;
 import com.jaxws.json.serializer.CustomSerializer;
 import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
+import com.sun.xml.bind.StringInputStream;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.SOAPVersion;
 import com.sun.xml.ws.api.WSBinding;
@@ -58,9 +63,7 @@ import com.sun.xml.ws.api.server.EndpointAwareCodec;
 import com.sun.xml.ws.api.server.EndpointComponent;
 import com.sun.xml.ws.api.server.Module;
 import com.sun.xml.ws.api.server.WSEndpoint;
-import com.sun.xml.ws.api.streaming.XMLStreamWriterFactory;
 import com.sun.xml.ws.client.sei.SEIStub;
-import com.sun.xml.ws.encoding.xml.XMLCodec;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -83,6 +86,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     private static boolean				responsePayloadEnabled	= true;	
     private static boolean				requestPayloadEnabled	= true;	
     private static boolean				excludeNullProperties	= false;
+    private static boolean				gzip					= true;	
     private static Pattern 				pattern = null,valuePattern = null;
     protected static DateFormat			dateFormat = DateFormat.PLAIN;
     
@@ -111,6 +115,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().startsWith("json.include")){
     			includeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
+    		}else if(key.toString().equals("json.response.gzip")){
+    			gzip	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.response.enable.payloadname")){
     			responsePayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.request.enable.payloadname")){
@@ -212,13 +218,23 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		try {
 			String operationName = null;
 			//TODO code clean
-			if((!requestPayloadEnabled) && packet.webServiceContextDelegate != null && packet.webServiceContextDelegate instanceof WSHTTPConnection){
-				String queryString = ((WSHTTPConnection)packet.webServiceContextDelegate).getQueryString();
-				String params[] = queryString.split("&");
-				operationName = params[0];
-				if(params.length >1 && params[1].startsWith("accept")){
-					// Respone decode in difrent format. Redirect Required.
-					packet.invocationProperties.put("accept", params[1].split("=")[1]);
+			if(packet.webServiceContextDelegate != null 
+					&& packet.webServiceContextDelegate instanceof WSHTTPConnection){
+				WSHTTPConnection connection = (WSHTTPConnection)packet.webServiceContextDelegate;
+				String queryString = connection.getQueryString();
+				
+				if(connection.getRequestMethod().equals("GET")){
+					if(queryString == null || queryString.isEmpty()){
+						throw new Exception("Invalid Operation name in query parameter.(Please make payload name enabled or pass valid opeartion as query parameter)");
+					}
+					in = new StringInputStream(URLDecoder.decode(queryString,"UTF-8"));
+				}else if(!requestPayloadEnabled && queryString != null && !queryString.isEmpty()) {
+					String params[] = queryString.split("&");
+					operationName = params[0];
+					if(params.length >1 && params[1].startsWith("accept")){
+						// Respone decode in difrent format. Redirect Required.
+						packet.invocationProperties.put("accept", params[1].split("=")[1]);
+					}
 				}
 			}
 			if((!requestPayloadEnabled) && operationName == null){
@@ -365,15 +381,16 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		Message message = packet.getMessage();
 		if (message != null) {
 			SEIModel seiModel = getSEIModel(packet);
-			OutputStreamWriter sw = null;
 			try {
 				Pattern listMapKey		= null;
 				Pattern listMapValue	= null;
 				boolean listWrapperSkip = false;
 				Collection<Pattern> excludeProperties 	= this.excludeProperties;
 			    Collection<Pattern> includeProperties	= this.includeProperties;
-				
-				sw = new OutputStreamWriter(out, "UTF-8");
+				if(gzip && JSONUtil.isGzipInRequest((HttpServletRequest)packet.get(MessageContext.SERVLET_REQUEST))){
+					((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).addHeader("Content-Encoding", "gzip");
+					out = new GZIPOutputStream(out);
+				}
 				HashMap<String, Object> result = new HashMap<String, Object>();
 				for (Iterator iterator = packet.invocationProperties.keySet().iterator(); iterator
 						.hasNext();) {
@@ -392,13 +409,17 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 								.hasNext();) {
 							Element type = iterator.next();
 							detail.put(type.getLocalName(), type.getTextContent());
+							for(int att = type.getAttributes().getLength() -1;att >-1;att--){
+								Node node = type.getAttributes().item(att);
+								detail.put(node.getNodeName(), node.getNodeValue());
+							}
 						}
 					} catch(Throwable th){/*Dont mind about custom message set fail*/}
 					HashMap<String,Object> exception = new HashMap<String, Object>(); 
 					exception.put("code", faultObj.getFaultCodeAsQName().getLocalPart().toUpperCase());
 					exception.put("message", faultObj.getFaultString());
 					exception.put("actor", faultObj.getFaultActor());
-					exception.put("cause", detail);
+					exception.put("detail", detail);
 					result.put("exception", exception);
 				} else {// Not fault
 					result.put(STATUS_STRING_RESERVED, true);
@@ -465,14 +486,14 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 							dateFormat,
 							customCodecs
 							);
-					sw.write(writer.write(result, excludeProperties, includeProperties, excludeNullProperties));
+					writer.write(out,result, excludeProperties, includeProperties, excludeNullProperties);
 				}
 			} catch (Exception xe) {
 				throw new WebServiceException(xe);
 			} finally {
-				if (sw != null) {
+				if (out != null && out instanceof GZIPOutputStream) {
 					try {
-						sw.close();
+						out.close();
 					} catch (Exception xe) {
 						// let the original exception get through
 					}
