@@ -56,6 +56,7 @@ public class WSJSONWriter {
     private boolean enumAsBean = ENUM_AS_BEAN_DEFAULT;
     private boolean excludeNullProperties;
 	private boolean skipListWrapper  = false;
+	private boolean useTimezoneSeparator = false;
 	private Pattern listMapKey;
 	private Pattern listMapValue;
 	private com.jaxws.json.DateFormat dateFormat;
@@ -63,12 +64,13 @@ public class WSJSONWriter {
 
     public WSJSONWriter(boolean skipListWrapper,Pattern listMapKey,Pattern listMapValue,
     		com.jaxws.json.DateFormat dateFormat,
-    		Map<Class<? extends Object>,CustomSerializer> customCodecs){
+    		Map<Class<? extends Object>,CustomSerializer> customCodecs,boolean useTimezoneSeparator){
     	this.skipListWrapper   	= skipListWrapper;
     	this.listMapKey			= listMapKey;
     	this.listMapValue		= listMapValue;
     	this.dateFormat			= dateFormat;
     	this.customCodecs		= customCodecs;
+    	this.useTimezoneSeparator = useTimezoneSeparator;
     }
     
     /**
@@ -81,11 +83,15 @@ public class WSJSONWriter {
      *
      * @see
      */
-    static public String Date2ISO(Date date) {
-        String timePattern = "yyyy-MM-dd'T'HH:mm:ssZ";
-        SimpleDateFormat formatter = new SimpleDateFormat(timePattern);
-
-        return formatter.format(date);
+     public String Date2ISO(Date date) {
+       String timePattern = "yyyy-MM-dd'T'HH:mm:ssZ";
+       SimpleDateFormat formatter = new SimpleDateFormat(timePattern);
+       if(useTimezoneSeparator){
+    	   StringBuffer dateStr = new StringBuffer(formatter.format(date));
+    	   return dateStr.length() > 22 ? dateStr.insert(22, ':').toString() : dateStr.toString();
+       }else{
+    	   return formatter.format(date);
+       }
     }
 
     /**
@@ -376,25 +382,30 @@ public class WSJSONWriter {
 	                        	}
 	                        }
 	                    }catch(Throwable th){}
-                    }else if(accessor.getDeclaringClass().getDeclaredField(name) != null){
-                    	Field declaredField = accessor.getDeclaringClass().getDeclaredField(name);
-                    	// XML choice list
-                    	XmlElements xmlElms =  declaredField.getAnnotation(XmlElements.class);
-                    	if(xmlElms != null && Collection.class.isAssignableFrom(declaredField.getType())
-                    			&& value instanceof Collection){
-                    		Collection<?> valueList = (Collection<?>)value;
-                    		if(!valueList.isEmpty()){
-                    			// use first object to identify type
-                    			Object firstObject = valueList.toArray()[0];
-                    			for(XmlElement elm : xmlElms.value()){
-									Class<?> elType = elm.type();
-                    				if(firstObject.getClass().equals(elType) ){
-                    					name = elm.name();
-                    					//
-                    					break;
-                    				}
-                    			}
-                    		}
+                    }else{
+                    	// Process xml annatation if any
+                    	try{
+	                    	Field declaredField = accessor.getDeclaringClass().getDeclaredField(name);
+	                    	// XML choice list
+	                    	XmlElements xmlElms =  declaredField.getAnnotation(XmlElements.class);
+	                    	if(xmlElms != null && Collection.class.isAssignableFrom(declaredField.getType())
+	                    			&& value instanceof Collection){
+	                    		Collection<?> valueList = (Collection<?>)value;
+	                    		if(!valueList.isEmpty()){
+	                    			// use first object to identify type
+	                    			Object firstObject = valueList.toArray()[0];
+	                    			for(XmlElement elm : xmlElms.value()){
+										Class<?> elType = elm.type();
+	                    				if(firstObject.getClass().equals(elType) ){
+	                    					name = elm.name();
+	                    					//
+	                    					break;
+	                    				}
+	                    			}
+	                    		}
+	                    	}
+                    	}catch(Throwable th){
+                    		log.debug("Processing xml annatation failed for field: "+name);
                     	}
                     }
                     //CODEC

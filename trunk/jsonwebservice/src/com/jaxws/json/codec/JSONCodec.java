@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.channels.ReadableByteChannel;
@@ -89,6 +88,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     private static boolean				gzip					= true;	
     private static Pattern 				pattern = null,valuePattern = null;
     protected static DateFormat			dateFormat = DateFormat.PLAIN;
+    protected static boolean 			useTimezoneSeparator 	= false;
     
     public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
     private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
@@ -129,6 +129,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     			valuePattern = Pattern.compile(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals(com.jaxws.json.DateFormat.class.getName())){
     			dateFormat	= Enum.valueOf(com.jaxws.json.DateFormat.class, properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals("json.date.iso.useTimezoneSeparator")){
+    			useTimezoneSeparator	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}
     	}
     	try {
@@ -484,7 +486,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 							listMapKey,
 							listMapValue,
 							dateFormat,
-							customCodecs
+							customCodecs,
+							useTimezoneSeparator
 							);
 					writer.write(out,result, excludeProperties, includeProperties, excludeNullProperties);
 				}

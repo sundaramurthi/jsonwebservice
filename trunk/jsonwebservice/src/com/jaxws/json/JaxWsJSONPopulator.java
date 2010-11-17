@@ -272,10 +272,21 @@ public class JaxWsJSONPopulator extends JSONPopulator {
         } else if (dateStr.length() == 19) {
             timePattern = "yyyy-MM-dd'T'HH:mm:ss";
         } else if (dateStr.length() > 10 && dateStr.charAt(10) == 'T') {
-            timePattern = "yyyy-MM-dd'T'HH:mm:ssz";
+        	if(dateStr.length() > 19 && (dateStr.charAt(19) == '+' || dateStr.charAt(19) == '-')){
+        		timePattern = "yyyy-MM-dd'T'HH:mm:ssZ";// time
+        	}else{
+        		timePattern = "yyyy-MM-dd'T'HH:mm:ssz";
+        	}
         } else {
             timePattern = "yyyy-MM-ddHH:mm:ssz";
         }
+        if(timePattern.endsWith("Z") && dateStr.length() > 22 && dateStr.charAt(22) == ':'){
+        	// time zone input follows ":" pattern
+        	StringBuffer buf = new StringBuffer(dateStr);
+        	dateStr = buf.replace(22, 23, "").toString();
+        }
+        
+        
         // Format the current time.
         SimpleDateFormat formatter = new SimpleDateFormat(timePattern);
 
