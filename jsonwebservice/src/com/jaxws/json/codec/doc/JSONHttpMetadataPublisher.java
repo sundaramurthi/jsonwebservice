@@ -78,8 +78,12 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 
 	        PortAddressResolver portAddressResolver = adapter.owner.createPortAddressResolver(connection.getBaseAddress());
 	        String address = portAddressResolver.getAddressFor(endPoint.getServiceName(), endPoint.getPortName().getLocalPart());
-	        if(address != null)
+	        if(address != null){
+	        	if(address.endsWith(".soap")){
+	        		address = address.replace(".soap", ".json");
+	        	}
 	        	templateMain = templateMain.replaceAll("#END_POINT_URL#", address);
+	        }
 
 	        StringBuffer 	methods = new StringBuffer();
 	        
