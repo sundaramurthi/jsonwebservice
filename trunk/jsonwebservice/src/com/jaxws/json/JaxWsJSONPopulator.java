@@ -123,8 +123,9 @@ public class JaxWsJSONPopulator extends JSONPopulator {
 					return new Timestamp(new Long(value.toString()));
 				}
 		}
-		if(value != null && value.equals("") && isJSONPrimitive(clazz)){
-			value = null; // Bug with number conversion
+		if(value != null && value.equals("") && isJSONPrimitive(clazz) && 
+				!(clazz.equals(String.class) || clazz.equals(Character.class) )){
+			value = null; // Bug with number conversion and date
 		}
 		return super.convert(clazz, type, value, method);
 	}
