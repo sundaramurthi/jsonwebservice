@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
@@ -75,23 +76,158 @@ import com.sun.xml.ws.util.ServiceFinder;
  * @mail sundaramurthis@gmail.com
  */
 public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
+	/**
+	 * Static content type of json. used in request/response verification.
+	 */
 	private static final ContentType 	jsonContentType 		= new JSONContentType();
-	private final static String 		STATUS_STRING_RESERVED 	= "statusFlag";
+	
+	/**
+	 * Flag to enable/disable json request call status. 
+	 */
+	private static final String 		STATUS_STRING_RESERVED 	= "statusFlag";
+	
+	/**
+	 * Java default ISO date format, timezone specified with out separator (E.g 2010-11-24T17:23:10+0100) last time zone part specified with out ':' separtor.
+	 * To add separator between hour and minute part of timezone  useTimezoneSeparator set to true.
+	 * If useTimezoneSeparator =true  data with ISO format written in json as 2010-11-24T17:23:10+01:00
+	 * 
+	 * FYI: both with separator (+01:00) or with out separator (+0100) are valid according to ISO date format.
+	 * 
+	 * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.date.iso.useTimezoneSeparator</b>
+	 * </blockquote>
+	 * 
+	 * Default: false
+	 */
+	public static boolean 				useTimezoneSeparator 	= false;
+	
+	/**
+	 * Date format used in JSON input and output. All java.util.Date, Calender and Timestamp use specified format. 
+	 * For available format look at com.jaxws.json.DateFormat
+	 * 
+	 * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>com.jaxws.json.DateFormat</b>
+	 * </blockquote>
+	 * 
+	 * Default: DateFormat.PLAIN
+	 */
+	protected static DateFormat			dateFormat = DateFormat.PLAIN;
+	
+	/**
+	 * Request Payload name (Operation Name) enabled in JSON request. E.g. Operation called "getVersion",  this request object warped with object named "getVersion". 
+	 * 
+	 * When set to json.request.enable.payloadname=true:
+	 * 
+	 * Request: 
+	 * <code> {"getVersion":{"requestContext":{"token":""}}}</code>
+	 * 
+	 * When set to json.request.enable.payloadname=false
+	 * 
+	 * Request: 
+	 * <code> {"requestContext":{"token":""}}</code>
+	 * <b> When request payload set to false. End point should be appended with operation name.</b>
+	 * 
+	 * E.g: Endpoint when payload enabled.
+	 * .../1_0/settings.json
+	 * 
+	 * E.g: Endpoint when payload disabled.
+	 * .../1_0/settings.json?getVersion&...
+	 * 
+	 * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.request.enable.payloadname</b>
+	 * </blockquote>
+	 * 
+	 * Default: true
+	 */
+	private static boolean				requestPayloadEnabled	= true;	
+	
+	
+	/**
+	 * Response Payload name (Operation response Name) enabled in JSON response. E.g. Operation called "getVersion" which returns response object "versionInfo". 
+	 * This response object warped with operation object. 
+	 * 
+	 * When set to json.response.enable.payloadname=true:
+	 * 
+	 * Request: 
+	 * <code> {"getVersion":{"requestContext":{"token":""}}}</code>
+	 * 
+	 * Response:  
+	 * <code>{"getVersionXXX":{"versionInfo":{"version":"1.0","buildDate":"1290612232525","releaseDate":"1290612232525"}}}</code>
+	 * 
+	 * "getVersionXXX" is a response element name defined in wsdl.
+	 * 
+	 * When set to json.response.enable.payloadname=false
+	 * 
+	 * Response:  <code>{"versionInfo":{"version":"1.0","buildDate":"1290612232525","releaseDate":"1290612232525"}}</code>
+	 * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.response.enable.payloadname</b>
+	 * </blockquote>
+	 * 
+	 * Default: true
+	 * 
+	 * This property normally true for better automated testing. In application suggested to be false.
+	 */
+	private static boolean				responsePayloadEnabled	= true;	
+    
+    /**
+     * Null values are ignored in JSON response when set to true.
+     * 
+     * E.g: when set to false: 	<code>{"versionInfo":{"version":"null","buildDate":"34234234"}}</code>
+     *  
+     * E.g: when set to true: 	<code>{"versionInfo":{"buildDate":"34234234"}}</code>
+     * since value of version is null it is ignored in json output.
+     * 
+     * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.excludeNullProperties</b>
+	 * </blockquote>
+	 * 
+	 * Default: false
+     */
+    private static boolean				excludeNullProperties	= false;
+    
+    /**
+     * JSON response written as gzip encoded format. It's dependent on Accept-content: type header in http request. 
+     * When set to true response return as gzip if client send Accept-Encoding with gzip true.
+     * 
+     * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.response.gzip</b>
+	 * </blockquote>
+	 * 
+	 * Default: true
+     */
+    private static boolean				gzip					= true;	
+    
+    
+    /**
+     * List of excluded properties, User can add one with regex format.
+     *  
+     * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.exclude</b>
+	 * </blockquote>
+	 * 
+	 * Default: empty. All are included 
+     */
+    public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
+    
+    /**
+     * List of included properties, User can add one with regex format. By specifying include property, properties which are not matching to include are ignored in json output.
+     *  
+     * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.include</b>
+	 * </blockquote>
+	 * 
+	 * Default: empty. 
+     */
+    private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
+    
 	private final 	WSBinding 			binding;
 	public final 	SOAPVersion 		soapVersion;
     private 		WSEndpoint<?> 		endpoint;
     private HttpMetadataPublisher 		metadataPublisher;
     static private SEIModel 			staticSeiModel;
-    private static boolean				responsePayloadEnabled	= true;	
-    private static boolean				requestPayloadEnabled	= true;	
-    private static boolean				excludeNullProperties	= false;
-    private static boolean				gzip					= true;	
-    private static Pattern 				pattern = null,valuePattern = null;
-    protected static DateFormat			dateFormat = DateFormat.PLAIN;
-    protected static boolean 			useTimezoneSeparator 	= false;
     
-    public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
-    private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
+    private static Pattern 				pattern = null,valuePattern = null;
+    
     static SOAPFactory soapFactory = null ;
     
     private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
@@ -106,7 +242,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     		try {
 				properties.load(serviceProperties.openStream());
 			} catch (Throwable thrown) {
-				LOG.throwing(JSONCodec.class.getSimpleName(), "property load", thrown);
+				LOG.log(Level.CONFIG,"property load", thrown);
 			}
     	}
     	properties.put("json.exclude.serialVersionUID", "serialVersionUID");
@@ -342,22 +478,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		throw new UnsupportedOperationException();
 	}
 
-	private static final ContentType xmlType = new ContentType(){
-		static final String XML_MIME_TYPE 		= "text/xml";
-
-	    public String getContentType() {
-	        return XML_MIME_TYPE;
-	    }
-
-	    public String getSOAPActionHeader() {
-	        return null;
-	    }
-
-	    public String getAcceptHeader() {
-	        return XML_MIME_TYPE;
-	    }
-	};
-	
 	public ContentType encode(Packet packet, OutputStream out) throws IOException {
 		if(packet != null && packet.invocationProperties != null && packet.invocationProperties.containsKey("accept")
 				&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
