@@ -566,7 +566,7 @@ public class WSJSONWriter {
 	    		this.string(this.Date2ISO(date));
 	    		return;
 	    	}else if(this.dateFormat == com.jaxws.json.DateFormat.PLAIN){
-	    		this.string(date.getTime());
+	    		this.add(date.getTime());
 	    		return;
 	    	}
     	}
