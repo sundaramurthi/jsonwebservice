@@ -18,7 +18,9 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.namespace.QName;
 
+import com.googlecode.jsonplugin.JSONException;
 import com.googlecode.jsonplugin.JSONPopulator;
+import com.googlecode.jsonplugin.WSJSONWriter;
 import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.JSONCodec;
 import com.sun.istack.NotNull;
@@ -54,10 +56,18 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		}
 	}
 	private WSEndpoint<?> endPoint;
+	private WSJSONWriter writer;
 
 	public JSONHttpMetadataPublisher(WSEndpoint<?> endPoint) {
 		this.endPoint = endPoint;
 		codec = (JSONCodec) endPoint.createCodec();
+		writer = new WSJSONWriter(false/*listWrapperSkip*/,
+				/*listMapKey*/null,
+				/*listMapValue*/null,
+				codec.getDateFormat(),
+				codec.getCustomSerializer(),
+				JSONCodec.useTimezoneSeparator
+				);
 	}
 
 	@Override
@@ -212,9 +222,13 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
 			Object defaultval = null;
 			try {
-				defaultval = bean.newInstance().toString();
+				defaultval = bean.newInstance();
 			} catch (Throwable e) {}
-			out.append("\""+ (defaultval == null ?bean.getSimpleName():String.valueOf(defaultval))+"\"");
+			try {
+				out.append("\""+ (defaultval == null ?bean.getSimpleName() : writer.write(defaultval))+"\"");
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			return;
 		}
 		try{
@@ -258,9 +272,9 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 					                    itemClass = (Class) ((ParameterizedType) itemType).getRawType();
 					                }
 					                out.append("[");
-					                stack.add(itemClass);
+					                stack.add(bean);
 					                serializeBean(itemClass, out,stack,autoBind);
-					                stack.remove(itemClass);
+					                stack.remove(bean);
 					                out.append("]");
 					            }else{
 					            	out.append("[]");
