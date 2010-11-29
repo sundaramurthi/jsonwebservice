@@ -1,8 +1,10 @@
-#Documentation points 
+==Documentation points ==
 
-1) json.properties file. List of properties can be customized in JSONCodec.
-2) How "accept" header increase performance. (getStaticContentType method process)
-3) Include and exclude json properties at operation level. Usage of annotation JSONWebService
-4) How to convert List to JSON map and reversal. (getListMapKey and getListMapValue methods in codec)
+  # json.properties file. List of properties can be customized in JSONCodec.
+
+  # How "accept" header increase performance. (getStaticContentType method process)
+
+  # Include and exclude json properties at operation level. Usage of annotation JSONWebService
+
+  # How to convert List to JSON map and reversal. (getListMapKey and getListMapValue methods in codec)
  
-
