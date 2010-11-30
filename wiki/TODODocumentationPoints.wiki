@@ -8,3 +8,6 @@
 
   # How to convert List to JSON map and reversal. (getListMapKey and getListMapValue methods in codec)
  
+  # use of X-Debug or http trace method.
+
+  # Operation name can be part of query string, first parameter or part of JSON input. 
