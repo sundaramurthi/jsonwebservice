@@ -1,10 +1,13 @@
 package com.jaxws.json.serializer;
 
-import java.io.Writer;
-import java.lang.reflect.Method;
+import java.io.OutputStream;
 
 
-public interface CustomSerializer {
+/**
+ * @author ssaminathan
+ *
+ */
+public interface JSONObjectCustomizer {
 	
 	/**
 	 * Codec handle class type
@@ -12,14 +15,9 @@ public interface CustomSerializer {
 	public Class<? extends Object> getAcceptClass();
 	
 	/**
-	 * Codec handle class type
-	 */
-	public boolean canBeHandled(Method method);
-	
-	/**
 	 * To Json
 	 */
-	public void encode(Writer buf,Object object);
+	public void encode(OutputStream output,Object object);
 	
 	/**
 	 * To Json

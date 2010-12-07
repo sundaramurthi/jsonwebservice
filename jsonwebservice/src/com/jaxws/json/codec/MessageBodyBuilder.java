@@ -11,12 +11,14 @@ import java.util.regex.Pattern;
 import javax.jws.WebParam.Mode;
 import javax.xml.ws.Holder;
 
-import com.jaxws.json.JaxWsJSONPopulator;
+import org.jvnet.mimepull.MIMEPart;
+
 import com.jaxws.json.builder.BodyBuilder;
 import com.jaxws.json.builder.ResponseBuilder;
 import com.jaxws.json.builder.ValueGetterFactory;
 import com.jaxws.json.builder.ValueSetter;
 import com.jaxws.json.builder.ValueSetterFactory;
+import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.bind.api.CompositeStructure;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -141,7 +143,7 @@ public class MessageBodyBuilder {
 	
 	protected Map<String,Object> readParameterAsObjects(List<ParameterImpl> parameters,
 			Object requestPayloadJSON,JAXBContextImpl context,
-			Pattern listMapKey,Pattern listMapValue){
+			Pattern listMapKey,Pattern listMapValue,List<MIMEPart> attachments,boolean traceEnabled, DebugTrace traceLog){
 		Map<String,Object> objects	= new LinkedHashMap<String,Object>();
 		 for (ParameterImpl parameter : parameters) {
 			 if(parameter.isWrapperStyle()) {
@@ -153,7 +155,7 @@ public class MessageBodyBuilder {
 						 readParameterAsObjects(
 								 ((WrapperParameter)parameter).getWrapperChildren(),
 								 requestPayloadJSON,
-								 context,listMapKey,listMapValue
+								 context,listMapKey,listMapValue, attachments, traceEnabled,traceLog
 						)
 				);
 			 }else{
@@ -169,7 +171,7 @@ public class MessageBodyBuilder {
 					}
 	         	}
 				if (val != null && requestPayloadJSON != null && context != null) {
-					if(JaxWsJSONPopulator.isJSONPrimitive(type) || type.isEnum()){
+					if(WSJSONPopulator.isJSONPrimitive(type) ){
 						if(parameters.size() == 1){
 							CompositeStructure str = new CompositeStructure();
 							str.bridges = new Bridge[1];
@@ -194,8 +196,8 @@ public class MessageBodyBuilder {
 								String parameterName = parameter.getName().getLocalPart();
 								Object parameterValue = ((Map<?, ?>) requestPayloadJSON).get(parameterName);
 								if(parameterValue instanceof Map){
-									new JaxWsJSONPopulator(context,listMapKey,listMapValue,codec
-											).populateObject(val,(Map<?, ?>)parameterValue	);
+									new WSJSONPopulator(listMapKey,listMapValue,codec.getDateFormat(),codec.getCustomSerializer()
+											,traceEnabled,traceLog).populateObject(val,(Map<?, ?>)parameterValue,null, attachments);
 								}
 							}catch(Throwable th){
 								th.printStackTrace();
