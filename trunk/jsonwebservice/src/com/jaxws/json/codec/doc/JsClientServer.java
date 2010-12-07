@@ -17,9 +17,9 @@ import java.util.regex.Pattern;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElement;
 
-import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.JSONBindingID;
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.wsdl.WSDLInput;
@@ -156,7 +156,7 @@ public class JsClientServer {
 			createClientEnum(bean);
 			return;
 		}
-		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
+		if(WSJSONPopulator.isJSONPrimitive(bean)){
 			createClientPrimitive(bean);
 			return;
 		}
@@ -190,7 +190,7 @@ public class JsClientServer {
 				}
 			}
 			if(field.getDeclaringClass().getName().equals(bean.getName())){
-				if(field.getType() instanceof Class && !JaxWsJSONPopulator.isJSONPrimitive(field.getType())){
+				if(field.getType() instanceof Class && !WSJSONPopulator.isJSONPrimitive(field.getType())){
 					clientCode.append("\""+escapeString(field.getName())+"\":");
 					if(field.getType().getName().equals(JAXBElement.class.getName())){
 						//TODO serialize element

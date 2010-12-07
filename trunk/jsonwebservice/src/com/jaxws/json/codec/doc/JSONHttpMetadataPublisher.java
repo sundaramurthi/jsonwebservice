@@ -1,5 +1,8 @@
 package com.jaxws.json.codec.doc;
 
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
@@ -16,13 +19,12 @@ import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.namespace.QName;
 
-import com.googlecode.jsonplugin.JSONException;
-import com.googlecode.jsonplugin.JSONPopulator;
-import com.googlecode.jsonplugin.WSJSONWriter;
-import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.decode.WSJSONPopulator;
+import com.jaxws.json.feature.JSONObject;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
@@ -42,38 +44,39 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  * @mail sundaramurthis@gmail.com
  */
 public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
-	private static final Properties  templates = new Properties();
+	/**
+	 * Template cache
+	 */
+	private static final Properties  			templates 			= new Properties();
+	/**
+	 * meta data model cache.
+	 */
 	MetaDataModelServer	metaDataModelServer = null;
 	JsClientServer jsClientServer = null;
 	@NotNull 
-	JSONCodec codec;
+	private JSONCodec codec;
 	static{
 		try {
 			templates.load(JSONHttpMetadataPublisher.class.getResourceAsStream("codec.properties"));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	private WSEndpoint<?> endPoint;
-	private WSJSONWriter writer;
 
-	public JSONHttpMetadataPublisher(WSEndpoint<?> endPoint) {
-		this.endPoint = endPoint;
-		codec = (JSONCodec) endPoint.createCodec();
-		writer = new WSJSONWriter(false/*listWrapperSkip*/,
-				/*listMapKey*/null,
-				/*listMapValue*/null,
-				codec.getDateFormat(),
-				codec.getCustomSerializer(),
-				JSONCodec.useTimezoneSeparator
-				);
+	/**
+	 * @param endPoint
+	 * @param codec
+	 */
+	public JSONHttpMetadataPublisher(WSEndpoint<?> endPoint,JSONCodec codec) {
+		this.endPoint 	= endPoint;
+		this.codec		= codec;
 	}
 
 	@Override
 	public boolean handleMetadataRequest(HttpAdapter adapter,
 			WSHTTPConnection connection) throws IOException {
-		String queryString = connection.getQueryString();
+		String 	queryString 	= connection.getQueryString();
 		if ((queryString == null || queryString.equals("")) && endPoint != null){
 			
 			JAXBContextImpl context = (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
@@ -87,11 +90,15 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			templateMain		= templateMain.replaceAll("#SERIVICE_NAME#", endPoint.getServiceName().getLocalPart());
 
 	        PortAddressResolver portAddressResolver = adapter.owner.createPortAddressResolver(connection.getBaseAddress());
-	        String address = portAddressResolver.getAddressFor(endPoint.getServiceName(), endPoint.getPortName().getLocalPart());
+	        
+	        String portLocalPart = endPoint.getPortName().getLocalPart();
+	        
+	        String address = portAddressResolver.getAddressFor(endPoint.getServiceName(), portLocalPart);
 	        if(address != null){
-	        	if(address.endsWith(".soap")){
-	        		address = address.replace(".soap", ".json");
-	        	}
+	        	 if(address.endsWith(".soap")){
+	 	        	// Hack to SOAP implementation class configured to JSON end point.
+	        		 address = address.replace(".soap", ".json");
+	 	        }
 	        	templateMain = templateMain.replaceAll("#END_POINT_URL#", address);
 	        }
 
@@ -208,106 +215,118 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		}
 	}
 	
-	private void serializeBean(Class<?> bean,StringBuffer out,List<Class<?>> stack,boolean autoBind) throws IOException{
+	private void serializeBean(Class<?> clazz,StringBuffer out,List<Class<?>> stack,boolean autoBind) throws IOException{
 		for(Class<?> stackBean : stack ){
-			if(stackBean.equals(bean)){//Recursion deducted
-				out.append(bean.getCanonicalName());
+			if(stackBean.equals(clazz)){//Recursion deducted
+				out.append(clazz.getCanonicalName());
 				return;
 			}
 		}
-		if(bean.isEnum()){
-			out.append("\""+bean.getSimpleName()+"\"");
+		if(clazz.isEnum()){
+			out.append("\"");
+			boolean hasData = false;
+			for(Object enmConst : clazz.getEnumConstants()){
+				if(hasData)
+					out.append(" | ");
+				out.append(((Enum<?>)enmConst).name());
+				hasData = true;
+			}
+			out.append("\"");
 			return;
 		}
-		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
-			Object defaultval = null;
-			try {
-				defaultval = bean.newInstance();
-			} catch (Throwable e) {}
-			try {
-				out.append("\""+ (defaultval == null ?bean.getSimpleName() : writer.write(defaultval))+"\"");
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
+		if(WSJSONPopulator.isJSONPrimitive(clazz)){
+			out.append("\"\"");
 			return;
 		}
 		try{
-			if(bean != null){
+			if(clazz != null){
 				int count =0;
+				BeanInfo info = (clazz.isAnnotationPresent(JSONObject.class) && 
+	        			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) ? Introspector
+	                    .getBeanInfo(clazz, clazz.getSuperclass()) : Introspector
+	                    .getBeanInfo(clazz);
+
+	            PropertyDescriptor[] props = info.getPropertyDescriptors();
+	            
 				nextField:
-				for(Field field:bean.getDeclaredFields()){
-					field.getAnnotations();
-					for(Pattern patten:JSONCodec.excludeProperties){
-						if(patten.matcher(field.getName()).matches()){
-							continue nextField;
-						}
+				for(PropertyDescriptor property : props){
+					String 	name 		= property.getName();
+					if (this.shouldHardExcludeProperty(name)) {
+	                     continue;
+	                }
+					
+					if(count != 0 ){
+						out.append(",");
+					}else{
+						out.append("{");
 					}
-					if(field.getDeclaringClass().getName().equals(bean.getName())){
-						if(count != 0 ){
-							out.append(",");
-						}else{
-							out.append("{");
+					
+					Class<?> propertyType  	= property.getPropertyType();
+					Field declaredField 	= null;
+					try{
+						declaredField		= clazz.getDeclaredField(name);
+					}catch(Throwable th){
+						// TODO
+					}
+					if(declaredField == null){
+						continue; //TODO difrent field name
+					}
+					if(!WSJSONPopulator.isJSONPrimitive(propertyType)){
+						out.append("\""+escapeString(name)+"\":");
+						if(JAXBElement.class.isAssignableFrom(propertyType)){
+							//TODO serialize element
+							//serializeBean(field.getType(), out);
+							out.append("null");
+						}else if(Collection.class.isAssignableFrom(propertyType)){
+							Type type = declaredField.getGenericType();
+							Class<?> itemClass = Object.class;
+					        Type itemType = null;
+					        if (type != null && type instanceof ParameterizedType) {
+				                ParameterizedType ptype = (ParameterizedType) type;
+				                itemType = ptype.getActualTypeArguments()[0];
+				                if (itemType.getClass().equals(Class.class)) {
+				                    itemClass = (Class) itemType;
+				                } else if(itemType instanceof ParameterizedType){
+				                    itemClass = (Class) ((ParameterizedType) itemType).getRawType();
+				                }
+				                out.append("[");
+				                stack.add(clazz);
+				                serializeBean(itemClass, out,stack,autoBind);
+				                stack.remove(clazz);
+				                out.append("]");
+				            }else{
+				            	out.append("[]");
+				            }
+				            
+						} else if(declaredField.isAnnotationPresent(XmlMimeType.class)){
+							out.append("\""+escapeString(declaredField.getAnnotation(XmlMimeType.class).value())+"\":");
+						} else {
+							stack.add(clazz);
+							serializeBean(propertyType, out,stack,autoBind);
+							stack.remove(clazz);
 						}
-						try{
-							Class.forName("com.jaxws.json.JaxWsJSONPopulator");
-						}catch(Throwable th){
-							th.printStackTrace();
-						}
-						if(field.getType() instanceof Class && !JaxWsJSONPopulator.isJSONPrimitive(field.getType())){
-							out.append("\""+escapeString(field.getName())+"\":");
-							if(field.getType().getName().equals(JAXBElement.class.getName())){
-								//TODO serialize element
-								//serializeBean(field.getType(), out);
-								out.append("null");
-							}else if(Collection.class.isAssignableFrom(field.getType())){
-								Type type = field.getGenericType();
-								Class<?> itemClass = Object.class;
-					            Type itemType = null;
-					            if (type != null && type instanceof ParameterizedType) {
-					                ParameterizedType ptype = (ParameterizedType) type;
-					                itemType = ptype.getActualTypeArguments()[0];
-					                if (itemType.getClass().equals(Class.class)) {
-					                    itemClass = (Class) itemType;
-					                } else if(itemType instanceof ParameterizedType){
-					                    itemClass = (Class) ((ParameterizedType) itemType).getRawType();
-					                }
-					                out.append("[");
-					                stack.add(bean);
-					                serializeBean(itemClass, out,stack,autoBind);
-					                stack.remove(bean);
-					                out.append("]");
-					            }else{
-					            	out.append("[]");
-					            }
-					            
-							} else{
-								stack.add(bean);
-								serializeBean(field.getType(), out,stack,autoBind);
-								stack.remove(bean);
-							}
-						}else{
-							XmlElement xmlElemnt = field.getAnnotation(XmlElement.class);
+					}else{
+							XmlElement xmlElemnt = declaredField.getAnnotation(XmlElement.class);
 							if(autoBind){
 								//out.append("\""+escapeString(field.getName())+"\":function(){try{return $(\""+escapeString(field.getName())+"\").getValue().toJSON();}catch(e){}}");
-								out.append("\""+escapeString(field.getName())+"\":function(){try{return JSON_BIND_ACTIVE_FORM."+escapeString(field.getName())+".value}catch(e){return null;}}");
+								out.append("\""+escapeString(name)+"\":function(){try{return JSON_BIND_ACTIVE_FORM."+escapeString(name)+".value}catch(e){return null;}}");
 							}else{
-								out.append("\""+escapeString(field.getName())+"\":");
+								out.append("\""+escapeString(name)+"\":");
 								if(xmlElemnt != null && xmlElemnt.defaultValue() != null && !xmlElemnt.defaultValue().trim().isEmpty()){
 									out.append("\"" + xmlElemnt.defaultValue().trim() + "\"");
 								}else{
-									serializeBean(field.getType(), out,stack,autoBind);
+									serializeBean(propertyType, out,stack,autoBind);
 								}
 							}
 						}
-					}
 					count++;
 				}
 				if(count != 0 ){
 					out.append("}");
-				}else if(bean.isPrimitive()){
-					bean.getAnnotations();
-					bean.getDeclaredAnnotations();
-					out.append("\""+(new JSONPopulator().convert(bean, null, null, null))+"\"");
+				}else if(clazz.isPrimitive()){
+					clazz.getAnnotations();
+					clazz.getDeclaredAnnotations();
+					out.append("\""+/*(new JSONPopulator().convert(bean, null, null, null))+*/"\"");
 				}else{
 					out.append("null");
 				}
@@ -334,7 +353,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			out.append("]");
 			return;
 		}
-		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
+		if(WSJSONPopulator.isJSONPrimitive(bean)){
 			//out.append("\"\"");
 			out.append("{");
 			out.append("\"type\":\""+bean.getSimpleName()+"\",");
@@ -365,13 +384,15 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 						}catch(Throwable th){
 							th.printStackTrace();
 						}
-						if(field.getType() instanceof Class && !JaxWsJSONPopulator.isJSONPrimitive(field.getType())){
+						if(field.getType() instanceof Class && !WSJSONPopulator.isJSONPrimitive(field.getType())){
 							out.append("\""+escapeString(field.getName())+"\":");
 							if(field.getType().getName().equals(JAXBElement.class.getName())){
 								//TODO serialize element
 								//serializeBean(field.getType(), out);
 								out.append("null");
-							}else{
+							}else if(field.isAnnotationPresent(XmlMimeType.class)){
+								out.append("\""+escapeString(field.getAnnotation(XmlMimeType.class).value())+"\":");
+							} else{
 								stack.add(bean);
 								serializeMetaDtata(field.getType(), out,stack);
 								stack.remove(bean);
@@ -406,7 +427,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				}else if(bean.isPrimitive()){
 					bean.getAnnotations();
 					bean.getDeclaredAnnotations();
-					out.append("\""+(new JSONPopulator().convert(bean, null, null, null))+"\"");
+					out.append("\""+/*(new JSONPopulator().convert(bean, null, null, null))+*/"\"");
 				}else{
 					out.append("null");
 				}
@@ -454,4 +475,16 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		}
 		out.append('"');
 	}
+	
+	 /**
+     * Utility III  never serializable properties. 
+     * Ignore "class" field
+     */
+    private boolean shouldHardExcludeProperty(String name)
+            throws SecurityException, NoSuchFieldException {
+        if (name.equals("class") || name.equals("declaringClass") || name.equals("serialVersionUID")) {
+            return true;
+        }
+        return false;
+    }
 }

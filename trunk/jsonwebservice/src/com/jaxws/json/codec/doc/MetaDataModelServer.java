@@ -28,10 +28,10 @@ import org.exolab.castor.xml.schema.reader.SchemaReader;
 import org.exolab.castor.xml.schema.simpletypes.AtomicType;
 import org.xml.sax.InputSource;
 
-import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.JSONBindingID;
 import com.jaxws.json.codec.JSONCodec;
-import com.jaxws.json.serializer.CustomSerializer;
+import com.jaxws.json.codec.decode.WSJSONPopulator;
+import com.jaxws.json.serializer.JSONObjectCustomizer;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
@@ -55,7 +55,7 @@ public class MetaDataModelServer {
 	ArrayList<Class<?>> stack = new ArrayList<Class<?>>();
 	org.exolab.castor.xml.schema.Schema schema;
 	String serviceName ="UNDEFINDED";
-	Map<Class<? extends Object>,CustomSerializer> customCodecs;
+	Map<Class<? extends Object>,JSONObjectCustomizer> customCodecs;
 	public MetaDataModelServer(WSEndpoint<?> endPoint,
 			boolean all,boolean jsRoot,@NotNull
 			JSONCodec codec) {
@@ -210,11 +210,11 @@ public class MetaDataModelServer {
 				}
 			}
 		}
-		if(customCodecs.containsKey(bean) && customCodecs.get(bean).canBeHandled(null)){
+		if(customCodecs.containsKey(bean)){
         	customCodecs.get(bean).metaData(model);
         }else if(bean.isEnum()){
 			createMetaDataEnum(bean);
-		}else if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
+		}else if(WSJSONPopulator.isJSONPrimitive(bean)){
 			createMetaDataPrimitive(bean,null,null);
 		}else if(bean != null){
 			try{
@@ -355,7 +355,7 @@ public class MetaDataModelServer {
 				}
 			}
 			if(field.getDeclaringClass().getName().equals(bean.getName())){
-				if(field.getType() instanceof Class && !JaxWsJSONPopulator.isJSONPrimitive(field.getType())){
+				if(field.getType() instanceof Class && !WSJSONPopulator.isJSONPrimitive(field.getType())){
 					model.append("\""+escapeString(field.getName())+"\":");
 					if(field.getType().getName().equals(JAXBElement.class.getName())){
 						//TODO serialize element

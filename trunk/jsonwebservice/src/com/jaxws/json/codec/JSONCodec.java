@@ -1,18 +1,15 @@
 package com.jaxws.json.codec;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -24,31 +21,17 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.namespace.QName;
-import javax.xml.soap.Detail;
-import javax.xml.soap.SOAPConstants;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPFactory;
-import javax.xml.soap.SOAPFault;
-import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
-import com.googlecode.jsonplugin.JSONException;
-import com.googlecode.jsonplugin.JSONUtil;
-import com.googlecode.jsonplugin.WSJSONReader;
-import com.googlecode.jsonplugin.WSJSONWriter;
-import com.jaxws.json.DateFormat;
+import com.jaxws.json.codec.decode.FormDecoder;
+import com.jaxws.json.codec.decode.JSONDecoder;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
+import com.jaxws.json.codec.encode.JSONEncoder;
 import com.jaxws.json.feature.JSONWebService;
-import com.jaxws.json.packet.handler.ResponsePacketHandler;
-import com.jaxws.json.serializer.CustomSerializer;
+import com.jaxws.json.packet.handler.Encoder;
+import com.jaxws.json.serializer.JSONObjectCustomizer;
 import com.sun.istack.NotNull;
 import com.sun.istack.Nullable;
-import com.sun.xml.bind.StringInputStream;
-import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.SOAPVersion;
 import com.sun.xml.ws.api.WSBinding;
 import com.sun.xml.ws.api.message.Message;
@@ -65,6 +48,9 @@ import com.sun.xml.ws.api.server.Module;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.client.sei.SEIStub;
 import com.sun.xml.ws.model.JavaMethodImpl;
+import com.sun.xml.ws.protocol.soap.MessageCreationException;
+import com.sun.xml.ws.server.UnsupportedMediaException;
+import com.sun.xml.ws.transport.Headers;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 import com.sun.xml.ws.util.ByteArrayBuffer;
@@ -76,15 +62,47 @@ import com.sun.xml.ws.util.ServiceFinder;
  * @mail sundaramurthis@gmail.com
  */
 public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
+	private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
+	
 	/**
 	 * Static content type of json. used in request/response verification.
 	 */
-	private static final ContentType 	jsonContentType 		= new JSONContentType();
+	public static final ContentType 	jsonContentType 		= new JSONContentType();
 	
 	/**
 	 * Flag to enable/disable json request call status. 
 	 */
-	private static final String 		STATUS_STRING_RESERVED 	= "statusFlag";
+	public static final String 		STATUS_STRING_RESERVED 	= "statusFlag";
+
+	/**
+	 * TRACE back JSON object name
+	 */
+	public static final String 		TRACE 					= "TRACE";
+
+	/**
+	 * http header name for trace log
+	 */
+	public static final String 		XDEBUG_HEADER			= "X-Debug";
+	
+	/**
+	 * Http header for custom json parameter name
+	 */
+	public static final String		XJSONPARAM_HEADER		= "X-JSONParam";
+	
+	/**
+	 * 
+	 */
+	public static final String 		CONTENT_DISPOSITION_HEADER = "Content-Disposition";
+	
+	/**
+	 * Default json parameter name if XJSONPARAM_HEADER not present in http request
+	 */
+	public static String		XJSONPARAM_DEFAULT			= "JSON";
+	
+	/**
+	 * Attachment key
+	 */
+	public static String		MIME_ATTACHMENTS			= "ATTACHMENTS";
 	
 	/**
 	 * Java default ISO date format, timezone specified with out separator (E.g 2010-11-24T17:23:10+0100) last time zone part specified with out ':' separtor.
@@ -139,7 +157,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: true
 	 */
-	private static boolean				requestPayloadEnabled	= true;	
+	//private static boolean				requestPayloadInJSON = true;	
 	
 	
 	/**
@@ -163,11 +181,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * Property name <i>(jsonservice.properties)</i>: <b>json.response.enable.payloadname</b>
 	 * </blockquote>
 	 * 
-	 * Default: true
+	 * Default: false
 	 * 
 	 * This property normally true for better automated testing. In application suggested to be false.
 	 */
-	private static boolean				responsePayloadEnabled	= true;	
+	public static boolean				responsePayloadEnabled	= false;	
     
     /**
      * Null values are ignored in JSON response when set to true.
@@ -181,9 +199,9 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * Property name <i>(jsonservice.properties)</i>: <b>json.excludeNullProperties</b>
 	 * </blockquote>
 	 * 
-	 * Default: false
+	 * Default: true
      */
-    private static boolean				excludeNullProperties	= false;
+    public static boolean				excludeNullProperties	= true;
     
     /**
      * JSON response written as gzip encoded format. It's dependent on Accept-content: type header in http request. 
@@ -199,10 +217,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     
     
     /**
-     * List of excluded properties, User can add one with regex format.
+     * List of excluded properties, User can add one or more with regex format.
+     * 
+     * E.e json.exclude.serialVersionUID=serialVersionUID
      *  
      * <blockquote>
-	 * Property name <i>(jsonservice.properties)</i>: <b>json.exclude</b>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.exclude.xxx</b>
 	 * </blockquote>
 	 * 
 	 * Default: empty. All are included 
@@ -218,34 +238,100 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: empty. 
      */
-    private static Collection<Pattern> includeProperties	= null;//new ArrayList<Pattern>();
+    public static Collection<Pattern> 	includeProperties	= null;//new ArrayList<Pattern>();
     
-	private final 	WSBinding 			binding;
-	public final 	SOAPVersion 		soapVersion;
+    /**
+     * In JAXB generated object list sequence generated with warped object. Seralizing it to json end with unnessary objects.
+     * To avoid it user can set listWrapperSkip=true.
+     * 
+     * Eg: 
+     *  In XSF
+     *  <code>
+     *   <xsd:element name="items">
+              <xsd:complexType>
+                <xsd:sequence>
+                  <xsd:element name="item" type="xxxx" maxOccurs="unbounded" minOccurs="1"/>
+                </xsd:sequence>
+              </xsd:complexType>
+            </xsd:element>
+     *  </code>
+     * 
+     * Above XSD lead to java object as
+     * 
+     * Items{
+     * 		List<Item> getItems(){
+     * 			return <List>
+     * 		}
+     * }
+     *  
+     * 
+     * Result JSON representation of items looks like when listWrapperSkip set to false.
+     * 
+     * {"items":
+     * 		{"item":[...]}
+     * }
+     * 
+     * In most case java script developers don't prefer to have two object names. 
+     * Result JSON representation of items looks like when listWrapperSkip set to true.
+     * 
+     * {"items":[..]}
+     * 
+     * 
+     * <blockquote>
+	 * Property name <i>(jsonservice.properties)</i>: <b>json.list.wrapperSkip</b>
+	 * </blockquote>
+	 * 
+	 * Default: false. 
+     */
+    public static 	boolean 					listWrapperSkip 	= false;
+    
+    /**
+     * List of custom encoder used to handle non JSON response.
+     * User can register customized encoder like HTML, plain text etc output.
+     */
+    public static	Collection<Class<? extends Encoder>> customEncoder		= new ArrayList<Class<? extends Encoder>>();
+    
+    /**
+     * List of custom JSON object customizer. Which can be used to customize JSON output of specific object. 
+     * E.g an object/Class provided by third party library and its used in JSON encoding/decoding. 
+     * And prefer to serialize in custom format.
+     */
+    private 		Map<Class<? extends Object>,JSONObjectCustomizer> 	jsonObjectCustomizer;
+    
+    
+    /**
+     * WS end point configuration object. 
+     */
     private 		WSEndpoint<?> 		endpoint;
-    private HttpMetadataPublisher 		metadataPublisher;
+    
+	/**
+	 * Binding ID used for codec.
+	 */
+	private final 	WSBinding 			binding;
+	
+	/**
+	 * Document and model publisher.
+	 */
+	private HttpMetadataPublisher 		metadataPublisher;
+	
+	public final 	SOAPVersion 		soapVersion;
+    
     static private SEIModel 			staticSeiModel;
     
     private static Pattern 				pattern = null,valuePattern = null;
     
-    static SOAPFactory soapFactory = null ;
-    
-    private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
-    private Map<Class<? extends Object>,CustomSerializer> customCodecs;
-    private Map<String,ResponsePacketHandler> customResponsePacketHandler;
-	
     static{
-    	Properties properties = new Properties();
-    	URL serviceProperties = JSONCodec.class.getResource("/jsonservice.properties");
+    	LOG.info("Initalizing JSON codec static part.");
+    	Properties 		properties 			= new Properties();
+    	URL 			serviceProperties 	= JSONCodec.class.getResource("/jsonservice.properties");
     	if(serviceProperties != null){
-    		LOG.info("Using JSON service properties from "+serviceProperties);
+    		LOG.info("Using JSON service properties from " + serviceProperties);
     		try {
 				properties.load(serviceProperties.openStream());
 			} catch (Throwable thrown) {
 				LOG.log(Level.CONFIG,"property load", thrown);
 			}
     	}
-    	properties.put("json.exclude.serialVersionUID", "serialVersionUID");
     	for(Object key:properties.keySet()){
     		if(key.toString().equals("json.excludeNullProperties")){
     			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
@@ -255,64 +341,88 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     			gzip	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.response.enable.payloadname")){
     			responsePayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals("json.request.enable.payloadname")){
-    			requestPayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().startsWith("json.exclude")){
+    		}/*else if(key.toString().equals("json.request.enable.payloadname")){
+    			requestPayloadInJSON	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}*/else if(key.toString().startsWith("json.exclude")){
     			excludeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
     		}else if(key.toString().equals("json.list.map.key")){
     			pattern = Pattern.compile(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.list.map.value")){
     			valuePattern = Pattern.compile(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals(com.jaxws.json.DateFormat.class.getName())){
-    			dateFormat	= Enum.valueOf(com.jaxws.json.DateFormat.class, properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals("json.list.wrapperSkip")){
+    			listWrapperSkip = Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals(com.jaxws.json.codec.DateFormat.class.getName())){
+    			dateFormat	= Enum.valueOf(com.jaxws.json.codec.DateFormat.class, properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.date.iso.useTimezoneSeparator")){
     			useTimezoneSeparator	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}
     	}
-    	try {
-			soapFactory = SOAPFactory.newInstance();
-		} catch (SOAPException e) {}
+		
+		for (Encoder handler : ServiceFinder.find(Encoder.class)) {
+			customEncoder.add(handler.getClass());
+		}
     }
     
+	/**
+	 * Create codec using SOAP WSBinding
+	 * @param binding
+	 */
 	public JSONCodec(WSBinding binding) {
 		this.binding = binding;
 		this.soapVersion = binding.getSOAPVersion();
 		initCustom();
 	}
 	
+	/**
+	 * Copy codec.
+	 * 
+	 * @param that
+	 */
 	public JSONCodec(JSONCodec that) {
         this(that.binding);
-        this.endpoint = that.endpoint;
-        this.customCodecs = that.customCodecs;
+        this.endpoint 				= that.endpoint;
+        this.jsonObjectCustomizer 	= that.jsonObjectCustomizer;
+        this.metadataPublisher		= that.metadataPublisher;
     }
 	
+	/**
+	 * Initialize custom JSON serializer
+	 */
 	private void initCustom() {
-		customCodecs = new HashMap<Class<? extends Object>, CustomSerializer>();
-		for (CustomSerializer serializer : ServiceFinder
-				.find(CustomSerializer.class)) {
-			customCodecs.put(serializer.getAcceptClass(), serializer);
-		}
-		customResponsePacketHandler = new HashMap<String, ResponsePacketHandler>();
-		for (ResponsePacketHandler handler : ServiceFinder
-				.find(ResponsePacketHandler.class)) {
-			customResponsePacketHandler.put(handler.responseContentType().getContentType(), handler);
+		jsonObjectCustomizer = new HashMap<Class<? extends Object>, JSONObjectCustomizer>();
+		for (JSONObjectCustomizer serializer : ServiceFinder
+				.find(JSONObjectCustomizer.class)) {
+			jsonObjectCustomizer.put(serializer.getAcceptClass(), serializer);
 		}
 	}
 	
-	public Map<Class<? extends Object>, CustomSerializer> getCustomSerializer(){
-		return customCodecs;
+	/**
+	 * 
+	 * @return Map of custom serializers.
+	 */
+	public Map<Class<? extends Object>, JSONObjectCustomizer> getCustomSerializer(){
+		return jsonObjectCustomizer;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void setEndpoint(WSEndpoint endpoint) {
 		this.endpoint = endpoint;
         endpoint.getComponentRegistry().add(this);
 	}
 
+	
+	/* (non-Javadoc)
+	 * @see com.sun.xml.ws.api.pipe.Codec#copy()
+	 */
 	public Codec copy() {
 		 return new JSONCodec(this);
 	}
 	
-	private SEIModel getSEIModel(@NotNull final Packet packet){
+	/**
+	 * @param packet
+	 * @return
+	 */
+	public SEIModel getSEIModel(@NotNull final Packet packet){
 		SEIModel seiModel;
 		if(this.endpoint != null){
 			seiModel	= this.endpoint.getSEIModel();
@@ -329,228 +439,114 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return seiModel;
 	}
 	
-	private JavaMethodImpl getJavaMethodUsingPayloadName(SEIModel seiModel,String payloadName){
-		JavaMethodImpl methodImpl = null;
-		for(JavaMethod m:seiModel.getJavaMethods()){
-			if(m.getOperationName().equals(payloadName) 
-					|| ((!m.getMEP().isOneWay()) &&  m.getResponsePayloadName().getLocalPart().equals(payloadName))){
-				if(m instanceof JavaMethodImpl){
-					methodImpl = (JavaMethodImpl)m;
-				}else{
-					throw new Error("JavaMethod implementation is not JavaMethodImpl, " +
-							"May be NON JAX-WS implementaion");
-				}
-				break;
-			}
-		}
-		return methodImpl;
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.sun.xml.ws.api.pipe.Codec#decode(java.io.InputStream, java.lang.String, com.sun.xml.ws.api.message.Packet)
+	/** 
+	 * Method converts the JSON input into JAX-WS message object. 
 	 */
 	public void decode(InputStream in, String contentType, Packet packet)
 			throws IOException {
-		Message message = null;
-		Object inputJSON;
-		try {
-			String operationName = null;
-			//TODO code clean
-			if(packet.webServiceContextDelegate != null 
-					&& packet.webServiceContextDelegate instanceof WSHTTPConnection){
-				WSHTTPConnection connection = (WSHTTPConnection)packet.webServiceContextDelegate;
-				String queryString = connection.getQueryString();
-				
-				if(connection.getRequestMethod().equals("GET")){
-					if(queryString == null || queryString.isEmpty()){
-						throw new Exception("Invalid Operation name in query parameter.(Please make payload name enabled or pass valid opeartion as query parameter)");
-					}
-					in = new StringInputStream(URLDecoder.decode(queryString,"UTF-8"));
-				}else if(!requestPayloadEnabled && queryString != null && !queryString.isEmpty()) {
-					String params[] = queryString.split("&");
-					operationName = params[0];
-					if(params.length >1 && params[1].startsWith("accept")){
-						// Respone decode in difrent format. Redirect Required.
-						packet.invocationProperties.put("accept", params[1].split("=")[1]);
-					}
+		// Add trace log if X-Debug or TRACE request.
+		DebugTrace 		traceLog		= (packet.supports(MessageContext.HTTP_REQUEST_HEADERS) && 
+		((Headers)packet.get(MessageContext.HTTP_REQUEST_HEADERS)).containsKey(XDEBUG_HEADER)) ? new DebugTrace() : null;
+		
+		if(traceLog != null){
+			// Add trace log if X-Debug or TRACE request.
+			packet.invocationProperties.put(TRACE, traceLog);
+			traceLog.info("Request Content-type: " + contentType);
+		}
+		//
+		Message 	message 		= null;
+		String 		mimeType		= contentType != null ? contentType.split(";")[0] : "";
+		if(mimeType.equalsIgnoreCase(JSONContentType.JSON_MIME_TYPE)){
+			JSONDecoder decoder = new JSONDecoder(this,in,packet);
+			if(traceLog != null)traceLog.info("calling json to ws message converter: "+ new Date());
+			try{
+				message = decoder.getWSMessage();
+			}catch(Exception exp){
+				if(traceLog != null)traceLog.error(exp.getMessage());
+				if(packet.supports(MessageContext.SERVLET_RESPONSE)){
+					((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).setStatus(400);
 				}
+				throwMessageCreationException(exp, traceLog);
 			}
-			if((!requestPayloadEnabled) && operationName == null){
-				throw new Exception("Invalid Operation name in query parameter.(Please make payload name enabled or pass valid opeartion name as query parameter)");
+			if(traceLog != null)traceLog.info("Message decoded successfully: " + new Date());
+		} else if(mimeType.equalsIgnoreCase(FormDecoder.FORM_MULTIPART) || mimeType.equalsIgnoreCase(FormDecoder.FORM_URLENCODED)){
+			FormDecoder decoder = new FormDecoder(this,in,packet, contentType);
+			if(traceLog != null)traceLog.info("calling FORM data to ws message converter: "+ new Date());
+			try{
+				message = decoder.getWSMessage();
+			}catch(Exception exp){
+				if(traceLog != null)traceLog.error(exp.getMessage());
+				if(packet.supports(MessageContext.SERVLET_RESPONSE)){
+					((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).setStatus(400);
+				}
+				throwMessageCreationException(exp, traceLog);
 			}
-			SEIModel 			seiModel 	= getSEIModel(packet);
-			JAXBContextImpl 	context 	= (JAXBContextImpl)seiModel.getJAXBContext();
-			//read content
-	        BufferedReader bufferReader = new BufferedReader(new InputStreamReader(in));
-	        String line = null;
-	        StringBuilder buffer = new StringBuilder();
-	        if(!requestPayloadEnabled){
-	        	buffer.append("{\""+operationName+"\":");
-	        }
-	        try {
-	            while ((line = bufferReader.readLine()) != null) {
-	                buffer.append(line);
-	            }
-	        } catch (IOException e) {
-	            throw new JSONException(e);
-	        }
-	        if(!requestPayloadEnabled){
-	        	buffer.append("}");
-	        }
-	        inputJSON =  new WSJSONReader().read(buffer.toString());
-			if(inputJSON != null && inputJSON instanceof Map){
-				Map<String, Object> requestPayloadJSONMap = (Map<String, Object>) inputJSON;
-				if(requestPayloadJSONMap.containsKey(STATUS_STRING_RESERVED)){
-					if(!new Boolean(requestPayloadJSONMap.get(STATUS_STRING_RESERVED).toString())){
-						packet.setMessage(new com.sun.xml.ws.message.FaultMessage(Messages.createEmpty(soapVersion),null));
-						return;
-					}
-					// Remove codec set value WARN user should not used codec specific key
-					requestPayloadJSONMap.remove(STATUS_STRING_RESERVED);
-				}
-				for(Object payload : requestPayloadJSONMap.keySet()){
-					if(payload.equals(MessageContext.MESSAGE_OUTBOUND_PROPERTY))
-						continue;
-					JavaMethodImpl methodImpl = getJavaMethodUsingPayloadName(seiModel,payload.toString());
-					if(methodImpl != null){
-						if(methodImpl.getOperationName().equals(payload)){
-							// TEST HIT 2
-							// PRODUCTION HIT 1
-							// Decode as Request
-							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(this);
-							message = jsonRequestBodyBuilder.createMessage(methodImpl,requestPayloadJSONMap,context);
-						}else{
-							// TEST HIT 4 END
-							//Decode as Response
-							// Should happen only in TEST decoder
-							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(this);
-							message = jsonResponseBodyBuilder.createMessage(methodImpl,requestPayloadJSONMap,context);
-						}
-					}else{
-						throw new Error("Unknown payload "+payload);
-					}
-				}
-			}else{
-				throw new JSONException("No method/payload name found");
+			if(traceLog != null)traceLog.info("Message decoded successfully: " + new Date());
+		} else {
+			if(traceLog != null)traceLog.info("Supported content types: " + JSONContentType.JSON_MIME_TYPE);
+			if(packet.supports(MessageContext.SERVLET_RESPONSE)){
+				((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).setStatus(WSHTTPConnection.UNSUPPORTED_MEDIA);
 			}
-		} catch (Throwable e) {
-			packet.put(MessageContext.HTTP_RESPONSE_CODE, new Integer(400)); //BAD request
-			SOAPFault faultOb;
-			try {
-				faultOb = soapFactory.createFault("Client",new QName(SOAPConstants.URI_NS_SOAP_ENVELOPE));
-				faultOb.setFaultActor(this.getClass().getName());
-				
-				if(e instanceof JSONException){
-					faultOb.setFaultCode("Client.Invalid.structure");
-					faultOb.setFaultString("Invalid json input");
-				}else{
-					faultOb.setFaultCode("Client");
-					faultOb.setFaultString("Invalid input");
-				}
-				Detail detail = faultOb.addDetail();
-				detail.addChildElement("exception").setTextContent(e.getMessage());
-				packet.setMessage(Messages.create(faultOb));
-				if (packet.webServiceContextDelegate != null
-						&& packet.webServiceContextDelegate instanceof WSHTTPConnection) {
-					WSHTTPConnection con = (WSHTTPConnection) packet.webServiceContextDelegate;
-					ByteArrayBuffer buf = new ByteArrayBuffer();
-					con.setContentTypeResponseHeader(encode(packet, buf)
-							.getContentType());
-					//TODO disable option
-					dump(buf, "HTTP response " + con.getStatus(), con.getResponseHeaders());
-					 
-					OutputStream os = con.getOutput();
-					buf.writeTo(os);
-					os.close();
-					con.close();
-				}
-			} catch (SOAPException e1) {/*Out of control go with empty message*/}
-		} 
+			throwMessageCreationException(new UnsupportedMediaException(), traceLog);
+		}
+		
 		if(message == null){
-			//TODO log
+			if(traceLog != null)
+				traceLog.error("Unexpected case in JSON codec. message still empty. Please report");
 			packet.put(MessageContext.HTTP_RESPONSE_CODE, new Integer(400)); //BAD request
 			message = Messages.createEmpty(soapVersion);
 		}
 		packet.setMessage(message);
 	}
+	
+	/**
+	 * @param exp
+	 * @param traceLog
+	 * @throws MessageCreationException
+	 */
+	private void throwMessageCreationException(Exception exp, final DebugTrace traceLog) throws MessageCreationException{
+		if(traceLog == null){
+			throw new MessageCreationException(this.soapVersion,exp);
+		}else{
+			throw new MessageCreationException(this.soapVersion,exp){
+				private static final long serialVersionUID = 1L;
 
+				public Message getFaultMessage() {
+					return new TrackedMessage(super.getFaultMessage(),traceLog);
+				}
+			};
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see com.sun.xml.ws.api.pipe.Codec#decode(java.nio.channels.ReadableByteChannel, java.lang.String, com.sun.xml.ws.api.message.Packet)
+	 */
 	public void decode(ReadableByteChannel arg0, String arg1, Packet arg2) {
 		throw new UnsupportedOperationException();
 	}
 
+	/** 
+	 * Method converts JAX-WS message to JOSN and write it in output stream object. 
+	 */
 	public ContentType encode(Packet packet, OutputStream out) throws IOException {
-		if(packet != null && packet.invocationProperties != null && packet.invocationProperties.containsKey("accept")
-				&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
-			/*// Try is it handled by packet handler
-			if(customResponsePacketHandler.containsKey(packet.invocationProperties.get("accept"))){
-				return customResponsePacketHandler.get(packet.invocationProperties.get("accept")).encode(getSEIModel(packet),packet, out);
-			}
-			//end
-*/			
-			//FIXME use cached one
-			Module modules = endpoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
-			for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
-				if(endPointObj.getEndpoint().getImplementationClass().equals(endpoint.getImplementationClass())
-						&& endPointObj.getEndpoint().getBinding().getBindingId() != binding.getBindingId()){
-					Codec codec =endPointObj.getEndpoint().createCodec();
-					ContentType contentType = codec.getStaticContentType(packet);
-					if(contentType != null && contentType.getContentType().startsWith(packet.invocationProperties.get("accept").toString())){
-						return endPointObj.getEndpoint().createCodec().encode(packet, out);
-					}
+		JSONEncoder encoder = new JSONEncoder(packet,this);
+		if(gzip && packet.supports(MessageContext.SERVLET_REQUEST) && isGzipInRequest((HttpServletRequest)packet.get(MessageContext.SERVLET_REQUEST))){
+			((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).addHeader("Content-Encoding", "gzip");
+			out = new GZIPOutputStream(out);
+		}
+		try {
+			return encoder.encode(out);
+		} finally {
+			if (out != null && out instanceof GZIPOutputStream) {
+				try {
+					out.close();
+				} catch (Exception xe) {
+					// let the original exception get through
 				}
 			}
 		}
-		Message message = packet.getMessage();
-		if (message != null) {
-			SEIModel seiModel = getSEIModel(packet);
-			try {
-				Pattern listMapKey		= null;
-				Pattern listMapValue	= null;
-				boolean listWrapperSkip = false;
-				Collection<Pattern> excludeProperties 	= this.excludeProperties;
-			    Collection<Pattern> includeProperties	= this.includeProperties;
-				if(gzip && JSONUtil.isGzipInRequest((HttpServletRequest)packet.get(MessageContext.SERVLET_REQUEST))){
-					((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).addHeader("Content-Encoding", "gzip");
-					out = new GZIPOutputStream(out);
-				}
-				HashMap<String, Object> result = new HashMap<String, Object>();
-				for (Iterator iterator = packet.invocationProperties.keySet().iterator(); iterator
-						.hasNext();) {
-					Object type = iterator.next();
-					if(MessageContext.MESSAGE_OUTBOUND_PROPERTY.equals(type))
-						continue;
-					result.put(type.toString(),packet.invocationProperties.get(type));
-				}
-				if (message.isFault()) {
-					result.put(STATUS_STRING_RESERVED, false);
-					SOAPFault faultObj = message.readAsSOAPMessage().getSOAPBody().getFault();
-					HashMap<String,String> detail = new HashMap<String, String>(); 
-					try {
-						for (Iterator<Element> iterator = faultObj
-								.getDetail().getChildElements(); iterator
-								.hasNext();) {
-							Element type = iterator.next();
-							detail.put(type.getLocalName(), type.getTextContent());
-							for(int att = type.getAttributes().getLength() -1;att >-1;att--){
-								Node node = type.getAttributes().item(att);
-								detail.put(node.getNodeName(), node.getNodeValue());
-							}
-						}
-					} catch(Throwable th){/*Dont mind about custom message set fail*/}
-					HashMap<String,Object> exception = new HashMap<String, Object>(); 
-					exception.put("code", faultObj.getFaultCodeAsQName().getLocalPart().toUpperCase());
-					exception.put("message", faultObj.getFaultString());
-					exception.put("actor", faultObj.getFaultActor());
-					exception.put("detail", detail);
-					result.put("exception", exception);
-				} else {// Not fault
-					result.put(STATUS_STRING_RESERVED, true);
-					JavaMethodImpl methodImpl = (JavaMethodImpl)message.getMethod(seiModel);
-					if(methodImpl == null)// in case response OUT
-						methodImpl = getJavaMethodUsingPayloadName(seiModel, message.getPayloadLocalPart());
 					
-					if(methodImpl != null){
-						String inEx[][] = getInExProperties(methodImpl);
+						/*String inEx[][] = getInExProperties(methodImpl);
 						if(inEx[0].length > 0){
 							if(includeProperties == null)
 								includeProperties = new ArrayList<Pattern>();
@@ -566,66 +562,13 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						}
 						
 						listMapKey = getListMapKey(methodImpl);
-						listMapValue = getListMapValue(methodImpl);
-						if(methodImpl.getOperationName().equals(message.getPayloadLocalPart())){
-							// TEST HIT 1
-							// Encode as Request For testing
-							JSONRequestBodyBuilder	jsonRequestBodyBuilder = new JSONRequestBodyBuilder(this);
-							Map<String, Object> parameters = jsonRequestBodyBuilder.createMap(methodImpl,message);
-							//end remove holder
-							// When request use "methodName":{"param1":{},"param2":{}}
-							result.put(methodImpl.getOperationName(),parameters);
-						}else{
-							// TEST HIT 3
-							// PRODUCTION HIT 2
-							JSONResponseBodyBuilder jsonResponseBodyBuilder = new JSONResponseBodyBuilder(this);
-							if(!methodImpl.getMEP().isOneWay()){
-								Map<String, Object> parameters = jsonResponseBodyBuilder.createMap(methodImpl,message);
-								if(responsePayloadEnabled){
-									result.put(methodImpl.getResponsePayloadName().getLocalPart(),parameters);
-								}else{
-									result.putAll(parameters);
-								}
-							}else{
-								 //result.put("void","");
-							}
-						}
-					}else{
-						throw new Error("Unknown payload "+message.getPayloadLocalPart());
-					}
-				}
-				
-				if(packet.invocationProperties != null && packet.invocationProperties.containsKey("accept")
-						&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
-					// Try is it handled by packet handler
-					if(customResponsePacketHandler.containsKey(packet.invocationProperties.get("accept"))){
-						return customResponsePacketHandler.get(packet.invocationProperties.get("accept")).encode(result, out);
-					}
-				}else{
-					WSJSONWriter writer = new WSJSONWriter(listWrapperSkip,
-							listMapKey,
-							listMapValue,
-							dateFormat,
-							customCodecs,
-							useTimezoneSeparator
-							);
-					writer.write(out,result, excludeProperties, includeProperties, excludeNullProperties);
-				}
-			} catch (Exception xe) {
-				throw new WebServiceException(xe);
-			} finally {
-				if (out != null && out instanceof GZIPOutputStream) {
-					try {
-						out.close();
-					} catch (Exception xe) {
-						// let the original exception get through
-					}
-				}
-			}
-		}
-		return jsonContentType;
+						listMapValue = getListMapValue(methodImpl);*/
 	}
 	
+	/**
+	 * @param methodImpl
+	 * @return
+	 */
 	public static Pattern getListMapKey(JavaMethodImpl methodImpl){
 		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
 		if(jsonService != null){
@@ -638,6 +581,10 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return pattern;
 	}
 	
+	/**
+	 * @param methodImpl
+	 * @return
+	 */
 	public static Pattern getListMapValue(JavaMethodImpl methodImpl){
 		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
 		if(jsonService != null){
@@ -650,6 +597,13 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return valuePattern;
 	}
 	
+	/**
+	 * 
+	 * @param methodImpl
+	 * @return List of properties need to be excluded specific to operation call. 
+	 * This values defined in implementation operation JSONWebService annotation.
+	 * 
+	 */
 	public static String[][] getInExProperties(JavaMethodImpl methodImpl){
 		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
 		if(jsonService != null){
@@ -659,27 +613,49 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return new String[][]{{},{}};
 	}
 
-	public ContentType encode(Packet arg0, WritableByteChannel arg1) {
+	/* (non-Javadoc)
+	 * @see com.sun.xml.ws.api.pipe.Codec#encode(com.sun.xml.ws.api.message.Packet, java.nio.channels.WritableByteChannel)
+	 */
+	public ContentType encode(Packet packaet, WritableByteChannel byteChannel) {
 		throw new UnsupportedOperationException();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.sun.xml.ws.api.pipe.Codec#getMimeType()
+	 */
 	public String getMimeType() {
 		return JSONContentType.JSON_MIME_TYPE;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.sun.xml.ws.api.pipe.Codec#getStaticContentType(com.sun.xml.ws.api.message.Packet)
+	 * 
+	 * TIP 1: by sending accept http header with value "application/json" increase performance on finding relavent decoder.
+	 */
 	public ContentType getStaticContentType(Packet packet) {
-		if(packet != null && packet.invocationProperties != null && packet.invocationProperties.containsKey("accept")
+		/**
+		 * Check accept content type is not present.
+		 * 
+		 * TODO header case sensitive. Multiple header values handling.
+		 */
+		if(packet != null && 
+				packet.invocationProperties != null && 
+				packet.invocationProperties.containsKey("accept")
 				&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
-			if(customResponsePacketHandler.containsKey(packet.invocationProperties.get("accept"))){
-				return customResponsePacketHandler.get(packet.invocationProperties.get("accept")).responseContentType();
-			}
+			// Accept content type is not JSON.
+			// Test is this accept content type handled by custom response package handlers.
+			// Example case: JSON request result with HTML/CSV/PDF etc response.
+			/* FIXME if(customEncoder.containsKey(packet.invocationProperties.get("accept"))){
+				return customEncoder.get(packet.invocationProperties.get("accept")).contentType();
+			}*/
 			//Worst perform
 			Module modules = endpoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
+			//TODO document more here and increase performance.
 			for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
 				if(endPointObj.getEndpoint().getImplementationClass().equals(endpoint.getImplementationClass())
 						&& endPointObj.getEndpoint().getBinding().getBindingId() != binding.getBindingId()){
-					Codec codec =endPointObj.getEndpoint().createCodec();
-					ContentType contentType = codec.getStaticContentType(packet);
+					Codec 		codec 		=	endPointObj.getEndpoint().createCodec();
+					ContentType contentType = 	codec.getStaticContentType(packet);
 					if(contentType != null && contentType.getContentType().startsWith(packet.invocationProperties.get("accept").toString())){
 						return endPointObj.getEndpoint().createCodec().getStaticContentType(packet);
 					}
@@ -689,19 +665,75 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return jsonContentType;
 	}
 
+	/**
+	 * Utility method to find java method.
+	 * @param seiModel
+	 * @param payloadName
+	 * @return
+	 */
+	public JavaMethodImpl getJavaMethodUsingPayloadName(SEIModel seiModel,String payloadName){
+		JavaMethodImpl methodImpl = null;
+		for(JavaMethod m : seiModel.getJavaMethods()){
+			if(m.getOperationName().equals(payloadName) 
+					|| ((!m.getMEP().isOneWay()) &&  m.getResponsePayloadName().getLocalPart().equals(payloadName))){
+				if(m instanceof JavaMethodImpl){
+					methodImpl = (JavaMethodImpl)m;
+				}else{
+					throw new Error("JavaMethod implementation is not JavaMethodImpl, " +
+							"May be NON JAX-WS implementaion");
+				}
+				break;
+			}
+		}
+		return methodImpl;
+	}
+	
+	/**
+	 * Getter method returns date format currently configured in codec.
+	 * @return
+	 */
+	public DateFormat getDateFormat() {
+		return dateFormat;
+	}
+	
+	/**
+	 * @return
+	 */
+	public SOAPVersion getSoapVersion() {
+		return soapVersion;
+	}
+
+	public WSEndpoint<?> getEndpoint() {
+		return endpoint;
+	}
+	
+	public WSBinding getBinding() {
+		return binding;
+	}
+
+	private static boolean isGzipInRequest(HttpServletRequest request) {
+        String header = request.getHeader("Accept-Encoding");
+        return header != null && header.indexOf("gzip") >= 0;
+    }
+	
+	/**
+	 * Meta data publisher for get request.
+	 */
 	public @Nullable <T> T getSPI(@NotNull Class<T> type) {
 		if (type == HttpMetadataPublisher.class) {
+			// Overwrite http end point document provider.
 			if (metadataPublisher == null)
-				metadataPublisher = new JSONHttpMetadataPublisher(endpoint);
+				metadataPublisher = new JSONHttpMetadataPublisher(endpoint, this);
 			return type.cast(metadataPublisher);
 		}
 		return null;
 	}
-	
-	public DateFormat getDateFormat() {
-		return dateFormat;
-	}
-
+	/**
+	 * @param buf
+	 * @param caption
+	 * @param headers
+	 * @throws IOException
+	 */
 	private void dump(ByteArrayBuffer buf, String caption, Map<String, List<String>> headers) throws IOException {
 	        System.out.println("---["+caption +"]---");
 	        if (headers != null) {
@@ -720,4 +752,5 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	        buf.writeTo(System.out);
 	        System.out.println("--------------------");
 	 }
+	
 }

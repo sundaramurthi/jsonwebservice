@@ -16,9 +16,9 @@ import org.exolab.castor.xml.schema.ElementDecl;
 import org.exolab.castor.xml.schema.Facet;
 import org.exolab.castor.xml.schema.simpletypes.AtomicType;
 
-import com.jaxws.json.JaxWsJSONPopulator;
 import com.jaxws.json.codec.JSONBindingID;
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.wsdl.WSDLInput;
@@ -118,7 +118,7 @@ public class ReusableDataModelProvider {
 			createMetaDataEnum(bean);
 			return;
 		}
-		if(JaxWsJSONPopulator.isJSONPrimitive(bean)){
+		if(WSJSONPopulator.isJSONPrimitive(bean)){
 			createMetaDataPrimitive(bean,null,null);
 			return;
 		}
@@ -158,7 +158,7 @@ public class ReusableDataModelProvider {
 				}
 			}
 			if(field.getDeclaringClass().getName().equals(bean.getName())){
-				if(field.getType() instanceof Class && !JaxWsJSONPopulator.isJSONPrimitive(field.getType())){
+				if(field.getType() instanceof Class && !WSJSONPopulator.isJSONPrimitive(field.getType())){
 					if(field.getType().getName().equals(JAXBElement.class.getName())){
 						//TODO serialize element
 						//serializeBean(field.getType(), model);
