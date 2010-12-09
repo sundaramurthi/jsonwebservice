@@ -35,27 +35,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link LoginParameter }
+     * Create an instance of {@link UIElement }
      * 
      */
-    public LoginParameter createLoginParameter() {
-        return new LoginParameter();
+    public UIElement createUIElement() {
+        return new UIElement();
     }
 
     /**
-     * Create an instance of {@link EntryType }
+     * Create an instance of {@link UIElements }
      * 
      */
-    public EntryType createEntryType() {
-        return new EntryType();
-    }
-
-    /**
-     * Create an instance of {@link Crediential }
-     * 
-     */
-    public Crediential createCrediential() {
-        return new Crediential();
+    public UIElements createUIElements() {
+        return new UIElements();
     }
 
     /**
@@ -75,27 +67,35 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link UIElement }
-     * 
-     */
-    public UIElement createUIElement() {
-        return new UIElement();
-    }
-
-    /**
-     * Create an instance of {@link FeedType }
-     * 
-     */
-    public FeedType createFeedType() {
-        return new FeedType();
-    }
-
-    /**
      * Create an instance of {@link LoginFault }
      * 
      */
     public LoginFault createLoginFault() {
         return new LoginFault();
+    }
+
+    /**
+     * Create an instance of {@link EntryType }
+     * 
+     */
+    public EntryType createEntryType() {
+        return new EntryType();
+    }
+
+    /**
+     * Create an instance of {@link Crediential }
+     * 
+     */
+    public Crediential createCrediential() {
+        return new Crediential();
+    }
+
+    /**
+     * Create an instance of {@link LoginParameter }
+     * 
+     */
+    public LoginParameter createLoginParameter() {
+        return new LoginParameter();
     }
 
     /**
@@ -107,11 +107,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link UIElements }
+     * Create an instance of {@link FeedType }
      * 
      */
-    public UIElements createUIElements() {
-        return new UIElements();
+    public FeedType createFeedType() {
+        return new FeedType();
     }
 
     /**

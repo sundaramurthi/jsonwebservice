@@ -30,11 +30,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ContentType }
+     * Create an instance of {@link ThumbnailType }
      * 
      */
-    public ContentType createContentType() {
-        return new ContentType();
+    public ThumbnailType createThumbnailType() {
+        return new ThumbnailType();
     }
 
     /**
@@ -46,11 +46,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ThumbnailType }
+     * Create an instance of {@link ContentType }
      * 
      */
-    public ThumbnailType createThumbnailType() {
-        return new ThumbnailType();
+    public ContentType createContentType() {
+        return new ContentType();
     }
 
 }
