@@ -14,10 +14,11 @@ public class JSONCodecTest extends TestCase {
 	
 	protected String postOnEndPoint(String postBody) throws MalformedURLException, IOException {
 		HttpURLConnection connection = (HttpURLConnection) new URL(END_POINT).openConnection();
+		connection.setRequestProperty("Content-Type", "application/json");
 		connection.setDoOutput(true);
 		connection.getOutputStream().write(postBody.getBytes());
-		assertEquals(connection.getResponseCode(), 200);
-		BufferedReader bufReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+		BufferedReader bufReader = new BufferedReader(new InputStreamReader(connection.getResponseCode() < 300 ? connection.getInputStream() :
+			connection.getErrorStream()));
 		StringBuffer buf = new StringBuffer();
 		String str = bufReader.readLine();
 		while(str != null){

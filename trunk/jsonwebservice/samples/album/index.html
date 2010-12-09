@@ -17,7 +17,7 @@
   	
 	<script type="text/javascript">
 		 var SERVICES = {};
-		    new Ajax.Request('/album/json/picasa?form', {
+		    new Ajax.Request('/album/json/picasa?model', {
 		      method:'get',
 		      onSuccess: function(transport){
 		         SERVICES = transport.responseText.evalJSON();

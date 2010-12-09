@@ -35,35 +35,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link UIElement }
+     * Create an instance of {@link LoginParameter }
      * 
      */
-    public UIElement createUIElement() {
-        return new UIElement();
-    }
-
-    /**
-     * Create an instance of {@link UIElements }
-     * 
-     */
-    public UIElements createUIElements() {
-        return new UIElements();
-    }
-
-    /**
-     * Create an instance of {@link LinkType }
-     * 
-     */
-    public LinkType createLinkType() {
-        return new LinkType();
-    }
-
-    /**
-     * Create an instance of {@link Crediential }
-     * 
-     */
-    public Crediential createCrediential() {
-        return new Crediential();
+    public LoginParameter createLoginParameter() {
+        return new LoginParameter();
     }
 
     /**
@@ -75,19 +51,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link LoginParameter }
+     * Create an instance of {@link Crediential }
      * 
      */
-    public LoginParameter createLoginParameter() {
-        return new LoginParameter();
+    public Crediential createCrediential() {
+        return new Crediential();
     }
 
     /**
-     * Create an instance of {@link LoginFault }
+     * Create an instance of {@link Photo }
      * 
      */
-    public LoginFault createLoginFault() {
-        return new LoginFault();
+    public Photo createPhoto() {
+        return new Photo();
     }
 
     /**
@@ -99,11 +75,43 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link UIElement }
+     * 
+     */
+    public UIElement createUIElement() {
+        return new UIElement();
+    }
+
+    /**
      * Create an instance of {@link FeedType }
      * 
      */
     public FeedType createFeedType() {
         return new FeedType();
+    }
+
+    /**
+     * Create an instance of {@link LoginFault }
+     * 
+     */
+    public LoginFault createLoginFault() {
+        return new LoginFault();
+    }
+
+    /**
+     * Create an instance of {@link LinkType }
+     * 
+     */
+    public LinkType createLinkType() {
+        return new LinkType();
+    }
+
+    /**
+     * Create an instance of {@link UIElements }
+     * 
+     */
+    public UIElements createUIElements() {
+        return new UIElements();
     }
 
     /**
