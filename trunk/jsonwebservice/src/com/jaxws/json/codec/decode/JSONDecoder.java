@@ -6,23 +6,18 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.ws.handler.MessageContext;
-
-import org.jvnet.mimepull.MIMEPart;
 
 import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONFault;
-import com.jaxws.json.codec.encode.JSONResponseBodyBuilder;
+import com.jaxws.json.codec.MessageBodyBuilder;
 import com.sun.xml.bind.StringInputStream;
-import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.api.message.Packet;
-import com.sun.xml.ws.api.model.SEIModel;
-import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
@@ -117,7 +112,7 @@ public class JSONDecoder {
 	    		traceLog.info("Error detail: Lines read successfully: " + jsonBuffer.toString());
 	    		traceLog.info("Error detail: Exception message" + e.getMessage());
 	    	}
-	    	throw new JSONFault("Client",jsonBuffer.toString(),e.getMessage(),null);
+	    	throw new JSONFault("Client",jsonBuffer.toString(),e.getMessage(),null,e);
 	    }finally{
 	    	try {
 	    		if(traceLog != null)
@@ -180,47 +175,31 @@ public class JSONDecoder {
 			
 	    	if(traceLog != null)
 	    		traceLog.info("Reading operation using service endpoint definition");
-	    	/*
-			 * Step 5.2: access SEI model to identify operation definition. 
-			 */
-			SEIModel 			seiModel 	= codec.getSEIModel(this.packet);
-			JAXBContextImpl 	context 	= (JAXBContextImpl)seiModel.getJAXBContext();
 			
 			/*
-			 * Step 5.3: Identify method definition using operation/payload name.
+			 * Step 5.2: Remove out bound property from JSON to avoid it serializing in json.
 			 */
-			for(Object payload : requestJSONMap.keySet()){
-				if(payload.equals(MessageContext.MESSAGE_OUTBOUND_PROPERTY))
-					continue;
-				// payload string can be operation request name or operation response name.
-				JavaMethodImpl methodImpl = codec.getJavaMethodUsingPayloadName(seiModel,payload.toString());
-				if(methodImpl == null){
-					if(traceLog != null){
-						traceLog.error("Operaion unknown in this endpoint. " + payload);
-			    		String methods = "";
-			    		for(com.sun.xml.ws.api.model.JavaMethod method : seiModel.getJavaMethods()){
-			    			methods += method.getOperationName() + ",";
-			    		}
-			    		traceLog.info("Available operations " + methods);
-					}
-					throw new JSONFault("Client","Unknown payload/operation " + payload, "Codec", null);
+			if(requestJSONMap.containsKey(MessageContext.MESSAGE_OUTBOUND_PROPERTY)){
+				requestJSONMap.remove(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+			}
+			/*
+			 * Step 5.3: Only one operation should be handle.
+			 */
+			if(requestJSONMap.size() == 1){
+				// Must be only one operation
+				Entry<String, Object> operation = requestJSONMap.entrySet().iterator().next();
+				if(traceLog != null){
+					traceLog.info("Operaion identified as . " + operation.getKey());
 				}
-				/*
-				 * Step 5.4: Identify method definition using operation/payload name.
-				 */
-				if(methodImpl.getOperationName().equals(payload)){
-					// TEST HIT 2
-					// PRODUCTION HIT 1
-					// Decode as Request
-					return new JSONRequestBodyBuilder(this.codec).createMessage(methodImpl, requestJSONMap, context,(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),
-							traceLog != null, traceLog);
-				}else{
-					// TEST HIT 4 END
-					//Decode as Response
-					// Should happen only in TEST decoder
-					return new JSONResponseBodyBuilder(this.codec).createMessage(methodImpl, requestJSONMap, context,(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),
-							traceLog != null, traceLog);
-				}
+				this.packet.invocationProperties.put(JSONCodec.JSON_MAP_KEY, operation.getValue());
+				try {
+					return new MessageBodyBuilder(this.codec).handleMessage(this.packet,operation.getKey());
+				} catch (Exception e) {
+					throw new JSONFault("Client","Failed to create message body."+e.getMessage(),"MessageBody Builder",null,e);
+				}	
+			} else if(traceLog != null){
+				traceLog.error("Operaion unknown in this endpoint. Please read endpoint documentation page for list of operations.");
+	    		
 			}
 			if(traceLog != null)
 	    		traceLog.add("ERROR-JSON-DECODER" , "Unknown payload/operation in json request");

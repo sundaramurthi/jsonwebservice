@@ -37,7 +37,6 @@ import com.sun.xml.ws.api.WSBinding;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.api.message.Packet;
-import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.pipe.Codec;
 import com.sun.xml.ws.api.pipe.ContentType;
@@ -93,6 +92,10 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 */
 	public static final String 		CONTENT_DISPOSITION_HEADER = "Content-Disposition";
+
+	public static final String 		JSON_MAP_KEY 			= "JSON_MAP_KEY";
+	
+	public static final String		FORCED_RESPONSE_CONTENT_TYPE	= "FORCED_RESPONSE_CONTENT_TYPE";
 	
 	/**
 	 * Default json parameter name if XJSONPARAM_HEADER not present in http request
@@ -129,7 +132,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: DateFormat.PLAIN
 	 */
-	protected static DateFormat			dateFormat = DateFormat.PLAIN;
+	public static DateFormat			dateFormat = DateFormat.PLAIN;
 	
 	/**
 	 * Request Payload name (Operation Name) enabled in JSON request. E.g. Operation called "getVersion",  this request object warped with object named "getVersion". 
@@ -318,7 +321,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     
     static private SEIModel 			staticSeiModel;
     
-    private static Pattern 				pattern = null,valuePattern = null;
+    public static Pattern 				globalMapKeyPattern = null,globalMapValuePattern = null;
     
     static{
     	LOG.info("Initalizing JSON codec static part.");
@@ -346,9 +349,9 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     		}*/else if(key.toString().startsWith("json.exclude")){
     			excludeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
     		}else if(key.toString().equals("json.list.map.key")){
-    			pattern = Pattern.compile(properties.getProperty(key.toString()).trim());
+    			globalMapKeyPattern = Pattern.compile(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.list.map.value")){
-    			valuePattern = Pattern.compile(properties.getProperty(key.toString()).trim());
+    			globalMapValuePattern = Pattern.compile(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals("json.list.wrapperSkip")){
     			listWrapperSkip = Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals(com.jaxws.json.codec.DateFormat.class.getName())){
@@ -442,7 +445,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	/** 
 	 * Method converts the JSON input into JAX-WS message object. 
 	 */
-	public void decode(InputStream in, String contentType, Packet packet)
+	public void decode(InputStream in, String sContentType, Packet packet)
 			throws IOException {
 		// Add trace log if X-Debug or TRACE request.
 		DebugTrace 		traceLog		= (packet.supports(MessageContext.HTTP_REQUEST_HEADERS) && 
@@ -451,12 +454,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		if(traceLog != null){
 			// Add trace log if X-Debug or TRACE request.
 			packet.invocationProperties.put(TRACE, traceLog);
-			traceLog.info("Request Content-type: " + contentType);
+			traceLog.info("Request Content-type: " + sContentType);
 		}
 		//
-		Message 	message 		= null;
-		String 		mimeType		= contentType != null ? contentType.split(";")[0] : "";
-		if(mimeType.equalsIgnoreCase(JSONContentType.JSON_MIME_TYPE)){
+		Message 		message 		= null;
+		com.sun.xml.ws.encoding.ContentType 	contentType		= new com.sun.xml.ws.encoding.ContentType(sContentType);
+		if(contentType.getBaseType().equalsIgnoreCase(JSONContentType.JSON_MIME_TYPE)){
 			JSONDecoder decoder = new JSONDecoder(this,in,packet);
 			if(traceLog != null)traceLog.info("calling json to ws message converter: "+ new Date());
 			try{
@@ -469,7 +472,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				throwMessageCreationException(exp, traceLog);
 			}
 			if(traceLog != null)traceLog.info("Message decoded successfully: " + new Date());
-		} else if(mimeType.equalsIgnoreCase(FormDecoder.FORM_MULTIPART) || mimeType.equalsIgnoreCase(FormDecoder.FORM_URLENCODED)){
+		} else if(contentType.getBaseType().equalsIgnoreCase(FormDecoder.FORM_MULTIPART) || 
+				contentType.getBaseType().equalsIgnoreCase(FormDecoder.FORM_URLENCODED)){
 			FormDecoder decoder = new FormDecoder(this,in,packet, contentType);
 			if(traceLog != null)traceLog.info("calling FORM data to ws message converter: "+ new Date());
 			try{
@@ -535,6 +539,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			out = new GZIPOutputStream(out);
 		}
 		try {
+			// MessageContext.MESSAGE_OUTBOUND_PROPERTY set by JAX_WS only if handler configured. But encode always a out bound.
+			packet.invocationProperties.put(MessageContext.MESSAGE_OUTBOUND_PROPERTY,true); 
 			return encoder.encode(out);
 		} finally {
 			if (out != null && out instanceof GZIPOutputStream) {
@@ -563,38 +569,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 						
 						listMapKey = getListMapKey(methodImpl);
 						listMapValue = getListMapValue(methodImpl);*/
-	}
-	
-	/**
-	 * @param methodImpl
-	 * @return
-	 */
-	public static Pattern getListMapKey(JavaMethodImpl methodImpl){
-		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
-		if(jsonService != null){
-			if(!jsonService.listMapKey().trim().equals("")){
-				// Performance down, TODO via singleton
-				return Pattern.compile(jsonService.listMapKey()); 
-			}
-		}
-		// default codec level
-		return pattern;
-	}
-	
-	/**
-	 * @param methodImpl
-	 * @return
-	 */
-	public static Pattern getListMapValue(JavaMethodImpl methodImpl){
-		JSONWebService jsonService = methodImpl.getMethod().getAnnotation(JSONWebService.class);
-		if(jsonService != null){
-			if(!jsonService.listMapValue().trim().equals("")){
-				// Performance down, TODO via singleton
-				return Pattern.compile(jsonService.listMapValue()); 
-			}
-		}
-		// default codec level
-		return valuePattern;
 	}
 	
 	/**
@@ -639,25 +613,28 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		 * TODO header case sensitive. Multiple header values handling.
 		 */
 		if(packet != null && 
-				packet.invocationProperties != null && 
-				packet.invocationProperties.containsKey("accept")
+				packet.invocationProperties != null){
+			if(packet.invocationProperties.containsKey(FORCED_RESPONSE_CONTENT_TYPE)){
+				return (ContentType)packet.invocationProperties.get(FORCED_RESPONSE_CONTENT_TYPE);
+			}else if(packet.invocationProperties.containsKey("accept")
 				&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
-			// Accept content type is not JSON.
-			// Test is this accept content type handled by custom response package handlers.
-			// Example case: JSON request result with HTML/CSV/PDF etc response.
-			/* FIXME if(customEncoder.containsKey(packet.invocationProperties.get("accept"))){
-				return customEncoder.get(packet.invocationProperties.get("accept")).contentType();
-			}*/
-			//Worst perform
-			Module modules = endpoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
-			//TODO document more here and increase performance.
-			for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
-				if(endPointObj.getEndpoint().getImplementationClass().equals(endpoint.getImplementationClass())
-						&& endPointObj.getEndpoint().getBinding().getBindingId() != binding.getBindingId()){
-					Codec 		codec 		=	endPointObj.getEndpoint().createCodec();
-					ContentType contentType = 	codec.getStaticContentType(packet);
-					if(contentType != null && contentType.getContentType().startsWith(packet.invocationProperties.get("accept").toString())){
-						return endPointObj.getEndpoint().createCodec().getStaticContentType(packet);
+				// Accept content type is not JSON.
+				// Test is this accept content type handled by custom response package handlers.
+				// Example case: JSON request result with HTML/CSV/PDF etc response.
+				/* FIXME if(customEncoder.containsKey(packet.invocationProperties.get("accept"))){
+					return customEncoder.get(packet.invocationProperties.get("accept")).contentType();
+				}*/
+				//Worst perform
+				Module modules = endpoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
+				//TODO document more here and increase performance.
+				for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
+					if(endPointObj.getEndpoint().getImplementationClass().equals(endpoint.getImplementationClass())
+							&& endPointObj.getEndpoint().getBinding().getBindingId() != binding.getBindingId()){
+						Codec 		codec 		=	endPointObj.getEndpoint().createCodec();
+						ContentType contentType = 	codec.getStaticContentType(packet);
+						if(contentType != null && contentType.getContentType().startsWith(packet.invocationProperties.get("accept").toString())){
+							return endPointObj.getEndpoint().createCodec().getStaticContentType(packet);
+						}
 					}
 				}
 			}
@@ -665,37 +642,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return jsonContentType;
 	}
 
-	/**
-	 * Utility method to find java method.
-	 * @param seiModel
-	 * @param payloadName
-	 * @return
-	 */
-	public JavaMethodImpl getJavaMethodUsingPayloadName(SEIModel seiModel,String payloadName){
-		JavaMethodImpl methodImpl = null;
-		for(JavaMethod m : seiModel.getJavaMethods()){
-			if(m.getOperationName().equals(payloadName) 
-					|| ((!m.getMEP().isOneWay()) &&  m.getResponsePayloadName().getLocalPart().equals(payloadName))){
-				if(m instanceof JavaMethodImpl){
-					methodImpl = (JavaMethodImpl)m;
-				}else{
-					throw new Error("JavaMethod implementation is not JavaMethodImpl, " +
-							"May be NON JAX-WS implementaion");
-				}
-				break;
-			}
-		}
-		return methodImpl;
-	}
-	
-	/**
-	 * Getter method returns date format currently configured in codec.
-	 * @return
-	 */
-	public DateFormat getDateFormat() {
-		return dateFormat;
-	}
-	
 	/**
 	 * @return
 	 */
