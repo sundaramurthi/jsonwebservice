@@ -30,19 +30,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link MediaGroup }
-     * 
-     */
-    public MediaGroup createMediaGroup() {
-        return new MediaGroup();
-    }
-
-    /**
      * Create an instance of {@link ContentType }
      * 
      */
     public ContentType createContentType() {
         return new ContentType();
+    }
+
+    /**
+     * Create an instance of {@link MediaGroup }
+     * 
+     */
+    public MediaGroup createMediaGroup() {
+        return new MediaGroup();
     }
 
     /**

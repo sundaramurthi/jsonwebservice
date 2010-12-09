@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<?xml-stylesheet type="text/xsl" href="nedstatservice.xslt"?>
 <definitions targetNamespace="http://album.com/dispatcher"
 	xmlns:tns="http://album.com/dispatcher" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns:atom="http://www.w3.org/2005/Atom"
@@ -48,10 +47,59 @@
 	</message>
 
 	<message name="listPhotosOutput">
-		<part name="requestcontext" type="atom:FeedType"></part>
+		<part name="response" type="atom:FeedType"></part>
 	</message>
-
+	
+	<message name="listPhotosByAlbumObjectInput">
+		<part name="crediential" type="atom:Crediential"></part>
+		<part name="album" type="atom:EntryType"></part>
+	</message>
+	
+	<message name="photoByIdInput">
+		<part name="albumId" type="xsd:int"></part>
+		<part name="photoId" type="xsd:int"></part>
+	</message>
+	
+	<message name="photoByIdOutput">
+		<part name="photo" type="atom:Photo"></part>
+	</message>
+	
+	<message name="albumByIdInput">
+		<part name="albumId" type="xsd:int"></part>
+	</message>
+	
+	<message name="albumByIdOutput">
+		<part name="entryType" type="atom:EntryType"></part>
+	</message>
+	
+	<message name="albumByNameInput">
+		<part name="albumName" type="xsd:string"></part>
+	</message>
+	
+	<message name="albumByNameOutput">
+		<part name="entryType" type="atom:EntryType"></part>
+	</message>
+	
+	<message name="albumIDByNameInput">
+		<part name="albumName" type="xsd:string"></part>
+	</message>
+	
+	<message name="albumIDByNameOutput">
+		<part name="albumID" type="xsd:int"></part>
+	</message>
+	
+	<message name="albumVersionInput">
+		<part name="albumId" type="xsd:int"></part>
+	</message>
+	
+	<message name="albumVersionOutput">
+		<part name="albumVersion" type="xsd:double"></part>
+	</message>
+	
+	<message name="emptyOutput"/>
+	
 	<portType name="Album">
+	
 		<operation name="getUIElements">
 			<input name="uiElementsInput" message="tns:uiElementsInput" />
 			<output name="uiElementsOutput" message="tns:uiElementsOutput" />
@@ -71,6 +119,41 @@
 		<operation name="listPhotos">
 			<input name="listPhotosInput" message="tns:listPhotosInput" />
 			<output name="listPhotosOutput" message="tns:listPhotosOutput" />
+		</operation>
+		
+		<operation name="listPhotosByAlbumObject">
+			<input name="listPhotosByAlbumObjectInput" message="tns:listPhotosByAlbumObjectInput" />
+			<output name="listPhotosOutput" message="tns:listPhotosOutput" />
+		</operation>
+		
+		<operation name="getPhotoById">
+			<input name="photoByIdInput" message="tns:photoByIdInput" />
+			<output name="photoByIdOutput" message="tns:photoByIdOutput" />
+		</operation>
+		
+		<operation name="getAlbumById">
+			<input name="albumByIdInput" message="tns:albumByIdInput" />
+			<output name="albumByIdOutput" message="tns:albumByIdOutput" />
+		</operation>
+		
+		<operation name="getAlbumByName">
+			<input name="albumByNameInput" message="tns:albumByNameInput" />
+			<output name="albumByNameOutput" message="tns:albumByNameOutput" />
+		</operation>
+		
+		<operation name="getAlbumIDByName">
+			<input name="albumIDByNameInput" message="tns:albumIDByNameInput" />
+			<output name="albumIDByNameOutput" message="tns:albumIDByNameOutput" />
+		</operation>
+		
+		<operation name="getAlbumVersion">
+			<input name="albumVersionInput" message="tns:albumVersionInput" />
+			<output name="albumVersionOutput" message="tns:albumVersionOutput" />
+		</operation>
+		
+		<operation name="updatePhoto">
+			<input name="photo" message="tns:photoByIdOutput" />
+			<output name="emptyOutput" message="tns:emptyOutput" />
 		</operation>
 	</portType>
 
@@ -106,6 +189,56 @@
 			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
 		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
 		</operation>
+		
+		<operation name="listPhotosByAlbumObject">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
+		<operation name="getPhotoById">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
+		<operation name="getAlbumById">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
+		<operation name="getAlbumByName">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
+		<operation name="getAlbumIDByName">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
+		<operation name="getAlbumVersion">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
+		<operation name="updatePhoto">
+			<json:operation soapAction="http://code.google.com/p/jsonwebservice/album"
+				style="rpc" />
+			<input><json:body use="literal" namespace="http://code.google.com/json"/></input>
+		  	<output><json:body use="literal" namespace="http://code.google.com/json"/></output>
+		</operation>
+		
 	</binding>
 	
 	<service name="AlbumService">

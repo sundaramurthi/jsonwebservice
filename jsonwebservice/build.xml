@@ -9,8 +9,7 @@
      ====================================================================== -->
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
-	<property name="version" value="0.3"/>
-	<property name="jsonjarname" value="jsonplugin"/>
+	<property name="version" value="0.4"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
@@ -51,7 +50,6 @@
 	<target name="init">
 		<mkdir dir="${buildroot}"/>
 		<mkdir dir="${buildroot}/classes"/>
-		<mkdir dir="${buildroot}/jsonclasses"/>
 		<mkdir dir="${buildroot}/samples"/>
 		<mkdir dir="${buildroot}/samples/album"/>
 		<mkdir dir="${buildroot}/samples/album/WEB-INF/classes"/>
@@ -61,12 +59,6 @@
           target: build                      
          - - - - - - - - - - - - - - - - - -->
 	<target name="build" depends="clean,init">
-		<javac classpathref="classpath" srcdir="${jsonjarname}"
-			destdir="${buildroot}/jsonclasses" debug="on" source="1.5" 
-    		excludes="**/JSONInterceptor.java,**/JSONResult.java"/>
-
-		<jar destfile="${archive}/${jsonjarname}-${version}.jar" basedir="${buildroot}/jsonclasses" />
-
 		<javac classpathref="classpath" srcdir="${src}"
         					destdir="${buildroot}/classes" debug="on" source="1.5"/>
 		<jar destfile="${archive}/${jarname}-${version}.jar">
@@ -80,6 +72,7 @@
 				<attribute name="Implementation-Version" value="0.2"/>
 			</manifest>
 		</jar>
+		<copy todir="${basedir}/samples/album/WEB-INF/lib/" file="${archive}/${jarname}-${version}.jar"/>
 	</target>
 	
 	<!-- ================================= 

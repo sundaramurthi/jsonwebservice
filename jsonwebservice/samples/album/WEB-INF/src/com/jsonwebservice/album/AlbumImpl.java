@@ -14,9 +14,11 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 
 import org.w3._2005.atom.Crediential;
+import org.w3._2005.atom.EntryType;
 import org.w3._2005.atom.FeedType;
 import org.w3._2005.atom.LoginParameter;
 import org.w3._2005.atom.LoginResponse;
+import org.w3._2005.atom.Photo;
 import org.w3._2005.atom.UIElement;
 import org.w3._2005.atom.UIElements;
 
@@ -79,9 +81,21 @@ public class AlbumImpl implements Album{
 		return albums;
 	}
 
-	public LoginResponse clientLogin(LoginParameter requestcontext)
+	/* (non-Javadoc)
+	 * @see com.album.dispatcher.Album#clientLogin(org.w3._2005.atom.LoginParameter)
+	 */
+	@WebMethod (operationName="clientLogin")
+	public LoginResponse clientLogin(@WebParam(name = "requestcontext", partName = "requestcontext") LoginParameter loginParameter)
 			throws ClientLoginFault {
-		// TODO Auto-generated method stub
+		if(loginParameter != null && loginParameter.getEmail() != null
+				&& !loginParameter.getEmail().isEmpty()
+				&& loginParameter.getPasswd() != null){
+			LoginResponse respone = new LoginResponse();
+			respone.setCaptchaToken("DUMMY");
+			respone.setCaptchaUrl("http://dummp.url");
+			return respone;
+			
+		}
 		return null;
 	}
 
@@ -114,5 +128,77 @@ public class AlbumImpl implements Album{
 			e.printStackTrace();
 			throw new Error("Album request failed",e);
 		}
+	}
+	
+	/**
+     * 
+     * @param albumId
+     * @param photoId
+     * @return
+     *     returns org.w3._2005.atom.Photo
+     */
+    @WebMethod
+    @WebResult(name = "photo", partName = "photo")
+    public Photo getPhotoById(
+        @WebParam(name = "albumId", partName = "albumId")
+        int albumId,
+        @WebParam(name = "photoId", partName = "photoId")
+        int photoId){
+    	Photo photo = new Photo();
+    	photo.setHeight(photoId);
+    	photo.setWidth(albumId);
+    	return photo;
+    }
+    
+	/* (non-Javadoc)
+	 * @see com.album.dispatcher.Album#getAlbumById(int)
+	 */
+	public EntryType getAlbumById(int albumId) {
+		EntryType type = new EntryType();
+		type.setId(String.valueOf(albumId));
+		return type;
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.album.dispatcher.Album#getAlbumByName(java.lang.String)
+	 */
+	public EntryType getAlbumByName(String albumName) {
+		EntryType type = new EntryType();
+		type.setTitle(albumName);
+		return type;
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.album.dispatcher.Album#getAlbumIDByName(java.lang.String)
+	 */
+	public int getAlbumIDByName(String albumName) {
+		return albumName != null ? 1 : 0;
+	}
+	/* (non-Javadoc)
+	 * @see com.album.dispatcher.Album#getAlbumVersion(int)
+	 */
+	public double getAlbumVersion(int albumId) {
+		return albumId > 0 ? 1.1 : 0.0;
+	}
+	/* (non-Javadoc)
+	 * @see com.album.dispatcher.Album#listPhotosByAlbumObject(org.w3._2005.atom.Crediential, org.w3._2005.atom.EntryType)
+	 */
+	public FeedType listPhotosByAlbumObject(Crediential crediential,
+			EntryType album) {
+		FeedType ft = new FeedType();
+		ft.getEntry().add(album);
+		EntryType credEntry = new EntryType();
+		credEntry.setSummary(crediential.getToken());
+		ft.getEntry().add(credEntry );
+		return ft;
+	}
+	/* (non-Javadoc)
+	 * @see com.album.dispatcher.Album#updatePhoto(org.w3._2005.atom.Photo)
+	 */
+	public void updatePhoto(Photo photo) {
+		if(photo == null || photo.getChecksum() == null){
+			throw new RuntimeException("Invalid input");
+		}
+		
 	}
 }

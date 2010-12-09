@@ -15,30 +15,30 @@ public class WSJSONPopulatorTest extends TestCase {
 
 	public void testPopulatePrimitive() throws IllegalArgumentException, JSONFault, IllegalAccessException, InvocationTargetException, NoSuchMethodException, IntrospectionException, InstantiationException{
 		
-		WSJSONPopulator populator = new WSJSONPopulator(null, null, null, null, false, null);
+		WSJSONPopulator populator = new WSJSONPopulator(null, null, null, null, null);
 		JSONReader r = new JSONReader();
 		TestClass object = new TestClass();
-		populator.populateObject(object, (Map) r.read("{\"name\":\"nm\"}"), null);
+		populator.populateObject(object, (Map) r.read("{\"name\":\"nm\"}"), null, null);
 		assertEquals(object.name, "nm");
 		assertEquals(object.values, null);
 		
-		populator.populateObject(object, (Map) r.read("{\"integer\":\"24\"}"), null);
+		populator.populateObject(object, (Map) r.read("{\"integer\":\"24\"}"), null, null);
 		assertEquals(object.integer, 24);
 		assertEquals(object.values, null);
 	}
 	
 	public void testList() throws IllegalArgumentException, JSONFault, IllegalAccessException, InvocationTargetException, NoSuchMethodException, IntrospectionException, InstantiationException{
 		
-		WSJSONPopulator populator = new WSJSONPopulator(null, null, null, null, false, null);
+		WSJSONPopulator populator = new WSJSONPopulator(null, null, null, null, null);
 		JSONReader r = new JSONReader();
 		TestClass object = new TestClass();
-		populator.populateObject(object, (Map) r.read("{\"values\":[\"nm\"]}"), null);
+		populator.populateObject(object, (Map) r.read("{\"values\":[\"nm\"]}"), null, null);
 		assertEquals(object.name, null);
 		assertEquals(object.values.size(), 1);
 		assertEquals(object.values.get(0), "nm");
 		
 		// empty list
-		populator.populateObject(object, (Map) r.read("{\"values\":[]}"), null);
+		populator.populateObject(object, (Map) r.read("{\"values\":[]}"), null, null);
 		assertNotNull(object.values);
 		assertEquals(object.values.size(), 0);
 	}

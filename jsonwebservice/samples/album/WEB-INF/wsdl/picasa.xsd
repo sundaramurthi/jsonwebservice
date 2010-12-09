@@ -83,5 +83,26 @@
 			</xsd:sequence>
 		</xsd:complexType>
 		
+		<xsd:simpleType name="VideoStatus">
+			<xsd:restriction base="xsd:string">
+				<xsd:enumeration value="pending" />
+				<xsd:enumeration value="ready" />
+				<xsd:enumeration value="final" />
+				<xsd:enumeration value="failed" />
+			</xsd:restriction>
+		</xsd:simpleType>
+	
+		<xsd:complexType name="Photo" xmlns="http://www.w3.org/2005/Atom">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="checksum"/>
+				<xsd:element type="xsd:int" name="commentCount"/>
+				<xsd:element type="xsd:int" name="height"/>
+				<xsd:element type="xsd:int" name="width"/>
+				<xsd:element type="xsd:int" name="rotation"/>
+				<xsd:element type="xsd:int" name="size"/>
+				<xsd:element type="xsd:int" name="timestamp"/>
+				<xsd:element type="dis:VideoStatus" name="videostatus"></xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
 		<xsd:element name="feed" type="dis:FeedType"/>
 </xsd:schema>		
