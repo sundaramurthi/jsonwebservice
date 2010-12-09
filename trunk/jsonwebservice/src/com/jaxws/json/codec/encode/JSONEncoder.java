@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,7 +15,6 @@ import javax.xml.soap.SOAPFault;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.ws.handler.MessageContext;
 
-import org.jvnet.mimepull.MIMEPart;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -24,16 +22,12 @@ import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONContentType;
 import com.jaxws.json.codec.JSONFault;
-import com.jaxws.json.codec.JSONWebserviceUtil;
 import com.jaxws.json.codec.MessageBodyBuilder;
 import com.jaxws.json.codec.TrackedMessage;
-import com.jaxws.json.codec.decode.JSONRequestBodyBuilder;
 import com.jaxws.json.packet.handler.Encoder;
 import com.sun.xml.ws.api.WSBinding;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.message.Packet;
-import com.sun.xml.ws.api.model.JavaMethod;
-import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.pipe.Codec;
 import com.sun.xml.ws.api.pipe.ContentType;
 import com.sun.xml.ws.api.server.BoundEndpoint;
@@ -219,7 +213,6 @@ public class JSONEncoder {
 				/*
 				 * Step 4.2: message is not fault. valid json response
 				 */
-				
 				if(MessageBodyBuilder.CAN_HANDLE_RESPONE){
 					try {
 						new MessageBodyBuilder(this.codec).handleMessage(this.packet,payload);
@@ -235,53 +228,7 @@ public class JSONEncoder {
 					}
 				} else {
 					// Until JAX_WS 2.0.1 MessageBodyBuilder.CAN_HANDLE_RESPONE is true, can read using reflection
-					SEIModel seiModel = this.codec.getSEIModel(packet);
-					JavaMethod javaMethod = message.getMethod(seiModel);
-					if(javaMethod == null)// in case response OUT
-						javaMethod = JSONWebserviceUtil.getJavaMethod(seiModel, message.getPayloadLocalPart());
-					if(javaMethod != null){
-						/*
-						 * Step 4.2.1: message is not fault and relavant service method identified.
-						 */
-						try{
-							if(javaMethod.getOperationName().equals(payload)){
-								// TEST HIT 1
-								// Encode as Request For testing
-								//end remove holder
-								// When request use "methodName":{"param1":{},"param2":{}}
-								responseJSONMap.put(payload,new JSONRequestBodyBuilder(this.codec).createMap(javaMethod, message, 
-										(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),traceEnabled, traceLog));
-							}else{
-								// TEST HIT 3
-								// PRODUCTION HIT 2
-								if(!javaMethod.getMEP().isOneWay()){
-									if(JSONCodec.responsePayloadEnabled){
-										responseJSONMap.put(payload,new JSONResponseBodyBuilder(this.codec).createMap(javaMethod, message,
-												(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),traceEnabled, traceLog));
-									}else{
-										responseJSONMap.putAll(new JSONResponseBodyBuilder(this.codec).createMap(javaMethod, message,
-												(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS), traceEnabled, traceLog));
-									}
-								}else{
-									responseJSONMap.put("ONEWAY-INFO", "Your request successfully submited.");
-								}
-							}
-						}catch(Exception e){
-							responseJSONMap.put(FAULT, new JSONFault("Server.json",
-									"Failed to process response message :" + payload ,"Codec",null));
-							if(traceEnabled) {
-								traceLog.error("Failed to parse response message:"+e.getMessage());
-								traceLog.add("ERROR-Cause", e.getCause().getMessage());
-							}
-							LOG.log(Level.WARNING,"Failed to parse response message",e);
-						}
-					}else{
-						/*
-						 * Step 4.2.3: message is not fault and relavant service method not identified.
-						 */
-						responseJSONMap.put(FAULT, new JSONFault("Client.json",
-								"Unknown payload name: " + message.getPayloadLocalPart(),"Codec",null));
-					}
+					throw new RuntimeException("Encoding can only handled on JAXBMessage which has jaxbObject.");
 				}
 			}
 			

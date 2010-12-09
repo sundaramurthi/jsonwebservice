@@ -56,6 +56,7 @@ import com.sun.xml.ws.util.ByteArrayBuffer;
 import com.sun.xml.ws.util.ServiceFinder;
 
 /**
+ * @model abstract="false" interface="false"
  * @author Sundaramurthi
  * @version 1.0
  * @mail sundaramurthis@gmail.com
@@ -444,6 +445,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	
 	/** 
 	 * Method converts the JSON input into JAX-WS message object. 
+	 * @model
 	 */
 	public void decode(InputStream in, String sContentType, Packet packet)
 			throws IOException {
@@ -531,6 +533,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 
 	/** 
 	 * Method converts JAX-WS message to JOSN and write it in output stream object. 
+	 * @model
 	 */
 	public ContentType encode(Packet packet, OutputStream out) throws IOException {
 		JSONEncoder encoder = new JSONEncoder(packet,this);
