@@ -24,19 +24,21 @@ import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONContentType;
 import com.jaxws.json.codec.JSONFault;
+import com.jaxws.json.codec.JSONWebserviceUtil;
+import com.jaxws.json.codec.MessageBodyBuilder;
 import com.jaxws.json.codec.TrackedMessage;
 import com.jaxws.json.codec.decode.JSONRequestBodyBuilder;
 import com.jaxws.json.packet.handler.Encoder;
 import com.sun.xml.ws.api.WSBinding;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.message.Packet;
+import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.pipe.Codec;
 import com.sun.xml.ws.api.pipe.ContentType;
 import com.sun.xml.ws.api.server.BoundEndpoint;
 import com.sun.xml.ws.api.server.Module;
 import com.sun.xml.ws.api.server.WSEndpoint;
-import com.sun.xml.ws.model.JavaMethodImpl;
 
 /**
  * @author ssaminathan
@@ -217,56 +219,74 @@ public class JSONEncoder {
 				/*
 				 * Step 4.2: message is not fault. valid json response
 				 */
-				SEIModel seiModel = this.codec.getSEIModel(packet);
-				JavaMethodImpl methodImpl = (JavaMethodImpl)message.getMethod(seiModel);
-				if(methodImpl == null)// in case response OUT
-					methodImpl = this.codec.getJavaMethodUsingPayloadName(seiModel, message.getPayloadLocalPart());
-				if(methodImpl != null){
-					/*
-					 * Step 4.2.1: message is not fault and relavant service method identified.
-					 */
-					try{
-						if(methodImpl.getOperationName().equals(payload)){
-							// TEST HIT 1
-							// Encode as Request For testing
-							//end remove holder
-							// When request use "methodName":{"param1":{},"param2":{}}
-							responseJSONMap.put(payload,new JSONRequestBodyBuilder(this.codec).createMap(methodImpl, message, 
-									(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),traceEnabled, traceLog));
+				
+				if(MessageBodyBuilder.CAN_HANDLE_RESPONE){
+					try {
+						new MessageBodyBuilder(this.codec).handleMessage(this.packet,payload);
+						if(JSONCodec.responsePayloadEnabled){
+							responseJSONMap.put(payload,this.packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 						}else{
-							// TEST HIT 3
-							// PRODUCTION HIT 2
-							if(!methodImpl.getMEP().isOneWay()){
-								if(JSONCodec.responsePayloadEnabled){
-									responseJSONMap.put(payload,new JSONResponseBodyBuilder(this.codec).createMap(methodImpl, message,
-											(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),traceEnabled, traceLog));
-								}else{
-									responseJSONMap.putAll(new JSONResponseBodyBuilder(this.codec).createMap(methodImpl, message,
-											(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS), traceEnabled, traceLog));
-								}
-							}else{
-								responseJSONMap.put("ONEWAY-INFO", "Your request successfully submited.");
-							}
+							responseJSONMap.putAll((Map<? extends String, ? extends Object>) this.packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 						}
-					}catch(Exception e){
-						responseJSONMap.put(FAULT, new JSONFault("Server.json",
-								"Failed to process response message :" + payload ,"Codec",null));
-						if(traceEnabled) {
-							traceLog.error("Failed to parse response message:"+e.getMessage());
-							traceLog.add("ERROR-Cause", e.getCause().getMessage());
-						}
-						LOG.log(Level.WARNING,"Failed to parse response message",e);
+					} catch (Exception e1) {
+						responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
+						responseJSONMap.put(FAULT, new JSONFault("Client.json",
+								"Unknown payload name: " + message.getPayloadLocalPart(),"Codec",null));
 					}
-				}else{
-					/*
-					 * Step 4.2.3: message is not fault and relavant service method not identified.
-					 */
-					responseJSONMap.put(FAULT, new JSONFault("Client.json",
-							"Unknown payload name: " + message.getPayloadLocalPart(),"Codec",null));
+				} else {
+					// Until JAX_WS 2.0.1 MessageBodyBuilder.CAN_HANDLE_RESPONE is true, can read using reflection
+					SEIModel seiModel = this.codec.getSEIModel(packet);
+					JavaMethod javaMethod = message.getMethod(seiModel);
+					if(javaMethod == null)// in case response OUT
+						javaMethod = JSONWebserviceUtil.getJavaMethod(seiModel, message.getPayloadLocalPart());
+					if(javaMethod != null){
+						/*
+						 * Step 4.2.1: message is not fault and relavant service method identified.
+						 */
+						try{
+							if(javaMethod.getOperationName().equals(payload)){
+								// TEST HIT 1
+								// Encode as Request For testing
+								//end remove holder
+								// When request use "methodName":{"param1":{},"param2":{}}
+								responseJSONMap.put(payload,new JSONRequestBodyBuilder(this.codec).createMap(javaMethod, message, 
+										(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),traceEnabled, traceLog));
+							}else{
+								// TEST HIT 3
+								// PRODUCTION HIT 2
+								if(!javaMethod.getMEP().isOneWay()){
+									if(JSONCodec.responsePayloadEnabled){
+										responseJSONMap.put(payload,new JSONResponseBodyBuilder(this.codec).createMap(javaMethod, message,
+												(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS),traceEnabled, traceLog));
+									}else{
+										responseJSONMap.putAll(new JSONResponseBodyBuilder(this.codec).createMap(javaMethod, message,
+												(List<MIMEPart>)this.packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS), traceEnabled, traceLog));
+									}
+								}else{
+									responseJSONMap.put("ONEWAY-INFO", "Your request successfully submited.");
+								}
+							}
+						}catch(Exception e){
+							responseJSONMap.put(FAULT, new JSONFault("Server.json",
+									"Failed to process response message :" + payload ,"Codec",null));
+							if(traceEnabled) {
+								traceLog.error("Failed to parse response message:"+e.getMessage());
+								traceLog.add("ERROR-Cause", e.getCause().getMessage());
+							}
+							LOG.log(Level.WARNING,"Failed to parse response message",e);
+						}
+					}else{
+						/*
+						 * Step 4.2.3: message is not fault and relavant service method not identified.
+						 */
+						responseJSONMap.put(FAULT, new JSONFault("Client.json",
+								"Unknown payload name: " + message.getPayloadLocalPart(),"Codec",null));
+					}
 				}
 			}
 			
 		} else {
+			responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
 			/*
 			 * Step 4.2: message in packet is null
 			 */
@@ -277,7 +297,7 @@ public class JSONEncoder {
 		 * Step 5: Write processed message map to output stream
 		 */
 		if(traceEnabled) traceLog.info("Writing json respone from map");
-		writer.write(this.codec.getDateFormat(),JSONCodec.excludeProperties,
+		writer.write(JSONCodec.dateFormat,JSONCodec.excludeProperties,
 				JSONCodec.includeProperties,null,null);
 		
 		if(traceEnabled) traceLog.info("JSON response encoding completed." + new Date());

@@ -42,12 +42,7 @@ public class FormDecoder {
 	/**
 	 * Request content type either multipart/form-data or application/x-www-form-urlencoded with boundtry or encoding 
 	 */
-	private String 			contentType;
-	
-	/**
-	 * Request content type either multipart/form-data or application/x-www-form-urlencoded with out boundtry or encoding 
-	 */
-	private String 			mimeType;
+	private ContentType		contentType;
 	
 	private final String	JSON_PARAM_NAME;
 	/**
@@ -57,9 +52,9 @@ public class FormDecoder {
 	 * @param contentType
 	 */
 	public FormDecoder(JSONCodec codec, InputStream in, Packet packet,
-			String contentType) {
-		this.mimeType		= contentType != null ? contentType.split(";")[0] : "";
-		if(!(mimeType.equalsIgnoreCase(FORM_MULTIPART) || mimeType.equalsIgnoreCase(FORM_URLENCODED))){
+			ContentType contentType) {
+		if(!(contentType.getBaseType().equalsIgnoreCase(FORM_MULTIPART) || 
+				contentType.getBaseType().equalsIgnoreCase(FORM_URLENCODED))){
 			throw new RuntimeException("Invalid contenty type. FormDecoder handle only " + FORM_MULTIPART + " " + FORM_URLENCODED);
 		}
 		this.codec 			= codec;
@@ -77,7 +72,7 @@ public class FormDecoder {
 	 * @throws UnsupportedEncodingException 
 	 */
 	public Message getWSMessage() throws UnsupportedEncodingException {
-		if(mimeType.equalsIgnoreCase(FORM_MULTIPART)){
+		if(contentType.getBaseType().equalsIgnoreCase(FORM_MULTIPART)){
 			return getMultiPartMessageWithAttachement();
 		}else{
 			return getFormData();
@@ -90,8 +85,7 @@ public class FormDecoder {
 	 */
 	private Message getMultiPartMessageWithAttachement() throws UnsupportedEncodingException {
 		if(input != null){
-			ContentType ct = new ContentType(contentType);
-		    String boundary = ct.getParameter("boundary");
+		    String boundary = contentType.getParameter("boundary");
 	        if (boundary == null || boundary.equals("")) {
 	            throw new WebServiceException("MIME boundary parameter not found" + contentType);
 	        }
@@ -122,6 +116,7 @@ public class FormDecoder {
 			}
 			this.packet.invocationProperties.put(JSONCodec.MIME_ATTACHMENTS,message.getAttachments());
 			com.sun.xml.ws.api.message.Message wsMessage = new JSONDecoder(this.codec,jsonPart.readOnce(),packet).getWSMessage();
+			this.packet.invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE,JSONContentType.TEXT_PLAIN);
 			return wsMessage;
 		} else {
 			throw new RuntimeException("Multipart form data should be POST. No input stream found.");
@@ -136,3 +131,5 @@ public class FormDecoder {
 	}
 	
 }
+
+

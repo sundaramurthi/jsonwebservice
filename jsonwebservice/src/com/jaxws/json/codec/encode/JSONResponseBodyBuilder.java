@@ -18,6 +18,7 @@ import com.jaxws.json.codec.MessageBodyBuilder;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.message.Message;
+import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.message.jaxb.JAXBMessage;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.model.ParameterImpl;
@@ -32,19 +33,20 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 	
 	/**
 	 * 	 * Response used back as Request
+	 * @deprecated
 	 */
-	public Message createMessage(JavaMethodImpl methodImpl, 
+	public Message createMessage(JavaMethod methodImpl, 
 								Map<String, Object> responseJSONObject,
 								JAXBContextImpl context,
 								List<MIMEPart> attachments,
 								boolean traceEnabled,DebugTrace traceLog) {
-		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
-		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
+		Pattern listMapKey		= getListMapKey(methodImpl);
+		Pattern listMapValue	= getListMapValue(methodImpl);
 		
 		Collection<Object> parameterObjects = readParameterAsObjects(
-				methodImpl.getResponseParameters(),
+				((JavaMethodImpl)methodImpl).getResponseParameters(),
 				responseJSONObject,context,listMapKey,listMapValue,attachments, traceEnabled,traceLog).values();
-		ParameterImpl responseParameter = methodImpl.getResponseParameters().get(0);
+		ParameterImpl responseParameter = ((JavaMethodImpl)methodImpl).getResponseParameters().get(0);
 		
 		if(parameterObjects.size() ==0){
 			//VOID response
@@ -65,22 +67,23 @@ public class JSONResponseBodyBuilder extends MessageBodyBuilder{
 	 * This is normal standard call
 	 * @throws XMLStreamException 
 	 * @throws JAXBException 
+	 * @deprecated
 	 */
-	public Map<String,Object> createMap(JavaMethodImpl methodImpl,Message message,
+	public Map<String,Object> createMap(JavaMethod methodImpl,Message message,
 			List<MIMEPart> attachments,
 			boolean traceEnabled,DebugTrace traceLog) throws JAXBException, XMLStreamException{
 		
-		Pattern listMapKey		= JSONCodec.getListMapKey(methodImpl);
-		Pattern listMapValue	= JSONCodec.getListMapValue(methodImpl);
+		Pattern listMapKey		= getListMapKey(methodImpl);
+		Pattern listMapValue	= getListMapValue(methodImpl);
 		//Encode as Response
 		Map<String,Object> parameterObjects = readParameterAsObjects(
-											methodImpl.getResponseParameters(),
+											((JavaMethodImpl)methodImpl).getResponseParameters(),
 											null,null,listMapKey,listMapValue,attachments,traceEnabled,traceLog);
 		assert parameterObjects.size() <= 1;
 		HashMap<String, Object> parameters = new LinkedHashMap<String, Object>();
 		if(!parameterObjects.keySet().isEmpty()){	
 			parameters.put(parameterObjects.keySet().toArray()[0].toString(), 
-					getResponseBuilder(methodImpl.getResponseParameters())
+					getResponseBuilder(((JavaMethodImpl)methodImpl).getResponseParameters())
 					.readResponse(message, parameterObjects.values().toArray()));
 		}
 		return parameters;

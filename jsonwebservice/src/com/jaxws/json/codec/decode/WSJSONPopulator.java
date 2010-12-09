@@ -105,7 +105,6 @@ public class WSJSONPopulator {
 	public WSJSONPopulator(Pattern listMapKey,Pattern listMapValue,
 			DateFormat dateFormat,Map<Class<? extends Object>, 
 			JSONObjectCustomizer> objectCustomizers,
-			boolean traceEnabled,
 			DebugTrace traceLog) {
 		this.listMapKey 		= listMapKey;
 		this.listMapValue		= listMapValue;
@@ -118,11 +117,8 @@ public class WSJSONPopulator {
 		}else{
 			this.objectCustomizers	= new HashMap<Class<? extends Object>, JSONObjectCustomizer>();
 		}
-		this.traceEnabled 	= traceEnabled;
+		this.traceEnabled 	= traceLog != null;
 		this.traceLog		= traceLog;
-		if(traceEnabled && this.traceLog == null){
-			this.traceLog = new DebugTrace();
-		}
 	}
 
 
@@ -142,7 +138,7 @@ public class WSJSONPopulator {
 	 * @throws IntrospectionException
 	 */
 	@SuppressWarnings("unchecked")
-	private Object convert(Class clazz, Type type, Object value, JSONWebService customizeInfo, Method method) throws IllegalArgumentException, 
+	public Object convert(Class clazz, Type type, Object value, JSONWebService customizeInfo, Method method) throws IllegalArgumentException, 
 					IllegalAccessException, 
 					InvocationTargetException, InstantiationException, 
 					NoSuchMethodException, IntrospectionException {

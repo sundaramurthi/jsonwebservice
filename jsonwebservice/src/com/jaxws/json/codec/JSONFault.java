@@ -45,6 +45,20 @@ public class JSONFault extends RuntimeException{
 		this.detail = detail;
 	}
 	
+	/**
+	 * @param code
+	 * @param message
+	 * @param actor
+	 * @param detail
+	 */
+	public JSONFault(String code, String message, String actor,HashMap<String,String> detail, Exception e) {
+		super(e);
+		this.code = code;
+		this.message = message;
+		this.actor = actor;
+		this.detail = detail;
+	}
+	
 	
 	/**
 	 * @return
