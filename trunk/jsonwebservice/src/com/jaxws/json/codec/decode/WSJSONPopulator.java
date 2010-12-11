@@ -13,8 +13,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.Timestamp;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -329,6 +327,17 @@ public class WSJSONPopulator {
 									traceLog.info(String.format("Only list read method found for property %s adding new values to existing collection. " +
 				            				"Old list size: %d", expectedJSONPropName, objectList.size()));
 				            	}
+								java.lang.reflect.Field f = getDeclaredField(clazz,prop.getName());
+								if(f != null && f.isAnnotationPresent(XmlElements.class)){
+									// Field is choice. name1OrName2OrName3. But user passing as "name1OrName2OrName3" single field name. Its invalid.
+									// end with hashMap can't converted to xml exception.
+									// Ignore this property.
+									if(traceEnabled){
+					            		traceLog.warn(String.format("Property %s is invalid. %s is a choice list. For more above choice read endpoint document.",
+												expectedJSONPropName,expectedJSONPropName));
+					            	}
+									continue;
+								}
 								Object convertedValue = this.convert(readMethod.getReturnType(), readMethod.getGenericReturnType(), value, 
 										readMethodConfig, readMethod);
 								objectList.addAll((Collection) convertedValue);
@@ -348,18 +357,8 @@ public class WSJSONPopulator {
                 }
 		    } else {
 		    	 // JOSN input DON'T contains specified property. May come from customized json name or XMLElement definition.
-	    		java.lang.reflect.Field f = null;
-				try {
-					f = clazz.getDeclaredField(prop.getName());
-				} catch (Throwable e) {
-					try {
-						f = clazz.getSuperclass().getDeclaredField(prop.getName());
-					} catch (Throwable e1) {
-						try {
-							f = clazz.getSuperclass().getSuperclass().getDeclaredField(prop.getName());
-						} catch (Throwable e12) {}
-					}
-				}
+	    		java.lang.reflect.Field f = getDeclaredField(clazz,prop.getName());
+				
 				if(f != null && f.isAnnotationPresent(XmlElements.class)){
 					// Handle XSD choice element. 
 					XmlElements 	ann 		= f.getAnnotation(XmlElements.class);
@@ -806,6 +805,9 @@ public class WSJSONPopulator {
             } else if (Enum.class.isAssignableFrom(clazz)) {
                 return Enum.valueOf(clazz, sValue);
             }
+        }else if(clazz != null && !clazz.isAssignableFrom(value.getClass())){
+        	// TODO log. Value not assignable from the value. The ignore value. TODO add trace log 
+        	return null;
         }
         return value;
     }
@@ -915,5 +917,22 @@ public class WSJSONPopulator {
 				|| clazz.equals(Calendar.class)
 				|| clazz.equals(Date.class)
 				|| clazz.equals(java.sql.Date.class);
+	}
+	
+	/**
+	 * Utility method to read declaring field including private scope.
+	 * @param clazz
+	 * @param fieldName
+	 * @return
+	 */
+	private java.lang.reflect.Field getDeclaredField(Class<?> clazz, String fieldName){
+		try {
+			return clazz.getDeclaredField(fieldName);
+		} catch (Throwable e) {
+			if(!Object.class.equals(clazz.getSuperclass())){
+				return getDeclaredField(clazz.getSuperclass(),fieldName);
+			}
+		}
+		return null;
 	}
 }
