@@ -101,12 +101,12 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	/**
 	 * Default json parameter name if XJSONPARAM_HEADER not present in http request
 	 */
-	public static String		XJSONPARAM_DEFAULT			= "JSON";
+	public static final String		XJSONPARAM_DEFAULT		= "JSON";
 	
 	/**
 	 * Attachment key
 	 */
-	public static String		MIME_ATTACHMENTS			= "ATTACHMENTS";
+	public static final String		MIME_ATTACHMENTS		= "ATTACHMENTS";
 	
 	/**
 	 * Java default ISO date format, timezone specified with out separator (E.g 2010-11-24T17:23:10+0100) last time zone part specified with out ':' separtor.
@@ -121,6 +121,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: false
 	 */
+	public static String				useTimezoneSeparator_KEY= "json.date.iso.useTimezoneSeparator";
 	public static boolean 				useTimezoneSeparator 	= false;
 	
 	/**
@@ -133,7 +134,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: DateFormat.PLAIN
 	 */
-	public static DateFormat			dateFormat = DateFormat.PLAIN;
+	public static String				dateFormat_KEY 			= com.jaxws.json.codec.DateFormat.class.getName();
+	public static DateFormat			dateFormat 				= DateFormat.PLAIN;
 	
 	/**
 	 * Request Payload name (Operation Name) enabled in JSON request. E.g. Operation called "getVersion",  this request object warped with object named "getVersion". 
@@ -189,7 +191,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * This property normally true for better automated testing. In application suggested to be false.
 	 */
-	public static boolean				responsePayloadEnabled	= false;	
+	public static final String			responsePayloadEnabled_KEY	= "json.response.enable.payloadname";	
+	public static boolean				responsePayloadEnabled		= false;	
     
     /**
      * Null values are ignored in JSON response when set to true.
@@ -205,7 +208,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: true
      */
-    public static boolean				excludeNullProperties	= true;
+	public static final String			excludeNullProperties_KEY	= "json.excludeNullProperties";
+    public static boolean				excludeNullProperties		= true;
     
     /**
      * JSON response written as gzip encoded format. It's dependent on Accept-content: type header in http request. 
@@ -217,7 +221,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: true
      */
-    private static boolean				gzip					= true;	
+    public static final String			gzip_KEY					= "json.response.gzip";
+    public static boolean				gzip						= true;	
     
     
     /**
@@ -231,7 +236,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: empty. All are included 
      */
-    public static Collection<Pattern> excludeProperties 	= new ArrayList<Pattern>();
+    public static final String			excludeProperties_KEY		= "json.exclude";
+    public static Collection<Pattern> 	excludeProperties 			= new ArrayList<Pattern>();
     
     /**
      * List of included properties, User can add one with regex format. By specifying include property, properties which are not matching to include are ignored in json output.
@@ -242,7 +248,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: empty. 
      */
-    public static Collection<Pattern> 	includeProperties	= null;//new ArrayList<Pattern>();
+    public static final String			includeProperties_KEY		= "json.include";
+    public static Collection<Pattern> 	includeProperties			= null;//new ArrayList<Pattern>();
     
     /**
      * In JAXB generated object list sequence generated with warped object. Seralizing it to json end with unnessary objects.
@@ -287,8 +294,16 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: false. 
      */
-    public static 	boolean 					listWrapperSkip 	= false;
+    public static 	String 				listWrapperSkip_KEY			= "json.list.wrapperSkip";
+    public static 	boolean 			listWrapperSkip 			= false;
     
+    /**
+     * Match pattern which convert lists to MAP. TODO
+     */
+    public static 	String 				globalMapKeyPattern_KEY		= "json.list.map.key";
+    public static Pattern 				globalMapKeyPattern 		= null;
+    public static 	String 				globalMapValuePattern_KEY	= "json.list.map.value";
+    public static Pattern 				globalMapValuePattern 		= null;
     /**
      * List of custom encoder used to handle non JSON response.
      * User can register customized encoder like HTML, plain text etc output.
@@ -322,8 +337,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     
     static private SEIModel 			staticSeiModel;
     
-    public static Pattern 				globalMapKeyPattern = null,globalMapValuePattern = null;
-    
     static{
     	LOG.info("Initalizing JSON codec static part.");
     	Properties 		properties 			= new Properties();
@@ -337,27 +350,27 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			}
     	}
     	for(Object key:properties.keySet()){
-    		if(key.toString().equals("json.excludeNullProperties")){
+    		if(key.toString().equals(excludeNullProperties_KEY)){
     			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().startsWith("json.include")){
+    		}else if(key.toString().startsWith(includeProperties_KEY)){
     			includeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
-    		}else if(key.toString().equals("json.response.gzip")){
+    		}else if(key.toString().equals(gzip_KEY)){
     			gzip	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals("json.response.enable.payloadname")){
+    		}else if(key.toString().equals(responsePayloadEnabled_KEY)){
     			responsePayloadEnabled	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}/*else if(key.toString().equals("json.request.enable.payloadname")){
     			requestPayloadInJSON	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}*/else if(key.toString().startsWith("json.exclude")){
+    		}*/else if(key.toString().startsWith(excludeProperties_KEY)){
     			excludeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
-    		}else if(key.toString().equals("json.list.map.key")){
+    		}else if(key.toString().equals(globalMapKeyPattern_KEY)){
     			globalMapKeyPattern = Pattern.compile(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals("json.list.map.value")){
+    		}else if(key.toString().equals(globalMapValuePattern_KEY)){
     			globalMapValuePattern = Pattern.compile(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals("json.list.wrapperSkip")){
+    		}else if(key.toString().equals(listWrapperSkip_KEY)){
     			listWrapperSkip = Boolean.valueOf(properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals(com.jaxws.json.codec.DateFormat.class.getName())){
+    		}else if(key.toString().equals(dateFormat_KEY)){
     			dateFormat	= Enum.valueOf(com.jaxws.json.codec.DateFormat.class, properties.getProperty(key.toString()).trim());
-    		}else if(key.toString().equals("json.date.iso.useTimezoneSeparator")){
+    		}else if(key.toString().equals(useTimezoneSeparator_KEY)){
     			useTimezoneSeparator	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}
     	}
@@ -365,6 +378,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		for (Encoder handler : ServiceFinder.find(Encoder.class)) {
 			customEncoder.add(handler.getClass());
 		}
+		LOG.info("Initalizing JSON codec static part. Done");
     }
     
 	/**

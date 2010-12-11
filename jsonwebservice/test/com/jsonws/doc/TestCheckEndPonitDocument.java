@@ -12,5 +12,8 @@ public class TestCheckEndPonitDocument extends JSONCodecTest{
 	public void testEndpointDocument() throws MalformedURLException, IOException{
 		HttpURLConnection connection = (HttpURLConnection) new URL(END_POINT).openConnection();
 		assertEquals(connection.getResponseCode(), 200);
+		
+		connection = (HttpURLConnection) new URL(END_POINT + "?config").openConnection();
+		assertEquals(connection.getResponseCode(), 200);
 	}
 }

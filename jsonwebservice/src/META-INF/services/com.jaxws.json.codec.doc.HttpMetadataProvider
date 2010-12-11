@@ -1,0 +1,4 @@
+com.jaxws.json.codec.doc.provider.DefaultEndpointDocument
+com.jaxws.json.codec.doc.provider.ServiceConfigurationServer
+com.jaxws.json.codec.doc.provider.MetaDataModelServer
+com.jaxws.json.codec.doc.provider.JSMetaDataModelServer

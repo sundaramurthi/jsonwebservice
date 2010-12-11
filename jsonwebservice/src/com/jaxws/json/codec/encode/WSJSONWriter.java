@@ -4,11 +4,13 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.text.CharacterIterator;
 import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
@@ -34,6 +36,7 @@ import javax.xml.bind.annotation.XmlType;
 import com.jaxws.json.codec.DateFormat;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONFault;
+import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.feature.JSONObject;
 import com.jaxws.json.feature.JSONWebService;
 import com.jaxws.json.serializer.JSONObjectCustomizer;
@@ -114,6 +117,11 @@ public class WSJSONWriter {
 	 * 
 	 */
 	private Pattern listMapValue;
+	
+	/**
+	 * Flag which enable write object as possible JSON document format or not.
+	 */
+	private boolean metaDataMode	= false;
     
     /**
      * Writer instance with parameter passed writer object.
@@ -141,6 +149,52 @@ public class WSJSONWriter {
     public void write(DateFormat dateFormat,
     		Collection<Pattern> excludeProperties, Collection<Pattern> includeProperties,
     		Pattern listMapKey,Pattern listMapValue){
+    	this.initValues(dateFormat, excludeProperties, includeProperties, listMapKey, listMapValue);
+    	// Convert passed object to value.
+    	this.process(rootObject, null);
+    }
+    /**
+     * Serialize passed object to JSON string, writes into constructor passed writer object. 
+     * For null properties new instance created and serialized as meta data.
+     * @param object Map object to serialize.
+     */
+    public void writeMetadata(DateFormat dateFormat,
+    		Collection<Pattern> excludeProperties, Collection<Pattern> includeProperties,
+    		Pattern listMapKey,Pattern listMapValue){
+    	this.initValues(dateFormat, excludeProperties, includeProperties, listMapKey, listMapValue);
+    	this.metaDataMode	= true;
+    	// Convert passed object to value.
+    	this.process(rootObject, null);
+    }
+    
+    /**
+     * Utility method to serialize object.
+     * @param rootObject
+     * @param objectCustomizers
+     * @return
+     */
+    public static final String writeMetadata(Object rootObject,
+    		Map<Class<? extends Object>, JSONObjectCustomizer> objectCustomizers){
+    	ByteArrayOutputStream out = new ByteArrayOutputStream();
+    	WSJSONWriter	writter = new WSJSONWriter(out, rootObject, objectCustomizers);
+    	writter.writeMetadata(JSONCodec.dateFormat, JSONCodec.excludeProperties, 
+    			JSONCodec.includeProperties, JSONCodec.globalMapKeyPattern, 
+    			JSONCodec.globalMapValuePattern);
+    	return out.toString();
+	}
+
+    
+    /**
+     * Pass write iniatated values.
+     * @param dateFormat
+     * @param excludeProperties
+     * @param includeProperties
+     * @param listMapKey
+     * @param listMapValue
+     */
+    private void initValues(DateFormat dateFormat,
+    		Collection<Pattern> excludeProperties, Collection<Pattern> includeProperties,
+    		Pattern listMapKey,Pattern listMapValue){
     	// TODO if passed ROOT object is primitive ??
     	if(dateFormat != null){
     		this.dateFormat = dateFormat;
@@ -154,8 +208,6 @@ public class WSJSONWriter {
         		!excludeProperties.isEmpty()) || 
         		((includeProperties != null) && 
         				!includeProperties.isEmpty());
-    	// Convert passed object to value.
-    	this.process(rootObject, null);
     }
     
     /**
@@ -462,7 +514,17 @@ public class WSJSONWriter {
          } 
     	
         this.add("[");
-
+        if(this.metaDataMode && method != null && method.getGenericReturnType() != null){
+        	try {
+        		Class<?> parameterType  = (Class<?>)((ParameterizedType)method.getGenericReturnType()).
+						getActualTypeArguments()[0];
+        		if(parameterType.equals(Object.class)){
+        			// JAXB Choice
+        		} else {
+        			this.process(parameterType.newInstance(),method);
+        		}
+			} catch (Throwable e) {}
+        }
         boolean hasData = false;
         for (int i = 0; iterator.hasNext(); i++) {
             String expr = null;
@@ -500,6 +562,15 @@ public class WSJSONWriter {
 			if(Introspector.getBeanInfo(clazz, 
 					Enum.class).getPropertyDescriptors().length != 0){
 				this.bean(enumeration, clazz);
+			}else if(this.metaDataMode){
+				boolean hasdata = false;
+				String enumVals = "";
+				for(Object cnst : clazz.getEnumConstants()){
+					if(hasdata) enumVals	 += "|";
+					enumVals	 +=  ((Enum<?>)cnst).name();
+					hasdata = true;
+				}
+				this.string(enumVals);
 			}else{
 				this.string(enumeration.name());
 			}
@@ -536,7 +607,8 @@ public class WSJSONWriter {
         	 */
             nextProperty:
             for(PropertyDescriptor property : props){
-            	 String 	name 		= property.getName();
+            	 Class<?> 	propertyType  	= property.getPropertyType();
+            	 String 	name 			= property.getName();
             	/*
               	 *  Step 5.10.2.1: If this property hard coded exclude list, exclude it. 
               	 */
@@ -549,7 +621,7 @@ public class WSJSONWriter {
              	 *  Step 5.10.2.2: Handle special case, When property is Boolean object (not boolean primitive) and getter method starts with "is"
              	 *  This is not standard boolean declaration. But logical to do in hand written bean. Then support it.
              	 */
-                 if(accessor == null && property.getPropertyType().isAssignableFrom(Boolean.class)){
+                 if(accessor == null && propertyType.isAssignableFrom(Boolean.class)){
                  	// for Boolean Objet is method issue
                  	try{
                  		accessor = clazz.getMethod("is"+name.substring(0, 1).toUpperCase()+name.substring(1),((Class[])null));
@@ -579,13 +651,13 @@ public class WSJSONWriter {
                 	 
                      Object value = null;
                      try{
-                     value	= accessor.invoke(object, new Object[0]);
+                    	 value	= accessor.invoke(object, new Object[0]);
                      }catch(Throwable th){/*TODO trace*/}
                     /*
                    	 *  Step 5.10.2.4.1: Read property value from object. If value null and exclude is true continue next property.
                    	 */
                      if(value == null){
-                    	 if(JSONCodec.excludeNullProperties){
+                    	 if(JSONCodec.excludeNullProperties && !this.metaDataMode){
                     		 continue nextProperty;
                     	 }else{
                     		/*
@@ -595,19 +667,16 @@ public class WSJSONWriter {
       	                    	Field declaredField = clazz.getDeclaredField(name);
       	                    	XmlElement 	xmlElm 	=  declaredField.getAnnotation(XmlElement.class);
       	                        if(xmlElm != null){
-      	                        	if(xmlElm.defaultValue() != NULL && (clazz.isPrimitive() || clazz.equals(String.class) ||
-      	                	                clazz.equals(Date.class) || clazz.equals(Boolean.class) ||
-      	                	                clazz.equals(Byte.class) || clazz.equals(Character.class) ||
-      	                	                clazz.equals(Double.class) || clazz.equals(Float.class) ||
-      	                	                clazz.equals(Integer.class) || clazz.equals(Long.class) ||
-      	                	                clazz.equals(Short.class) || clazz.equals(Locale.class) ||
-      	                	                clazz.isEnum())){
+      	                        	if(xmlElm.defaultValue() != NULL && WSJSONPopulator.isJSONPrimitive(clazz)){
       	                        		value = xmlElm.defaultValue();
       	                        	} else if(!xmlElm.nillable()){
       	                        		// TODO throw exception to user
       	                        	}
       	                        }
       	                    }catch(Throwable th){}
+	      	                if(this.metaDataMode && value == null){
+	      	                	value = getMetaDataInstance(propertyType);
+	                      	}
                     	 }
                  	 } 
                       
@@ -636,8 +705,12 @@ public class WSJSONWriter {
  	                    			(declaredField != null && declaredField.isAnnotationPresent(XmlTransient.class))){
  	                    		continue nextProperty;
  	                    	}else if(declaredField.isAnnotationPresent(XmlMimeType.class)){
+ 	                    		if(this.metaDataMode){
+ 	                    			value	= declaredField.getAnnotation(XmlMimeType.class).value();
+ 	                    		}else{
  	                    		// TODO response attachment
- 	                    		continue nextProperty;
+ 	                    			continue nextProperty;
+ 	                    		}
  	                    	}
  	                    	if(declaredField != null){
 	 	                    	// XML choice list
@@ -724,7 +797,7 @@ public class WSJSONWriter {
      * Add name/value pair to buffer
      */
     private boolean add(String name, Object value, Method method, boolean hasData) throws JSONFault {
-        if (!JSONCodec.excludeNullProperties || value != null) {
+        if (!JSONCodec.excludeNullProperties || value != null || this.metaDataMode) {
             if (hasData) {
                 this.add(',');
             }
@@ -858,7 +931,7 @@ public class WSJSONWriter {
      * @return
      * @see
      */
-     public String date2String(Date date,String timePattern) {
+     private String date2String(Date date,String timePattern) {
     	 if(timePattern == null || timePattern.trim().isEmpty() ){
     		 timePattern = "yyyy-MM-dd'T'HH:mm:ssZ";
     	 }
@@ -904,4 +977,43 @@ public class WSJSONWriter {
          return null;
          // End
      }
+ 	
+ 	
+ 	/**
+ 	 * Utility method return instance from class. For meta data document generation.
+ 	 * @param propertyType
+ 	 * @return
+ 	 */
+ 	private Object getMetaDataInstance(Class<?> propertyType){
+ 		if(WSJSONPopulator.isJSONPrimitive(propertyType)){
+  			// Go with null
+  			if(Number.class.isAssignableFrom(propertyType)){
+  				return 0;	
+  			}else if(propertyType.isAssignableFrom(String.class)){
+  				return "";
+  			}else if(propertyType.isAssignableFrom(Boolean.class)){
+  				return false;
+  			}else if(propertyType.isAssignableFrom(Date.class)){
+  				return new Date();
+  			}else if(propertyType.isEnum()){
+  				if(propertyType.getEnumConstants().length > 0){
+  					return propertyType.getEnumConstants()[0];
+  				}
+  			}else {
+  				return null;
+  			}
+  		}else{
+  			for(Object ob : stack){
+  				if(ob.getClass().equals(propertyType)){
+  					return ob;
+  				}
+  			}
+			try{
+				return propertyType.newInstance();
+			}catch(Exception e){// Datahandler
+				return propertyType.getSimpleName();
+			}
+  		}
+ 		return null;
+ 	}
 }
