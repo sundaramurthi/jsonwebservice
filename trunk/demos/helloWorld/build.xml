@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     Nov 10, 2008 4:42:08 PM                                                        
+
+     helloWorld    
+     description
+     ====================================================================== -->
+<project name="helloWorld" default="war">
+    <description>
+            description
+    </description>
+	
+	<path id ="classpath">
+		<fileset dir="./WebContent/WEB-INF/lib" includes="*.jar"/>
+		<pathelement location="./classes"/>
+	</path>
+
+    <!-- ================================= 
+          target: war              
+         ================================= -->
+    <target name="war" depends="build" description="description">
+        
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - 
+          target: build                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="build">
+    	<mkdir dir="classes"/>
+    	<javac classpathref="classpath" srcdir="./src"
+    	    				destdir="./classes" debug="off" source="1.5"/>
+    	 <war destfile="hello.war" webxml="./WebContent/WEB-INF/web.xml">
+        	<fileset dir="./WebContent/"/>
+        	<classes dir="./classes"/>
+        </war>
+    </target>
+
+</project>
