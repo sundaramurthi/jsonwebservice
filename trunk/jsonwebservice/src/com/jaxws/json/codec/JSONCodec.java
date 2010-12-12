@@ -686,7 +686,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		if (type == HttpMetadataPublisher.class) {
 			// Overwrite http end point document provider.
 			if (metadataPublisher == null)
-				metadataPublisher = new JSONHttpMetadataPublisher(endpoint, this);
+				metadataPublisher = new JSONHttpMetadataPublisher(this);
 			return type.cast(metadataPublisher);
 		}
 		return null;

@@ -30,14 +30,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ContentType }
-     * 
-     */
-    public ContentType createContentType() {
-        return new ContentType();
-    }
-
-    /**
      * Create an instance of {@link MediaGroup }
      * 
      */
@@ -51,6 +43,14 @@ public class ObjectFactory {
      */
     public ThumbnailType createThumbnailType() {
         return new ThumbnailType();
+    }
+
+    /**
+     * Create an instance of {@link ContentType }
+     * 
+     */
+    public ContentType createContentType() {
+        return new ContentType();
     }
 
 }
