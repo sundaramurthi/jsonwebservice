@@ -72,7 +72,6 @@
 				<attribute name="Implementation-Version" value="0.2"/>
 			</manifest>
 		</jar>
-		<copy todir="${basedir}/samples/album/WEB-INF/lib/" file="${archive}/${jarname}-${version}.jar"/>
 	</target>
 	
 	<!-- ================================= 
