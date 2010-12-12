@@ -35,6 +35,46 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link EntryType }
+     * 
+     */
+    public EntryType createEntryType() {
+        return new EntryType();
+    }
+
+    /**
+     * Create an instance of {@link Photo }
+     * 
+     */
+    public Photo createPhoto() {
+        return new Photo();
+    }
+
+    /**
+     * Create an instance of {@link LoginFault }
+     * 
+     */
+    public LoginFault createLoginFault() {
+        return new LoginFault();
+    }
+
+    /**
+     * Create an instance of {@link UIElement }
+     * 
+     */
+    public UIElement createUIElement() {
+        return new UIElement();
+    }
+
+    /**
+     * Create an instance of {@link Crediential }
+     * 
+     */
+    public Crediential createCrediential() {
+        return new Crediential();
+    }
+
+    /**
      * Create an instance of {@link FeedType }
      * 
      */
@@ -59,43 +99,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Photo }
+     * Create an instance of {@link UIElements }
      * 
      */
-    public Photo createPhoto() {
-        return new Photo();
-    }
-
-    /**
-     * Create an instance of {@link UIElement }
-     * 
-     */
-    public UIElement createUIElement() {
-        return new UIElement();
-    }
-
-    /**
-     * Create an instance of {@link Crediential }
-     * 
-     */
-    public Crediential createCrediential() {
-        return new Crediential();
-    }
-
-    /**
-     * Create an instance of {@link EntryType }
-     * 
-     */
-    public EntryType createEntryType() {
-        return new EntryType();
-    }
-
-    /**
-     * Create an instance of {@link LoginFault }
-     * 
-     */
-    public LoginFault createLoginFault() {
-        return new LoginFault();
+    public UIElements createUIElements() {
+        return new UIElements();
     }
 
     /**
@@ -104,14 +112,6 @@ public class ObjectFactory {
      */
     public LoginParameter createLoginParameter() {
         return new LoginParameter();
-    }
-
-    /**
-     * Create an instance of {@link UIElements }
-     * 
-     */
-    public UIElements createUIElements() {
-        return new UIElements();
     }
 
     /**

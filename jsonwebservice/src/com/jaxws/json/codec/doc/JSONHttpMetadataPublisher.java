@@ -5,7 +5,6 @@ import java.net.HttpURLConnection;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.sun.istack.NotNull;
-import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -24,17 +23,14 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	/**
 	 * meta data model cache.
 	 */
-	JsClientServer 				jsClientServer 			= null;
 	@NotNull 
 	private JSONCodec codec;
-	private WSEndpoint<?> endPoint;
 
 	/**
 	 * @param endPoint
 	 * @param codec
 	 */
-	public JSONHttpMetadataPublisher(WSEndpoint<?> endPoint,JSONCodec codec) {
-		this.endPoint 	= endPoint;
+	public JSONHttpMetadataPublisher(JSONCodec codec) {
 		this.codec		= codec;
 	}
 
@@ -43,6 +39,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			WSHTTPConnection connection) throws IOException {
 		String 	queryString 	= connection.getQueryString();
 		
+		// If query handled by document provider, handle it.
 		for (HttpMetadataProvider metadataProvider : ServiceFinder.find(HttpMetadataProvider.class)) {
 			if(metadataProvider.canHandle(queryString)){
 				metadataProvider.setJSONCodec(this.codec);
@@ -53,27 +50,8 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				return true;
 			}
 		}
-		
-		if(queryString.startsWith("model")){
-			//TODO perform if(metaDataModelServer == null )
-				/*metaDataModelServer = new MetaDataModelServer(endPoint,queryString.indexOf("&all") > -1,true,codec);
-			
-			connection.setStatus(HttpURLConnection.HTTP_OK);
-			connection.setContentTypeResponseHeader("text/javascript;charset=\"utf-8\"");
-			metaDataModelServer.doResponse(connection.getOutput());*/
-			return true;
-		}else if(queryString.startsWith("client")){
-			if(jsClientServer == null)
-				jsClientServer	= new JsClientServer(endPoint);
-			
-			connection.setStatus(HttpURLConnection.HTTP_OK);
-			connection.setContentTypeResponseHeader("text/javascript;charset=\"utf-8\"");
-			jsClientServer.doResponse(connection.getOutput());
-			return true;
-		}else{
-			adapter.invokeAsync(connection);
-			// TODO respond with options document 
-			return true;
-		}
+		// Call http get operationn. 
+		adapter.invokeAsync(connection);
+		return true;
 	}
 }
