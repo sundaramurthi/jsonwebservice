@@ -212,6 +212,15 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     public static boolean				excludeNullProperties		= true;
     
     /**
+     * Null or non present values in JOSN request are non nullable in server, in this case create empty object.
+     * E.e <code>{"getUser":{}}</code> version part of getUser call user object/id marked as nullable false in XSD. 
+     * But in JSON sending null or non present. This case up on enable this flag, In case of object new instance created and assigned,
+     * IN case of primitive with xsd default, default value populated. 
+     * 
+     */
+    public static final String			createDefaultOnNonNullable_KEY	= "json.createDefaultOnNonNullable";
+    public static boolean 				createDefaultOnNonNullable	= true;
+    /**
      * JSON response written as gzip encoded format. It's dependent on Accept-content: type header in http request. 
      * When set to true response return as gzip if client send Accept-Encoding with gzip true.
      * 
@@ -336,7 +345,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	public final 	SOAPVersion 		soapVersion;
     
     static private SEIModel 			staticSeiModel;
-    
+
     static{
     	LOG.info("Initalizing JSON codec static part.");
     	Properties 		properties 			= new Properties();
@@ -352,6 +361,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     	for(Object key:properties.keySet()){
     		if(key.toString().equals(excludeNullProperties_KEY)){
     			excludeNullProperties	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals(createDefaultOnNonNullable_KEY)){
+    			createDefaultOnNonNullable	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}else if(key.toString().startsWith(includeProperties_KEY)){
     			includeProperties.add(Pattern.compile(properties.getProperty(key.toString())));
     		}else if(key.toString().equals(gzip_KEY)){

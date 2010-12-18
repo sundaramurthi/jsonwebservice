@@ -1,7 +1,6 @@
 package com.jaxws.json.codec.doc.provider;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,9 +18,10 @@ import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.model.wsdl.WSDLPart;
-import com.sun.xml.ws.api.server.PortAddressResolver;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
+import com.sun.xml.ws.transport.http.WSHTTPConnection;
+import com.sun.xml.ws.util.ServiceFinder;
 
 /**
  * @author Sundaramurthi Saminathan
@@ -108,11 +108,8 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 		
 			templateMain		= templateMain.replaceAll("#SERIVICE_NAME#", endPoint.getServiceName().getLocalPart());
 
-			PortAddressResolver portAddressResolver = httpAdapter.owner.createPortAddressResolver("");//connection.getBaseAddress());
-        
-			String 				portLocalPart 		= endPoint.getPortName().getLocalPart();
 			// NOTE:  endPoint.getSEIModel().getPort().getAddress() is not dynamic. Its address configured in WSDL
-			String 				address 			= portAddressResolver.getAddressFor(endPoint.getServiceName(), portLocalPart);
+			String 				address 			= "#BASEADDRESS#" + httpAdapter.getValidPath();
 	        if(address != null){
 	        	 if(address.endsWith(".soap")){
 	 	        	// Hack to SOAP implementation class configured to JSON end point.
@@ -120,6 +117,14 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	 	        }
 	        	templateMain = templateMain.replaceAll("#END_POINT_URL#", address);
 	        }
+	        StringBuffer queries = new StringBuffer();
+	        for (HttpMetadataProvider metadataProvider : ServiceFinder.find(HttpMetadataProvider.class)) {
+				String querys [] = metadataProvider.getHandlingQueries();
+				for(String query : querys){
+					queries.append(String.format("<a href=\"%s?%s\">%s?%s</a>",address,query,address,query));
+				}
+	        }
+	        templateMain		= templateMain.replaceAll("#DOCUMENT_ENDS#",queries.toString());
 
 	        StringBuffer 	methods = new StringBuffer();
         
@@ -175,15 +180,15 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	/* (non-Javadoc)
 	 * @see com.jaxws.json.codec.doc.HttpMetadataProvider#doResponse(java.io.OutputStream)
 	 */
-	public void doResponse(OutputStream ouStream) throws IOException {
+	public void doResponse(WSHTTPConnection ouStream) throws IOException {
 		process();
 		String portDocuments =  endPointDocuments.get(this.codec.getEndpoint().getPortName().getLocalPart()
 				+ requestPayloadEnabled
 				+ JSONCodec.responsePayloadEnabled);
 		if(portDocuments != null){
-			ouStream.write(portDocuments.getBytes());
+			ouStream.getOutput().write(portDocuments.replaceAll("#BASEADDRESS#", ouStream.getBaseAddress()).getBytes());
 		}else{
-			ouStream.write(String.format("Unable to find default document for %s",
+			ouStream.getOutput().write(String.format("Unable to find default document for %s",
 					this.codec.getEndpoint().getPortName()).getBytes());
 		}
 	}

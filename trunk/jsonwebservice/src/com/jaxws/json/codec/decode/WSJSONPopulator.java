@@ -31,10 +31,12 @@ import java.util.regex.Pattern;
 
 import javax.activation.DataHandler;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElements;
 import javax.xml.bind.annotation.XmlMimeType;
+import javax.xml.transform.stream.StreamSource;
 
 import org.jvnet.mimepull.MIMEPart;
 
@@ -43,17 +45,28 @@ import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.feature.JSONWebService;
 import com.jaxws.json.serializer.JSONObjectCustomizer;
-import com.sun.xml.messaging.saaj.packaging.mime.MessagingException;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.ContentDisposition;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.MimeBodyPart;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.MimePartDataSource;
-import com.sun.xml.messaging.saaj.packaging.mime.internet.ParseException;
 
 /**
- * @author ssaminathan
+ * @author Sundaramurthi Saminathan
+ * @version 2.0
+ * 
+ * WSJSONPopulator create java object from input JSON map. Uses bean inspector and populate all object.
+ * 
+ * Population customized using annotations.
+ * 
+ * @see XmlElement
+ * @see XmlAttribute
+ * @see JSONWebService
  *
  */
 public class WSJSONPopulator {
+	/**
+	 * Static string value for JSON/Default null. 
+	 */
+	private static final String NULL 		= "\u0000";
 	
 	/**
 	 * List of property name can be serialized to MAP
@@ -358,55 +371,82 @@ public class WSJSONPopulator {
 		    } else {
 		    	 // JOSN input DON'T contains specified property. May come from customized json name or XMLElement definition.
 	    		java.lang.reflect.Field f = getDeclaredField(clazz,prop.getName());
-				
-				if(f != null && f.isAnnotationPresent(XmlElements.class)){
-					// Handle XSD choice element. 
-					XmlElements 	ann 		= f.getAnnotation(XmlElements.class);
-					XmlElement[] 	xmlElements = ann.value();
-					for(XmlElement elm : xmlElements){
-						if(elements.containsKey(elm.name())){
-							try{
-								Object jsonValue = elements.get(elm.name());
-								List<Map> objects = new ArrayList<Map>();
-								if(jsonValue instanceof Map){// Single object XSD choice with maxOccur 1
-									objects.add((Map)jsonValue);
-								}else if(jsonValue instanceof List){// List of object XSD choice with maxOccur greater than 1
-									objects.addAll((List)jsonValue);
-								}else if(traceEnabled){
-									traceLog.warn(String.format("Object choice found. But input JSON is not object or LIST ignoring %s",
-											prop.getName()));
-								}
-								List<Object> populatedObjects = new ArrayList<Object>();
-								for(Map v :  objects){
-									Object ob = elm.type().newInstance();
-									populateObject(ob, v, writeMethodConfig);
-									populatedObjects.add(ob);
-								}
-								if(writeMethod != null){
-									writeMethod.invoke(object, populatedObjects);
-								}else if (prop.getReadMethod() != null){
-									Method readMethod = prop.getReadMethod();
-									Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
-									if(objectList != null){
-										objectList.addAll(populatedObjects);
-									}else{
-										if(traceEnabled)
-											traceLog.warn("List property dont have write method. Also read method returned null. " +
-													"Ignoring json value for list " + prop.getName());
+	    		// If there is no write method its hard to set. In latter version may attempt to use privalged private setting.
+	    		if(f != null && writeMethod != null){
+					if(f.isAnnotationPresent(XmlElements.class)){
+						// Handle XSD choice element. 
+						XmlElements 	ann 		= f.getAnnotation(XmlElements.class);
+						XmlElement[] 	xmlElements = ann.value();
+						for(XmlElement elm : xmlElements){
+							if(elements.containsKey(elm.name())){
+								try{
+									Object jsonValue = elements.get(elm.name());
+									List<Map> objects = new ArrayList<Map>();
+									if(jsonValue instanceof Map){// Single object XSD choice with maxOccur 1
+										objects.add((Map)jsonValue);
+									}else if(jsonValue instanceof List){// List of object XSD choice with maxOccur greater than 1
+										objects.addAll((List)jsonValue);
+									}else if(traceEnabled){
+										traceLog.warn(String.format("Object choice found. But input JSON is not object or LIST ignoring %s",
+												prop.getName()));
 									}
+									List<Object> populatedObjects = new ArrayList<Object>();
+									for(Map v :  objects){
+										Object ob = elm.type().newInstance();
+										populateObject(ob, v, writeMethodConfig);
+										populatedObjects.add(ob);
+									}
+									if(writeMethod != null){
+										writeMethod.invoke(object, populatedObjects);
+									}else if (prop.getReadMethod() != null){
+										Method readMethod = prop.getReadMethod();
+										Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
+										if(objectList != null){
+											objectList.addAll(populatedObjects);
+										}else{
+											if(traceEnabled)
+												traceLog.warn("List property dont have write method. Also read method returned null. " +
+														"Ignoring json value for list " + prop.getName());
+										}
+									}
+								} catch (Throwable th){
+									if(traceEnabled)
+										traceLog.warn(String.format("Failed to populate choice element list. property %s in clazz %s",prop.getName(),
+												clazz.getSimpleName()));
 								}
-							} catch (Throwable th){
+							}
+						}
+					} else if(f.isAnnotationPresent(XmlMimeType.class)){
+						// Process Attachments
+						XmlMimeType 	ann 		= f.getAnnotation(XmlMimeType.class);
+						writeMethod.invoke(object, new Object[]{handleMimeAttachement(f.getType(),ann,expectedJSONPropName)});
+					} else if(f.isAnnotationPresent(XmlElement.class)){
+						// Handle default value
+						XmlElement 		element 	= f.getAnnotation(XmlElement.class);
+						if(!element.defaultValue().equals(NULL)){
+							if(traceEnabled)
+								traceLog.info(String.format("Input do not have %s. Populating default value: %s",
+										expectedJSONPropName, element.defaultValue()));
+							writeMethod.invoke(object,
+									convert(prop.getPropertyType(), f.getType(), element.defaultValue(), 
+											writeMethod.getAnnotation(JSONWebService.class), writeMethod));
+						}else if(!element.nillable() && JSONCodec.createDefaultOnNonNullable){
+							if(!isJSONPrimitive(prop.getPropertyType())){
 								if(traceEnabled)
-									traceLog.warn(String.format("Failed to populate choice element list. property %s in clazz %s",prop.getName(),
-											clazz.getSimpleName()));
+									traceLog.warn("Non nillable object(\""+expectedJSONPropName +
+										"\") with nill value, populating default.");
+								Object ob = prop.getPropertyType().newInstance();
+								populateObject(ob, new HashMap<String, Object>(), writeMethodConfig);
+								writeMethod.invoke(object,ob);
+							}else{
+								// TODO ??
+								if(traceEnabled)
+									traceLog.error(String.format("Non nillable primitive \"%s\", also don't have default value." +
+										" Implementation may may fail to hanlde your request.  ", expectedJSONPropName));
 							}
 						}
 					}
-				} else if(f != null && f.isAnnotationPresent(XmlMimeType.class)){
-					// Attachments
-					XmlMimeType 	ann 		= f.getAnnotation(XmlMimeType.class);
-					writeMethod.invoke(object, new Object[]{handleMimeAttachement(f.getType(),ann,expectedJSONPropName)});
-				}
+	    		}
             }
 		}
     }
@@ -416,21 +456,29 @@ public class WSJSONPopulator {
      * @param ann
      */
     private Object handleMimeAttachement(Class<?> clazz, XmlMimeType ann,String propertyName) {
-		if(this.attachments != null && clazz.isAssignableFrom(DataHandler.class) ){
+		if(this.attachments != null){
 			for(MIMEPart mimePart : this.attachments){
 				List<String> contentDisposition = mimePart.getHeader(JSONCodec.CONTENT_DISPOSITION_HEADER);
 				if(contentDisposition != null && contentDisposition.size() > 0){
 					try {
 						ContentDisposition disp = new ContentDisposition(contentDisposition.get(0));
 						if(disp.getParameter("name") != null && disp.getParameter("name").equals(propertyName)){
-							return new DataHandler(new MimePartDataSource(new MimeBodyPart(mimePart.read())));
+							if(clazz.isAssignableFrom(DataHandler.class))
+								return new DataHandler(new MimePartDataSource(new MimeBodyPart(mimePart.read())));
+							else if(clazz.isAssignableFrom(javax.xml.transform.Source.class))
+								return new StreamSource(mimePart.read());
 						}
-					} catch (ParseException e) {} catch (MessagingException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					} catch (Exception e) {
+						if(this.traceEnabled){
+							traceLog.error(String.format("Error while handling attachment name:\"%s\". message: \"%s\"",
+									propertyName,e.getMessage()));
+						}
 					}
 				}
 			}
+		}
+		if(this.traceEnabled){
+			traceLog.warn(String.format("attachment name:\"%s\" Not found in request.", propertyName));
 		}
 		return null;
 	}
@@ -758,22 +806,14 @@ public class WSJSONPopulator {
                 return Boolean.parseBoolean(sValue);
             else if (Boolean.class.equals(clazz))
                 return Boolean.valueOf(sValue);
-            else if (Short.TYPE.equals(clazz))
-                return Short.parseShort(sValue);
-            else if (Short.class.equals(clazz))
-                return Short.valueOf(sValue);
-            else if (Byte.TYPE.equals(clazz))
-                return Byte.parseByte(sValue);
-            else if (Byte.class.equals(clazz))
-                return Byte.valueOf(sValue);
-            else if (Integer.TYPE.equals(clazz))
-                return Integer.parseInt(sValue);
-            else if (Integer.class.equals(clazz))
-                return Integer.valueOf(sValue);
-            else if (Long.TYPE.equals(clazz))
-                return Long.parseLong(sValue);
-            else if (Long.class.equals(clazz))
-                return Long.valueOf(sValue);
+            else if (Short.TYPE.equals(clazz) 	|| Short.class.equals(clazz))
+                return Short.decode(sValue);
+            else if (Byte.TYPE.equals(clazz) 	|| Byte.class.equals(clazz))
+                return Byte.decode(sValue);
+            else if (Integer.TYPE.equals(clazz) || Integer.class.equals(clazz))
+                return Integer.decode(sValue);
+            else if (Long.TYPE.equals(clazz)	|| Long.class.equals(clazz))
+                return Long.decode(sValue);
             else if (Float.TYPE.equals(clazz))
                 return Float.parseFloat(sValue);
             else if (Float.class.equals(clazz))
