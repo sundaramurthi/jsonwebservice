@@ -13,7 +13,7 @@
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
-	<property name="archive" value="${basedir}/archive"/>
+	<property name="archive" value="${basedir}/build"/>
 	
 	<property name="user.name" value="Sundaramurthi"/>
 

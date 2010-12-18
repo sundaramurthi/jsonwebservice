@@ -11,14 +11,18 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.CharacterIterator;
 import java.text.SimpleDateFormat;
 import java.text.StringCharacterIterator;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
@@ -122,6 +126,11 @@ public class WSJSONWriter {
 	 * Flag which enable write object as possible JSON document format or not.
 	 */
 	private boolean metaDataMode	= false;
+
+	/**
+	 * List of response attachments.
+	 */
+	private List<Map<String,Object>> attachments	 = new ArrayList<Map<String,Object>>();
     
     /**
      * Writer instance with parameter passed writer object.
@@ -467,50 +476,39 @@ public class WSJSONWriter {
      * Add array to buffer
      */
     private void array(Iterator<?> iterator, Method method, JSONWebService customInfo) throws JSONFault {
-    	if(listMapKey != null ){
-         	/*if(iterator.hasNext()){
- 	        	Object instance = iterator.next();
- 	        	Method[] methods = instance.getClass().getDeclaredMethods();
- 	        	
- 	        	Method valueMethod = null;*/
- 	        	if(listMapValue != null){
- 		        	/*for(Method meth: methods){
- 		        		if(listMapValue.matcher(meth.getName().replaceFirst("get","")).matches()){
- 		        			valueMethod = meth;
- 		        			break;
- 		        		}
- 		        	}*/
- 	        	}
- 	        	// WARN Any object which has map key considred as map 
- 	        	/*for(Method meth: methods){
- 	        		if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
- 	        			HashMap<String,Object> map = new HashMap<String,Object>();
- 	        			try {
- 	        				// PUT the first object
- 	        				Object value;
- 	        				if(valueMethod == null){
- 	        					value = instance;
- 	        				}else{
- 	        					value = valueMethod.invoke(instance, (Object[])null);//
- 	        				}
- 	        					
- 	        				map.put(""+meth.invoke(instance, (Object[])null), value);
- 	        				//Iterate from second
- 	        				while(itr.hasNext()){
- 	        					instance = itr.next();
- 	        					if(valueMethod == null){
- 		        					value = instance;
- 		        				}else{
- 		        					value = valueMethod.invoke(instance, (Object[])null);//
- 		        				}
- 	        					map.put(""+meth.invoke(instance, (Object[])null), value);
- 	        				}
- 							object = map;
- 							break;
- 						} catch (Throwable e) {}
- 	        		}
- 	        	}
-         	}*/
+    	if(listMapKey != null && method != null && method.getGenericReturnType() != null
+    			&& method.getGenericReturnType() instanceof ParameterizedType){
+    		Type[] types = ((ParameterizedType)method.getGenericReturnType()).getActualTypeArguments();
+    		if(types.length == 1){
+    			try{
+	    			Class<?> clazz = (Class<?>) types[0]; 
+	    			BeanInfo info = (clazz.isAnnotationPresent(JSONObject.class) && 
+	            			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) ? Introspector
+	                        .getBeanInfo(clazz, clazz.getSuperclass()) : Introspector
+	                        .getBeanInfo(clazz);
+	
+	                PropertyDescriptor[] props = info.getPropertyDescriptors();
+	                PropertyDescriptor	keyProperty	= null;
+	                for(PropertyDescriptor prop : props){
+	                	if(listMapKey.matcher(clazz.getName() + "." + prop.getName()).find()){
+	                		keyProperty = prop;
+	                		break;
+	                	}
+	                }
+	                if(keyProperty != null){
+	                	Method readMethod = keyProperty.getReadMethod();
+	                	HashMap<String,Object> map = new LinkedHashMap<String,Object>();
+	                	while(iterator.hasNext()){
+	                		Object ob = iterator.next();
+	                		map.put(String.valueOf(readMethod.invoke(ob)), ob);
+	                	}
+	                	map(map, readMethod, customInfo);
+	                	return;
+	                }
+    			}catch(Throwable th){
+    				// Continue with out Map
+    			}
+    		}
          } 
     	
         this.add("[");
@@ -518,7 +516,12 @@ public class WSJSONWriter {
         	try {
         		Class<?> parameterType  = (Class<?>)((ParameterizedType)method.getGenericReturnType()).
 						getActualTypeArguments()[0];
-        		if(parameterType.equals(Object.class)){
+        		if(parameterType.equals(Object.class) || WSJSONPopulator.isJSONPrimitive(parameterType)){
+        			if(method != null){
+        				this.process(getMetaDataInstance(parameterType, customInfo,
+        						method.getDeclaringClass().getDeclaredField(
+        								Introspector.decapitalize(method.getName().substring(3)))),null);
+        			}
         			// JAXB Choice
         		} else {
         			this.process(parameterType.newInstance(),method);
@@ -562,16 +565,7 @@ public class WSJSONWriter {
 			if(Introspector.getBeanInfo(clazz, 
 					Enum.class).getPropertyDescriptors().length != 0){
 				this.bean(enumeration, clazz);
-			}else if(this.metaDataMode){
-				boolean hasdata = false;
-				String enumVals = "";
-				for(Object cnst : clazz.getEnumConstants()){
-					if(hasdata) enumVals	 += "|";
-					enumVals	 +=  ((Enum<?>)cnst).name();
-					hasdata = true;
-				}
-				this.string(enumVals);
-			}else{
+			} else {
 				this.string(enumeration.name());
 			}
 		} catch (IntrospectionException e) {
@@ -664,21 +658,27 @@ public class WSJSONWriter {
      	                	 *  Step 5.10.2.4.2: Read property value from object. If value null attempt to get it from default value.
      	                	 */
                      		 try{
-      	                    	Field declaredField = clazz.getDeclaredField(name);
+      	                    	Field declaredField = getDeclaredField(clazz,name);
       	                    	XmlElement 	xmlElm 	=  declaredField.getAnnotation(XmlElement.class);
       	                        if(xmlElm != null){
-      	                        	if(xmlElm.defaultValue() != NULL && WSJSONPopulator.isJSONPrimitive(clazz)){
+      	                        	if(!xmlElm.defaultValue().equals(NULL) && WSJSONPopulator.isJSONPrimitive(propertyType)){
       	                        		value = xmlElm.defaultValue();
       	                        	} else if(!xmlElm.nillable()){
       	                        		// TODO throw exception to user
       	                        	}
       	                        }
       	                    }catch(Throwable th){}
-	      	                if(this.metaDataMode && value == null){
-	      	                	value = getMetaDataInstance(propertyType);
-	                      	}
                     	 }
-                 	 } 
+                    	 if(this.metaDataMode){
+	      	                // In meta data mode always get data via meta provider. 
+	      	                value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
+	      	                		getDeclaredField(clazz,name));
+	                     }
+                 	 }else if(this.metaDataMode && propertyType.isPrimitive()){
+                 		 // Primitive meta data. In case like int value become 0. But it may be from default
+                 		value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
+  	                			getDeclaredField(clazz,name));
+                 	 }
                       
                 	/*
                   	 *  Step 5.10.2.4.3: read property custom config. If it is serializable continue process with specified name if any
@@ -696,7 +696,7 @@ public class WSJSONWriter {
                     	 try{
                     		
                     		// XML annotation present at field level.
- 	                    	Field declaredField = accessor.getDeclaringClass().getDeclaredField(name);
+ 	                    	Field declaredField = getDeclaredField(clazz,name);
  	                    	
  	                       /*
  	                        *  Step 5.10.2.4.5: If XML transient ignore property.
@@ -708,7 +708,11 @@ public class WSJSONWriter {
  	                    		if(this.metaDataMode){
  	                    			value	= declaredField.getAnnotation(XmlMimeType.class).value();
  	                    		}else{
- 	                    		// TODO response attachment
+ 	                    			Map<String,Object> attachment = new HashMap<String, Object>();;
+ 	                    			attachment .put("name",name);
+ 	                    			attachment.put("value",value);
+ 	                    			attachment.put("mimeType",declaredField.getAnnotation(XmlMimeType.class).value());
+ 	                    			attachments	 .add(attachment);
  	                    			continue nextProperty;
  	                    		}
  	                    	}
@@ -982,9 +986,26 @@ public class WSJSONWriter {
  	/**
  	 * Utility method return instance from class. For meta data document generation.
  	 * @param propertyType
+ 	 * @param field 
+ 	 * @param webService 
  	 * @return
  	 */
- 	private Object getMetaDataInstance(Class<?> propertyType){
+ 	private Object getMetaDataInstance(Class<?> propertyType, JSONWebService webService, Field field){
+ 		if(field != null && field.isAnnotationPresent(XmlElement.class)){
+ 			XmlElement element = field.getAnnotation(XmlElement.class);
+			if(!element.defaultValue().equals(NULL)){
+				if(field != null && Collection.class.isAssignableFrom(field.getType())){
+					return element.defaultValue().replace(",", "\",\"");
+				} else if(propertyType.isEnum()){
+					// In case of enum meta data is decided list
+				} else if(Boolean.TYPE.equals(propertyType) || Boolean.class.equals(propertyType)){
+					return Boolean.valueOf(element.defaultValue());
+				} else {
+					return element.defaultValue();
+				}
+			}
+		}
+ 		
  		if(WSJSONPopulator.isJSONPrimitive(propertyType)){
   			// Go with null
   			if(Number.class.isAssignableFrom(propertyType)){
@@ -996,9 +1017,11 @@ public class WSJSONWriter {
   			}else if(propertyType.isAssignableFrom(Date.class)){
   				return new Date();
   			}else if(propertyType.isEnum()){
-  				if(propertyType.getEnumConstants().length > 0){
-  					return propertyType.getEnumConstants()[0];
+  				StringBuffer b = new StringBuffer();
+  				for(Object cont: propertyType.getEnumConstants()){
+  					 b.append((b.length() != 0 ? "|" :"") + ((Enum<?>)cont).name());
   				}
+  				return b.toString();
   			}else {
   				return null;
   			}
@@ -1014,6 +1037,29 @@ public class WSJSONWriter {
 				return propertyType.getSimpleName();
 			}
   		}
- 		return null;
  	}
+
+ 	/**
+	 * Utility method to read declaring field including private scope.
+	 * @param clazz
+	 * @param fieldName
+	 * @return
+	 */
+	private java.lang.reflect.Field getDeclaredField(Class<?> clazz, String fieldName){
+		try {
+			return clazz.getDeclaredField(fieldName);
+		} catch (Throwable e) {
+			if(!Object.class.equals(clazz.getSuperclass())){
+				return getDeclaredField(clazz.getSuperclass(),fieldName);
+			}
+		}
+		return null;
+	}
+	/**
+	 * Getter to return attachments
+	 * @return
+	 */
+	public List<Map<String, Object>> getAttachments() {
+		return attachments;
+	}
 }

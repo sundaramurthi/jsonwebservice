@@ -1,7 +1,6 @@
 package com.jaxws.json.codec.doc.provider;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -25,6 +24,7 @@ import com.sun.xml.ws.api.server.BoundEndpoint;
 import com.sun.xml.ws.api.server.Module;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
+import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
  * @author Sundaramurthi Saminathan
@@ -141,13 +141,13 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 	/**
 	 * Output responder.
 	 */
-	public void doResponse(OutputStream ouStream) throws IOException {
+	public void doResponse(WSHTTPConnection ouStream) throws IOException {
 		process();
 		String portDocuments =  endPointDocuments.get(this.codec.getEndpoint().getServiceName());
 		if(portDocuments != null){
-			ouStream.write(portDocuments.getBytes());
+			ouStream.getOutput().write(portDocuments.getBytes());
 		}else{
-			ouStream.write(String.format("Unable to find default document for %s",
+			ouStream.getOutput().write(String.format("Unable to find default document for %s",
 					this.codec.getEndpoint().getPortName()).getBytes());
 		}
 	}

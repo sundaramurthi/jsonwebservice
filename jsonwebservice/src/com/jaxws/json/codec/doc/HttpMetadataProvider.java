@@ -1,10 +1,10 @@
 package com.jaxws.json.codec.doc;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.sun.xml.ws.transport.http.HttpAdapter;
+import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
  * @author Sundaramurthi Saminathan
@@ -55,8 +55,9 @@ public interface HttpMetadataProvider {
 	
 	/**
 	 * Write document to output stream.
-	 * @param ouStream
+	 * @param ouStream WSHTTPConnection
 	 * @throws IOException
+	 * @see WSHTTPConnection
 	 */
-	void doResponse(OutputStream ouStream) throws IOException;
+	void doResponse(WSHTTPConnection ouStream) throws IOException;
 }

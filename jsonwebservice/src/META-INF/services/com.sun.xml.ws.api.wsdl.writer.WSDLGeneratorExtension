@@ -1,1 +1,1 @@
-com.sun.xml.ws.policy.jaxws.PolicyWSDLGeneratorExtension
+com.jaxws.json.codec.wsdl.PolicyWSDLGeneratorExtention

@@ -46,7 +46,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				metadataProvider.setHttpAdapter(adapter);
 				connection.setStatus(HttpURLConnection.HTTP_OK);
 				connection.setContentTypeResponseHeader(metadataProvider.getContentType());
-				metadataProvider.doResponse(connection.getOutput());
+				metadataProvider.doResponse(connection);
 				return true;
 			}
 		}

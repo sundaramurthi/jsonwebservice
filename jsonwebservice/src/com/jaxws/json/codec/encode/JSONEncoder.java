@@ -1,5 +1,10 @@
 package com.jaxws.json.codec.encode;
 
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
@@ -9,10 +14,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.activation.DataHandler;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriter;
 import javax.xml.bind.JAXBException;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Source;
 import javax.xml.ws.handler.MessageContext;
 
 import org.w3c.dom.Element;
@@ -150,7 +159,10 @@ public class JSONEncoder {
 		 * Since request reached to JSON codec endpoint send response as JSON.
 		 **/
 		}
-		
+		/*
+		 * Read and remove the forced content type don't end in response body part. 
+		 */
+		ContentType contentType = (ContentType) invocationProperties.remove(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE);
 		/*
 		 * DEFAULT JSON output
 		 */
@@ -244,10 +256,75 @@ public class JSONEncoder {
 		 * Step 5: Write processed message map to output stream
 		 */
 		if(traceEnabled) traceLog.info("Writing json respone from map");
+		
+		/*
+		 * In case of multipart mime body add boundry header
+		 */
+		if(contentType != null && contentType == JSONContentType.MULTIPART_MIXED){
+			output.write(JSONContentType.BOUNDARY.getBytes());
+			output.write(("\nContent-Type: "+JSONContentType.TEXT_PLAIN.getContentType()+"\n\n").getBytes());
+		}
+		// JSON data write.
 		writer.write(JSONCodec.dateFormat,JSONCodec.excludeProperties,
-				JSONCodec.includeProperties,null,null);
+				JSONCodec.includeProperties,JSONCodec.globalMapKeyPattern,
+				JSONCodec.globalMapValuePattern);
+		
+		//Process all response attachments
+		for(Map<String, Object> attachInfo : writer.getAttachments()){
+			Object value = attachInfo.remove("value");
+			if (value != null) {
+				String mimeType = (String)attachInfo.remove("mimeType");
+				output.write(JSONContentType.BOUNDARY.getBytes());
+				output.write(String.format("\nContent-Type: %s",mimeType).getBytes());
+				output.write(String.format("\nContent-Disposition: attachment; name=\"%s\"; filename=\"%s.%s\"\n\n",
+						attachInfo.get("name"),attachInfo.get("name"),
+						mimeType.split("/")[mimeType.indexOf('/') > -1? 1 : 0]).getBytes());
+				// TODO DataHandler and Source
+				if (Image.class.isAssignableFrom(value.getClass())) {
+					if (mimeType == null || mimeType.startsWith("image/*"))
+						mimeType = "image/png";
+					Iterator<ImageWriter> itr = ImageIO
+							.getImageWritersByMIMEType(mimeType);
+					if (itr.hasNext()) {
+						ImageWriter w = itr.next();
+                        w.setOutput(ImageIO.createImageOutputStream(output));
+						w.write(convertToBufferedImage((Image)value));
+						w.dispose();
+					} else {
+						// LOG no handler
+					}
+				}else if(DataHandler.class.isAssignableFrom(value.getClass())){
+					((DataHandler)value).writeTo(output);
+				}else if(Source.class.isAssignableFrom(value.getClass())){
+					//TODO ((Source)value).writeTo(output);
+				}
+			}
+		}
 		
 		if(traceEnabled) traceLog.info("JSON response encoding completed." + new Date());
 		return JSONCodec.jsonContentType;
 	}
+	
+	private BufferedImage convertToBufferedImage(Image image) throws IOException {
+        if (image instanceof BufferedImage) {
+            return (BufferedImage)image;
+
+        } else {
+            MediaTracker tracker = new MediaTracker(new Component(){}); // not sure if this is the right thing to do.
+            tracker.addImage(image, 0);
+            try {
+                tracker.waitForAll();
+            } catch (InterruptedException e) {
+                throw new IOException(e.getMessage());
+            }
+            BufferedImage bufImage = new BufferedImage(
+                    image.getWidth(null),
+                    image.getHeight(null),
+                    BufferedImage.TYPE_INT_ARGB);
+
+            Graphics g = bufImage.createGraphics();
+            g.drawImage(image, 0, 0, null);
+            return bufImage;
+        }
+    }
 }

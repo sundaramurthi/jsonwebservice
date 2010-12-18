@@ -114,9 +114,33 @@ public class FormDecoder {
 						" must be named as \"%s\" or pass %s: <Your json param name>. In alternate case body part content type should be %s " +
 						" json content as mime part body.", JSONCodec.XJSONPARAM_DEFAULT, JSONCodec.XJSONPARAM_HEADER, JSONContentType.JSON_MIME_TYPE));
 			}
-			this.packet.invocationProperties.put(JSONCodec.MIME_ATTACHMENTS,message.getAttachments());
+			List<MIMEPart> attachments = message.getAttachments();
+			/*
+			 * Remove JSON part from attachment list. JSON part reseved for codec. and handled by JSONDecoder.
+			 * 
+			 */
+			attachments.remove(jsonPart);
+			/*
+			 * Put attachemnts into invoke properties of packet.
+			 */
+			this.packet.invocationProperties.put(JSONCodec.MIME_ATTACHMENTS,attachments);
+			/*
+			 * Decode message
+			 */
 			com.sun.xml.ws.api.message.Message wsMessage = new JSONDecoder(this.codec,jsonPart.readOnce(),packet).getWSMessage();
-			this.packet.invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE,JSONContentType.TEXT_PLAIN);
+			/*
+			 * Remove attachment. Else same packet object used in response. It leads attachment fall back in response.
+			 */
+			this.packet.invocationProperties.remove(JSONCodec.MIME_ATTACHMENTS);
+			/*
+			 * TODO
+			 * Its weared all form post leads to multipart response. Invetigate and find better response type for form post.
+			 * In case of application/json form post leads popup in browser.
+			 * So multipart or text/plain prefred by user. But when XMLHttp support attachment, its good to send application/json or 
+			 * multi part mime.
+			 * 
+			 */
+			this.packet.invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE,JSONContentType.MULTIPART_MIXED);
 			return wsMessage;
 		} else {
 			throw new RuntimeException("Multipart form data should be POST. No input stream found.");

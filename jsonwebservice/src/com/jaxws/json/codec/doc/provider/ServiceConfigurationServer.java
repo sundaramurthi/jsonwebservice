@@ -1,7 +1,6 @@
 package com.jaxws.json.codec.doc.provider;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -10,6 +9,7 @@ import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.HttpAdapter;
+import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
  * @author Sundaramurthi Saminathan
@@ -115,6 +115,9 @@ public class ServiceConfigurationServer implements HttpMetadataProvider {
 						JSONCodec.excludeNullProperties_KEY, String
 								.valueOf(JSONCodec.excludeNullProperties)));
 				propertys.append(String.format(propertyTemplate,
+						JSONCodec.createDefaultOnNonNullable_KEY, String
+								.valueOf(JSONCodec.createDefaultOnNonNullable)));
+				propertys.append(String.format(propertyTemplate,
 						JSONCodec.gzip_KEY, String.valueOf(JSONCodec.gzip)));
 				propertys.append(String.format(propertyTemplate,
 						JSONCodec.listWrapperSkip_KEY, String
@@ -148,9 +151,9 @@ public class ServiceConfigurationServer implements HttpMetadataProvider {
 	 * com.jaxws.json.codec.doc.HttpMetadataProvider#doResponse(java.io.OutputStream
 	 * )
 	 */
-	public void doResponse(OutputStream ouStream) throws IOException {
+	public void doResponse(WSHTTPConnection ouStream) throws IOException {
 		process();
-		ouStream.write(configInfo.toString().getBytes());
-		ouStream.flush();
+		ouStream.getOutput().write(configInfo.toString().getBytes());
+		ouStream.getOutput().flush();
 	}
 }
