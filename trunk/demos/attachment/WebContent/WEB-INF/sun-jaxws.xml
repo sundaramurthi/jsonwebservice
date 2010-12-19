@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<endpoints version="2.0"
+	xmlns="http://java.sun.com/xml/ns/jax-ws/ri/runtime">
+
+	<endpoint name="ChartPortJSON"
+		implementation="com.googlecode.jsonwebservice.attachment.impl.ChartPortImpl"
+		binding="http://jsonplugin.googlecode.com/json/" url-pattern="/chart.json" />
+		
+	<endpoint name="ChartPortSOAP"
+		implementation="com.googlecode.jsonwebservice.attachment.impl.ChartPortImpl"
+		binding="http://schemas.xmlsoap.org/wsdl/soap/http" url-pattern="/chart.soap" />
+</endpoints>
