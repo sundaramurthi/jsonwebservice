@@ -52,6 +52,22 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		}
 		// Call http get operationn. 
 		adapter.invokeAsync(connection);
+		int i = 0;
+		while(!connection.isClosed()){
+			// Wait untill response complete
+			try {
+				Thread.sleep(200);// 0.1 milliseconds
+				
+			} catch (InterruptedException e) {
+				
+			}
+			if(i++ > 90000){
+				connection.close();
+				break;
+				//5 * 60 * 60 * 1000 / 200 maximum of 5 minitus to respond
+				
+			}
+		}
 		return true;
 	}
 }

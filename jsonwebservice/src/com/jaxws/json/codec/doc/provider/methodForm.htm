@@ -166,7 +166,7 @@ function parseValue(val, parent, level, propLabel){
       		return rtnStr;
       	} else{
       		var upload =  val == "text/xml";
-      		isAttachment = isAttachment || upload;
+      		isAttachment = isAttachment || upload || objectCount > 10; // If more then 10 object its always better to post
        		return "<span class='string'><input type='"+ (upload ? "file" : "text") +"' name='"+ propLabel +"' value='" + wordwrap(val.replace(/\n/g, "<br />")) + "'/></span>";
        	}
       }
@@ -176,8 +176,7 @@ function parseValue(val, parent, level, propLabel){
    }
 }
 
-function parse(str)
-{
+function parse(str) {
    elementCount = 0;
    arrayCount = 0;
    objectCount = 0;
@@ -222,7 +221,7 @@ function doParse2()
    else
    {
       var result = parse(escapeHTML(value), null);
-      if(result != null) $("output").innerHTML = "<form target='_blank' action='?#METHOD_NAME#' method='" + (isAttachment ? "POST' enctype='multipart/form-data' onsubmit='convertToJSON(this);return true;'><textarea name='JSON' style='display: none;'>{}</textarea>": "GET'>") + 
+      if(result != null) $("output").innerHTML = "<form target='_blank' action='#END_POINT_URL#' method='" + (isAttachment ? "POST' enctype='multipart/form-data' onsubmit='convertToJSON(this);submitAndReset(this);return false;'><textarea name='JSON' style='display: none;'>{}</textarea>": "GET'>") + 
             	 result +"<input type='submit' value='Submit'/></form>";
 
       $("stats").innerHTML = doStats();
@@ -366,9 +365,9 @@ function convertToJSON(form){
 		if(inputs[intCounter].type != 'file')
 			inputs[intCounter].disabled = true;
 		else if(name.indexOf(".") != -1)
-			inputs[intCounter].name =  name.substring(name.indexOf(".") + 1);
-				
-		setPropValue(name, inputs[intCounter].value, obj, inputs[intCounter].type, null);
+			inputs[intCounter].name =  name.substring(name.lastIndexOf(".") + 1);
+
+		setPropValue(name, (inputs[intCounter].type == 'checkbox'? inputs[intCounter].checked : inputs[intCounter].value), obj, inputs[intCounter].type, null);
 	}
 	inputs = form.getElementsByTagName("select"); 
 	for (var intCounter = 0; intCounter < inputs.length; intCounter++) {
@@ -391,19 +390,32 @@ function setPropValue(name,value, obj, type, propLabel){
          if((propLabel+'.'+prop) == name){
          		if(type == 'file'){
          			delete obj[prop];
-         		}	else if(type == 'checkbox'){
-         			obj[prop] = value == 'on';
-         		} else {
+         		}	else {
          			obj[prop] = value;
          		}
          		return true;
-         }else if(typeof(obj[prop]) == "object"){
+         }else if(type == 'file' && prop == name){// Problem with resubmiting same form name updated in convertToJSON method
+	         	delete obj[prop];
+	         	return true;
+         } else if(typeof(obj[prop]) == "object"){
          		if(setPropValue(name,value, obj[prop], type, (propLabel != null ? (propLabel+'.'+prop) : prop))) return true;
          }
       }
 		}
 	}
 }
+function submitAndReset(form){
+	form.submit();
+	var  inputs = form.getElementsByTagName("input"); 
+	for (var intCounter = 0; intCounter < inputs.length; intCounter++) {
+		inputs[intCounter].disabled = false;
+	}
+	inputs = form.getElementsByTagName("select"); 
+	for (var intCounter = 0; intCounter < inputs.length; intCounter++) {
+		inputs[intCounter].disabled = false;
+	}
+}
+
 window.onload = load;
 -->
 </script>

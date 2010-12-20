@@ -45,6 +45,8 @@ public class MethodFormServer implements HttpMetadataProvider {
 	 */
 	private JSONCodec codec = null;
 
+	private HttpAdapter httpAdapter;
+
 	/**
 	 * "config" query handled.
 	 */
@@ -75,7 +77,7 @@ public class MethodFormServer implements HttpMetadataProvider {
 	 * @see com.jaxws.json.codec.doc.HttpMetadataProvider#setHttpAdapter(com.sun.xml.ws.transport.http.HttpAdapter)
 	 */
 	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		// Not required for ServiceConfigurationServer
+		this.httpAdapter	= httpAdapter;
 	}
 	
 	/*
@@ -123,8 +125,10 @@ public class MethodFormServer implements HttpMetadataProvider {
 									.getSEIMethod()));
 					
 					contents.put(javaMethod.getRequestPayloadName().getLocalPart(), 
-							content.toString().replaceAll("#INPUT_JSON#", requestJSON)
-							.replaceAll("#METHOD_NAME#", javaMethod.getRequestPayloadName().getLocalPart()));
+							content.toString().replaceAll("#INPUT_JSON#", String.format("{\"%s\":%s}",operation.getName().getLocalPart(),
+									requestJSON))
+							.replaceAll("#METHOD_NAME#", javaMethod.getRequestPayloadName().getLocalPart())
+							.replaceAll("#END_POINT_URL#", "#BASEADDRESS#" + httpAdapter.getValidPath()));
 				}
 			}catch(Throwable th){}
 			operationDocuments.put(port.getBinding().getName(), contents);
@@ -144,7 +148,7 @@ public class MethodFormServer implements HttpMetadataProvider {
 		if(!oper.isEmpty())
 			ouStream.getOutput().write(
 					operationDocuments.get(this.codec.getEndpoint().getPort().getBinding().getName())
-					.get(oper).getBytes());
+					.get(oper).replaceAll("#BASEADDRESS#", ouStream.getBaseAddress()).getBytes());
 		else
 			ouStream.getOutput().write("add operation name in query string after 'form'. formxxxx E.g ?formgetChart".getBytes());
 		ouStream.getOutput().flush();
