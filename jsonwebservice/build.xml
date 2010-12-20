@@ -5,7 +5,7 @@
      jsonwebservice    
      JAX-WS JSON webservice
                    
-     Sundar                                                                
+     Sundaramurthi Saminathan                                                                
      ====================================================================== -->
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
@@ -13,7 +13,7 @@
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
-	<property name="archive" value="${basedir}/build"/>
+	<property name="archive" value="${basedir}"/>
 	
 	<property name="user.name" value="Sundaramurthi"/>
 
@@ -23,7 +23,6 @@
 		<pathelement location="${buildroot}/classes"/>
 	</path>
 
-	<taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport" classpathref="classpath"/>
 	
 	<description>
             JAX-WS JSON webservice
@@ -69,42 +68,9 @@
 				<!-- Information about the program itself -->
 				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
 				<attribute name="Implementation-Title" value="JSONWebservice"/>
-				<attribute name="Implementation-Version" value="0.2"/>
+				<attribute name="Implementation-Version" value="${version}"/>
 			</manifest>
 		</jar>
 	</target>
-	
-	<!-- ================================= 
-          target: wsimport              
-         ================================= -->
-    <target name="wsimport" description="create pojos">
-    	
-    	<wsimport wsdl="${basedir}/samples/album/WEB-INF/wsdl/picasa.wsdl"
-    					  destdir="${buildroot}/samples/album/WEB-INF/classes"
-    					  sourcedestdir="${basedir}/samples/album/WEB-INF/src"
-    					  keep="true"
-    					  extension="true"
-    					  verbose="true"
-    					  wsdllocation="http://picasa.com/wsdl">
-    	</wsimport>
-    </target>
-
-	<!-- ================================= 
-          target: war              
-         ================================= -->
-    <target name="war" depends="build" description="create test war file">
-    	
-    	<javac classpathref="classpath" srcdir="${basedir}/samples/album/WEB-INF/src"
-    				destdir="${buildroot}/samples/album/WEB-INF/classes" debug="off" source="1.5"/>
-    	
-        <war destfile="${archive}/album.war" webxml="${basedir}/samples/album/WEB-INF/web.xml">
-        	<fileset dir="${basedir}/samples/album" excludes="**/servlet-api.jar"/>
-        	<classes dir="${buildroot}/samples/album/WEB-INF/classes"/>
-        	<lib dir="${archive}" >
-        	    <include name="*-${version}.jar"/>
-        	</lib>
-        </war>
-    </target>
-
 
 </project>
