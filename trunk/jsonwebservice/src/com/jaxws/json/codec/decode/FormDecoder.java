@@ -2,8 +2,12 @@ package com.jaxws.json.codec.decode;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import javax.servlet.ServletRequest;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
@@ -12,6 +16,8 @@ import org.jvnet.mimepull.MIMEPart;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONContentType;
+import com.jaxws.json.codec.JSONFault;
+import com.jaxws.json.codec.MessageBodyBuilder;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.ContentDisposition;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.ParseException;
 import com.sun.xml.ws.api.message.Message;
@@ -151,9 +157,40 @@ public class FormDecoder {
 	 * @return
 	 */
 	private Message getFormData() {
-		throw new UnsupportedOperationException("http form post with urlencoded format not supported now.");
+		ServletRequest request = (ServletRequest) this.packet.get(MessageContext.SERVLET_REQUEST);
+		Map<String,Object> parameter = request.getParameterMap();
+		Map<String,Object> jsonMap	= new HashMap<String, Object>();
+		for(Entry<String, Object> paramEntry : parameter.entrySet()){
+			fillParameterMap(paramEntry.getKey(),request.getParameter(paramEntry.getKey()), jsonMap);
+		}
+		try {
+			if(jsonMap.size() == 1){
+				// Must be only one operation
+				packet.invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE, null);
+				Entry<String, Object> operation = jsonMap.entrySet().iterator().next();
+				this.packet.invocationProperties.put(JSONCodec.JSON_MAP_KEY, operation.getValue());
+				return new MessageBodyBuilder(this.codec).handleMessage(this.packet,operation.getKey());
+			}else{
+				throw new RuntimeException("More than one operation found");
+			}
+		} catch (Exception e) {
+			throw new JSONFault("Client","Failed to create message body."+e.getMessage(),"MessageBody Builder",null,e);
+		}	
+		
 	}
 	
+	private void fillParameterMap(String parameter,Object value,Map<String,Object> mapValue){
+		if(parameter.indexOf('.') > -1){
+			String key = parameter.substring(0, parameter.indexOf('.'));
+			// TODO IF key is idex like 0..x then its array
+			Map<String,Object> jsonMap	= mapValue.containsKey(key)? (Map<String,Object>)mapValue.get(key) : new HashMap<String, Object>();
+			if(!mapValue.containsKey(key))
+				mapValue.put(key, jsonMap);
+			fillParameterMap(parameter.substring(parameter.indexOf('.') + 1), value, jsonMap);
+		}else{
+			mapValue.put(parameter, value);
+		}
+	}
 }
 
 

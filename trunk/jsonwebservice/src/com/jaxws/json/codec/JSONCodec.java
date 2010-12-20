@@ -474,6 +474,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 */
 	public void decode(InputStream in, String sContentType, Packet packet)
 			throws IOException {
+		if(sContentType == null) sContentType = FormDecoder.FORM_URLENCODED;
 		// Add trace log if X-Debug or TRACE request.
 		DebugTrace 		traceLog		= (packet.supports(MessageContext.HTTP_REQUEST_HEADERS) && 
 		((Headers)packet.get(MessageContext.HTTP_REQUEST_HEADERS)).containsKey(XDEBUG_HEADER)) ? new DebugTrace() : null;

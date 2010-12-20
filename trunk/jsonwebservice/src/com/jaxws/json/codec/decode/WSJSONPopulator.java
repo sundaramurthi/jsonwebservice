@@ -435,9 +435,15 @@ public class WSJSONPopulator {
 								if(traceEnabled)
 									traceLog.warn("Non nillable object(\""+expectedJSONPropName +
 										"\") with nill value, populating default.");
-								Object ob = prop.getPropertyType().newInstance();
-								populateObject(ob, new HashMap<String, Object>(), writeMethodConfig);
-								writeMethod.invoke(object,ob);
+								try{
+									Object ob = prop.getPropertyType().newInstance();
+									populateObject(ob, new HashMap<String, Object>(), writeMethodConfig);
+									writeMethod.invoke(object,ob);
+								}catch(Throwable th){
+									if(traceEnabled)
+										traceLog.error("Non nillable object(\""+expectedJSONPropName +
+											"\") with nill value, failed to create instance.");
+								}
 							}else{
 								// TODO ??
 								if(traceEnabled)
@@ -845,7 +851,7 @@ public class WSJSONPopulator {
             } else if (Enum.class.isAssignableFrom(clazz)) {
                 return Enum.valueOf(clazz, sValue);
             }
-        }else if(clazz != null && !clazz.isAssignableFrom(value.getClass())){
+        } else if(clazz != null && !clazz.isPrimitive() /*Boolean reaches here*/ && !clazz.isAssignableFrom(value.getClass())){
         	// TODO log. Value not assignable from the value. The ignore value. TODO add trace log 
         	return null;
         }
