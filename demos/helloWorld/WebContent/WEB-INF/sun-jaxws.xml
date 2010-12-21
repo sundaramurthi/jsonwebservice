@@ -6,7 +6,9 @@
   		implementation="com.mycompany.HelloWorldImpl" 
   		url-pattern="/json/hello" 
   		binding="http://jsonplugin.googlecode.com/json/"/>
-  		
+  
+  <!-- OPTIONAL IF YOU ALSO LIKE TO USE SOAP  -->
+  			
   <endpoint name="HelloServiceSOAP"
 		implementation="com.mycompany.HelloWorldImpl"
 		binding="http://schemas.xmlsoap.org/wsdl/soap/http" url-pattern="/soap/hello" />
