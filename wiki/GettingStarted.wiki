@@ -1,20 +1,18 @@
-Getting started with jsonwebservice
+Getting started with JSON Web Service
 
 1) Overview
-    JSON webservice is focused towards developing pure web service with JSON as input and output format. 
+    JSON web service is focused towards developing web service with JSON as input and output format. Also existing web service can be used via JSON.
     
 2) Dependency
 	1) JAX-WS also called as metro (https://jax-ws.dev.java.net/)
-	2) Jsonplugin as part of google code. (http://code.google.com/p/jsonplugin/)
 
     Other default development tools (Ant java and tomcat)
     
 3) Installation
-	1) This webservice codec(plugin) can be installed by copying the jsonwebservice-ri-*.jar into your application's /WEB-INF/lib directory.
+	1) This JSON web service plug-in can be installed by copying the jsonwebservice-ri-*.jar into your application's /WEB-INF/lib directory.
 	2) JAX-WS/Metro installation,
-	    Download jax-ws from https://jax-ws.dev.java.net/ and copy all *.jars located from EXTRACT_ROOT/lib into your application's /WEB-INF/lib directory. (optionaly you can ignore *-tools*.jar)
-    3) Download jsonplugin from http://code.google.com/p/jsonplugin/downloads/list and copy jsonplugin-*.jar into  your application's /WEB-INF/lib directory.
-    
+	    Download jax-ws from https://jax-ws.dev.java.net/ and copy all *.jars located from EXTRACT_ROOT/lib into your application's /WEB-INF/lib directory. (optionaly you can ignore *-tools*.jar,*-extra*.jar)
+  
     Note : installation of Java 1.5 ant and tomcat refer in relevant sites.
     
 4) Creating hello world
@@ -23,39 +21,23 @@ Getting started with jsonwebservice
        {{{
        workspace
           |_helloWorld
+          		 |_src
+          		 |
                |_WebContent
-               |    |_WEB-INF
-               |         |_lib
-               |         |_web.xml
-               |         |_sun-jaxws.xml
-               |_src
-       }}}                  
-    2) Now follow up installation procedure described in previous step. Its simply copying jar files into your WEB-INF/lib folder.
+                    |_WEB-INF
+                    |    |_lib
+                    |    |_web.xml
+                    |    |_sun-jaxws.xml
+               			|_index.html
+       }}}         
+                
+    2) Now follow up installation procedure described in previous step 3. Its simply copying jar files into your WEB-INF/lib folder.
        In case of if your using metro, all jax-ws jars named as webservices-*.jar. 
        In case if your using Java webservice developer pack your jar name looks like jax-*.jar, saaj*.jar, etc
      
-       Another simple way to install jar is, just download album.war available as part of jsonwebservice download page, rename it as .zip, extract it and copy all jars located in WEB-INF/lib   
-     
        After installation procedure your file structure looks something like,
-        {{{
-         Workspace
-          |_helloWorld
-               |_WebContent
-               |    |_WEB-INF
-               |         |_lib
-               |	 |  |_activation-1.1.jar
-               |	 |  |_commons-logging-1.0.4.jar
-               |	 |  |_jsonplugin-0.2.jar
-               |	 |  |_jsonwebservice-ri-0.2.jar
-               |	 |  |_webservices-api.jar
-               |	 |  |_webservices-extra-api.jar
-               |	 |  |_webservices-extra.jar
-               |	 |  |_webservices-rt.jar
-               |	 |  |_xwork-2.0.4.jar
-               |         |_web.xml
-               |         |_sun-jaxws.xml
-               |_src
-          }}}     
+       [http://jsonwebservice.googlecode.com/svn/wiki/helloWorldStruct.jpg] 
+       
     3) web.xml update.
         Now open your helloWorld/WebContent/WEB-INF/web.xml and jax-ws specific following servlet entry.         
         {{{
@@ -78,6 +60,12 @@ Getting started with jsonwebservice
 				<servlet-name>JAX-WS-Service</servlet-name>
 				<url-pattern>/json/*</url-pattern>
 			</servlet-mapping>
+			
+			<!-- OPTIONAL IF YOU ALSO LIKE TO USE SOAP  -->
+			<servlet-mapping>
+				<servlet-name>JAX-WS-Service</servlet-name>
+				<url-pattern>/soap/*</url-pattern>
+			</servlet-mapping>
 		
 		</web-app>
 		}}}
@@ -92,77 +80,94 @@ Getting started with jsonwebservice
 		  		implementation="com.mycompany.HelloWorldImpl" 
 		  		url-pattern="/json/hello" 
 		  		binding="http://jsonplugin.googlecode.com/json/"/>
+		  
+		   <!-- OPTIONAL IF YOU ALSO LIKE TO USE SOAP  -->
+  			
+			  <endpoint name="HelloServiceSOAP"
+					implementation="com.mycompany.HelloWorldImpl"
+					binding="http://schemas.xmlsoap.org/wsdl/soap/http" url-pattern="/soap/hello" />		
 		</endpoints>
 		}}}
 	5) Creating HelloWorldImpl.
 	    Now create folders 	com/mycompany under src directory. And create HelloWorldImpl.java file.
 	    In HelloWorldImpl.java add your methods,
 	    {{{
+	    
 	    package com.mycompany;
 
-		import javax.jws.WebMethod;
-		import javax.jws.WebResult;
-		import javax.jws.WebService;
-		
-		
-		@WebService (name="HelloService", targetNamespace="http://album.jsonplugin.com/json/")
-		public class HelloWorldImpl {
-		
-			@WebMethod (operationName="sayHello")
-			public @WebResult(name="message") String sayHello(String name){
-				return "Hello "+name;
+			import javax.jws.WebMethod;
+			import javax.jws.WebParam;
+			import javax.jws.WebResult;
+			import javax.jws.WebService;
+			import javax.jws.soap.SOAPBinding;
+			
+			@SOAPBinding(style = SOAPBinding.Style.RPC)
+			@WebService (name="HelloService", targetNamespace="http://album.jsonplugin.com/json/")
+			public class HelloWorldImpl {
+			
+				@WebMethod (operationName = "sayHello")
+				public @WebResult(name="message") String sayHello(
+						@WebParam(name="name") String name){
+					return "Hello "+name;
+				}
 			}
-		}
+			
            }}}
+           
+           
+     NOTE: @SOAPBinding(style = SOAPBinding.Style.RPC) annotation is required, Document binding NOT tested with this JSON codec.
+                
 	6) Build
 	   To build war creates ant 	build.xml inside workspace/helloWorld folder.
 	   
 	   Following are the content of build.xml
 	  {{{ 
-	   <?xml version="1.0" encoding="UTF-8"?>
-		<!-- ====================================================================== 
-		     helloWorld    
-		     description
-		     ====================================================================== -->
-		<project name="helloWorld" default="war">
-		    <description>
-		            description
-		    </description>
+	   	<?xml version="1.0" encoding="UTF-8"?>
+			<!-- ====================================================================== 
+			     Dec 21, 2010                                                        
 			
-			<path id ="classpath">
-				<fileset dir="./WebContent/WEB-INF/lib" includes="*.jar"/>
-				<pathelement location="./classes"/>
-			</path>
-		
-		    <!-- ================================= 
-		          target: war              
-		         ================================= -->
-		    <target name="war" depends="build" description="description">
-		        
-		    </target>
-		
-		    <!-- - - - - - - - - - - - - - - - - - 
-		          target: build                      
-		         - - - - - - - - - - - - - - - - - -->
-		    <target name="build">
-		    	<mkdir dir="classes"/>
-		    	<javac classpathref="classpath" srcdir="./src"
-		    	    				destdir="./classes" debug="off" source="1.5"/>
-		    	 <war destfile="hello.war" webxml="./WebContent/WEB-INF/web.xml">
-		        	<fileset dir="./WebContent/"/>
-		        	<classes dir="./classes"/>
-		        </war>
-		    </target>
-		
-		</project>
+			     helloWorld    
+			     demo
+			     ====================================================================== -->
+			<project name="helloWorld" default="war">
+			  
+				<path id ="classpath">
+					<fileset dir="./WebContent/WEB-INF/lib" includes="*.jar"/>
+					<pathelement location="./classes"/>
+				</path>
+			
+			    <!-- ================================= 
+			          target: war              
+			         ================================= -->
+			    <target name="war" depends="build" description="description">
+			    	<war destfile="${ant.project.name}.war" webxml="./WebContent/WEB-INF/web.xml">
+			      	<fileset dir="./WebContent/"/>
+			      	<classes dir="./classes"/>
+			      </war>
+			    </target>
+			
+			    <!-- ================================= 
+			          target: build                      
+			         =================================  -->
+			    <target name="build">
+			    	<mkdir dir="classes"/>
+			    	<javac classpathref="classpath" srcdir="./src"
+			    	    				destdir="./classes" debug="off" source="1.5"/>
+			    </target>
+			
+			</project>
 	 }}}
 	 7) Run the ant build.xml .
 
-	 8) Now you can see the hello.war inside   workspace/helloWorld.
+	 8) Now you can see the helloWorld.war inside   workspace/helloWorld.
 
 	 9) Now copy the way file into tomcat webapps folder or use tomcat manager console to deploy it.
-     10) After successfull deployment look at automated document for json endpoint "http://localhost:8080/hello/json/hello"
-     11) Once you’re got doc/test page you’re done!!! Just copy sample input, fill data in it, and place it in endpoint post data…
+   10) After success full deployment look at automated document for json endpoint "http://localhost:8080/helloWorld/json/hello" or look at index page.
+   [http://jsonwebservice.googlecode.com/svn/wiki/helloHome.jpg]
+   [http://jsonwebservice.googlecode.com/svn/wiki/endPoint.jpg]
+   [http://jsonwebservice.googlecode.com/svn/wiki/methodForm.jpg]
+   
+   11) Once you got doc/test page you're done!!!
                 
                
                
