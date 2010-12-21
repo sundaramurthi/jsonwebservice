@@ -65,7 +65,8 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	 */
 	public boolean canHandle(String queryString) {
 		requestPayloadEnabled	= !(queryString != null && queryString.equals(queries[1]));
-		return queryString == null || queryString.equals(queries[0]) || queryString.equals(queries[1]);
+		return queryString == null || queryString.equals(queries[0]) || queryString.equals(queries[1])
+		|| queryString.equalsIgnoreCase("wsdl");
 	}
 
 	/** 

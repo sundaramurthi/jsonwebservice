@@ -82,7 +82,7 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 	 * @see HttpMetadataProvider.getContentType
 	 */
 	public String getContentType() {
-		return "application/json; charset=\"utf-8\"";
+		return "text/javascript; charset=\"utf-8\"";
 	}
 
 	public void process() {
@@ -121,6 +121,7 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				portJSONMap.put("address", endPoint.getPort().getAddress().toString());
 			}
 		}
 		/*clientCode.append(convertStreamToString(getClass().getResourceAsStream("client.js")));
