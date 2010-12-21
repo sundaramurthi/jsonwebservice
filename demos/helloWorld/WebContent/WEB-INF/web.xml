@@ -17,5 +17,10 @@
 		<servlet-name>JAX-WS-Service</servlet-name>
 		<url-pattern>/json/*</url-pattern>
 	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>JAX-WS-Service</servlet-name>
+		<url-pattern>/soap/*</url-pattern>
+	</servlet-mapping>
 
 </web-app>

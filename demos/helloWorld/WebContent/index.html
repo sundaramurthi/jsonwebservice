@@ -1,0 +1,38 @@
+<html>
+	<head>
+		<title>JSONWEBSERVICE HELLO WORLD</title>
+		<script type="text/javascript" src="prototype-1.6.0.3.js"></script>
+		<script type="text/javascript">
+		function submit(){
+			new Ajax.Request('http://localhost:8080/helloWorld/json/hello', {
+			  method: 'post',
+			  contentType: 'application/json',
+			  postBody: '{"sayHello":{"name":"'+$('name').value+'"}}',
+			  onSuccess: function(transport) {
+			     $('response').update(transport.responseText).setStyle({ background: '#FFFFAA' });
+			     $('notice').update(transport.responseText.evalJSON().message).setStyle({ background: '#dfd' });
+			  }
+			});
+		}
+		</script>
+	</head>
+	<body style="text-align: center">
+			<br/><br/><br/><br/><br/>
+			<label for="name">Name</label>
+			<input type="text" name="name" id="name">
+			<input type="button" onclick="submit();" value="Invoke"><br/><br/>
+			<div id="notice"></div><br/>
+			<div id="response"></div><br/><br/><br/><br/><br/><br/>
+			<table>
+				<tr>
+					<td><a href="http://localhost:8080/helloWorld/json/hello">JSON Endpoint</a></td>
+				</tr>
+				<tr>
+					<td><a href="http://localhost:8080/helloWorld/json/hello?formsayHello">Hello world test form</a></td>
+				</tr>
+				<tr>
+					<td><a href="http://localhost:8080/helloWorld/soap/hello">SOAP Endpoint</a></td>
+				</tr>
+			</table>
+	</body>
+</html>
