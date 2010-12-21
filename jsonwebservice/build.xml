@@ -9,7 +9,7 @@
      ====================================================================== -->
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
-	<property name="version" value="0.4"/>
+	<property name="version" value="0.4a"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
@@ -39,7 +39,7 @@
           target: clean                      
          - - - - - - - - - - - - - - - - - -->
 	<target name="clean">
-		<delete dir="${buildroot}">
+		<delete dir="${buildroot}" failonerror="on">
 		</delete>
 	</target>
 
