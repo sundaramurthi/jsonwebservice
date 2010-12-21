@@ -4,7 +4,7 @@
 		<script type="text/javascript" src="prototype-1.6.0.3.js"></script>
 		<script type="text/javascript">
 		function submit(){
-			new Ajax.Request('http://localhost:8080/helloWorld/json/hello', {
+			new Ajax.Request('/helloWorld/json/hello', {
 			  method: 'post',
 			  contentType: 'application/json',
 			  postBody: '{"sayHello":{"name":"'+$('name').value+'"}}',
@@ -25,13 +25,13 @@
 			<div id="response"></div><br/><br/><br/><br/><br/><br/>
 			<table>
 				<tr>
-					<td><a href="http://localhost:8080/helloWorld/json/hello">JSON Endpoint</a></td>
+					<td><a href="/helloWorld/json/hello">JSON Endpoint</a></td>
 				</tr>
 				<tr>
-					<td><a href="http://localhost:8080/helloWorld/json/hello?formsayHello">Hello world test form</a></td>
+					<td><a href="/helloWorld/json/hello?formsayHello">Hello world test form</a></td>
 				</tr>
 				<tr>
-					<td><a href="http://localhost:8080/helloWorld/soap/hello">SOAP Endpoint</a></td>
+					<td><a href="/helloWorld/soap/hello">SOAP Endpoint</a></td>
 				</tr>
 			</table>
 	</body>
