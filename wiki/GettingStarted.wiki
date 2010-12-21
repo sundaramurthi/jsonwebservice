@@ -1,7 +1,7 @@
 Getting started with JSON Web Service
 
 1) Overview
-    JSON web service is focused towards developing web service with JSON as input and output format. Also existing web service can be used via JSON.
+    JSON web service is focused towards developing web service with JSON as input and output format. Also existing web service can be accessed using JSON.
     
 2) Dependency
 	1) JAX-WS also called as metro (https://jax-ws.dev.java.net/)
@@ -157,7 +157,7 @@ Getting started with JSON Web Service
 			
 			</project>
 	 }}}
-	 7) Run the ant build.xml .
+	 7) Run the ant build.xml . You may down load pre build war from here http://jsonwebservice.googlecode.com/svn/trunk/demos/helloWorld/helloWorld.war
 
 	 8) Now you can see the helloWorld.war inside   workspace/helloWorld.
 
