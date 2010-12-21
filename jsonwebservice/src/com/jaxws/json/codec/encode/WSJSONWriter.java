@@ -736,6 +736,23 @@ public class WSJSONWriter {
 	 	                    					break;
 	 	                    				}
 	 	                    			}
+	 	                    		} else {
+	 	                    			// If choice element id empty, don't print it at all
+	 	                    			if(!this.metaDataMode){
+	 	                    				continue nextProperty;
+	 	                    			} else {
+	 	                    				name	= "CHOICE";
+	 	                    				Map<String,Object> choices 		= new HashMap<String, Object>(); 
+	 	                    				for(XmlElement elm : xmlElms.value()){
+	 	                    					try{
+	 	                    						choices.put(elm.name(), getMetaDataInstance(elm.type(),null,null));
+	 	                    					}catch(Throwable th){
+	 	                    						// 
+	 	                    						choices.put(elm.name(),"object");
+	 	                    					}
+	 	                    				}
+	 	                    				value = choices;
+	 	                    			}
 	 	                    		}
 	 	                    	}else if(declaredField.isAnnotationPresent(XmlElement.class)){
 	 	                    		/*

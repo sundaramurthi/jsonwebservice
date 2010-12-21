@@ -371,8 +371,7 @@ public class WSJSONPopulator {
 		    } else {
 		    	 // JOSN input DON'T contains specified property. May come from customized json name or XMLElement definition.
 	    		java.lang.reflect.Field f = getDeclaredField(clazz,prop.getName());
-	    		// If there is no write method its hard to set. In latter version may attempt to use privalged private setting.
-	    		if(f != null && writeMethod != null){
+	    		if(f != null){
 					if(f.isAnnotationPresent(XmlElements.class)){
 						// Handle XSD choice element. 
 						XmlElements 	ann 		= f.getAnnotation(XmlElements.class);
@@ -416,7 +415,7 @@ public class WSJSONPopulator {
 								}
 							}
 						}
-					} else if(f.isAnnotationPresent(XmlMimeType.class)){
+					} else if(f.isAnnotationPresent(XmlMimeType.class) && writeMethod != null){
 						// Process Attachments
 						XmlMimeType 	ann 		= f.getAnnotation(XmlMimeType.class);
 						writeMethod.invoke(object, new Object[]{handleMimeAttachement(f.getType(),ann,expectedJSONPropName)});
