@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jws.WebParam;
+import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.namespace.QName;
 import javax.xml.ws.handler.MessageContext;
 
@@ -64,6 +65,7 @@ public class MessageBodyBuilder {
 		boolean OUT_BOUND = packet.invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY) != null && 
 							(Boolean)packet.invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 		SEIModel seiModel = this.codec.getSEIModel(packet);
+		Style style = seiModel.getPort().getBinding().getStyle();
 		if(!OUT_BOUND){
 			// Request message
 			JavaMethod requestMethod = seiModel.getJavaMethod(new QName(seiModel.getTargetNamespace(),payloadName));
@@ -116,13 +118,24 @@ public class MessageBodyBuilder {
 					List<ParameterImpl> childParameters = ((WrapperParameter)parameter).getWrapperChildren();
 					if(parameterObjects.size() != childParameters.size())
 						throw new RuntimeException("Invalid count of parameters");
-					CompositeStructure cs = new CompositeStructure();
-					cs.values	= parameterObjects.toArray();
-					cs.bridges	= new Bridge[childParameters.size()];
-					for(ParameterImpl parameterChild : childParameters){
-						cs.bridges[parameterChild.getIndex()] = parameterChild.getBridge();
+					Object	obj	= null;
+					if(style == Style.RPC){
+						CompositeStructure cs = new CompositeStructure();
+						cs.values	= parameterObjects.toArray();
+						cs.bridges	= new Bridge[childParameters.size()];
+						for(ParameterImpl parameterChild : childParameters){
+							cs.bridges[parameterChild.getIndex()] = parameterChild.getBridge();
+						}
+						obj	= cs;
+					}else{
+						Class<?> type = (Class<?>)parameter.getBridge().getTypeReference().type;
+						obj	 = type.newInstance();
+						for(ParameterImpl parameterChild : childParameters){
+							type.getField(parameterChild.getPartName()).set(obj,
+									parameterObjects.toArray()[parameterChild.getIndex()]);
+						}
 					}
-					return JAXBMessage.create(parameter.getBridge(), cs, this.codec.soapVersion);
+					return JAXBMessage.create(parameter.getBridge(), obj, this.codec.soapVersion);
 				}else{
 					// BARE
 					assert(parameterObjects.size() == 1);
@@ -142,15 +155,23 @@ public class MessageBodyBuilder {
 				throw new RuntimeException("Message is not JAXBMessage. JSONCodec at now only handle JAXB messages in response.");
 			}
 			Map<String,Object> responseParameters = new HashMap<String, Object>();
-			com.sun.xml.bind.api.CompositeStructure responseWraper = (com.sun.xml.bind.api.CompositeStructure)jaxbObjectAccessor.get(message);
-			if(responseWraper != null && responseWraper.bridges.length == 1){
-				responseParameters.put(responseWraper.bridges[0].getTypeReference().tagName.getLocalPart(),
-						responseWraper.values[0]);
+			if(style == Style.RPC ){
+				com.sun.xml.bind.api.CompositeStructure responseWraper = (com.sun.xml.bind.api.CompositeStructure)jaxbObjectAccessor.get(message);
+				if(responseWraper != null && responseWraper.bridges.length == 1){
+					responseParameters.put(responseWraper.bridges[0].getTypeReference().tagName.getLocalPart(),
+							responseWraper.values[0]);
+				}else{
+					//One way.
+					//responseParameters.put("ONE_WAY","o");
+				}
 			}else{
-				//One way.
-				//responseParameters.put("ONE_WAY","o");
+				// Docunemnt
+				Object object = jaxbObjectAccessor.get(message);
+				for(Field field : object.getClass().getFields()){
+					responseParameters.put(field.getName(), field.get(object));
+				}
 			}
-			packet.invocationProperties.put(JSONCodec.JSON_MAP_KEY,responseParameters);
+			packet.invocationProperties.put(JSONCodec.JSON_MAP_KEY, responseParameters);
 			return message;
 		}
 	}
