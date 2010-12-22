@@ -43,6 +43,7 @@ import org.jvnet.mimepull.MIMEPart;
 import com.jaxws.json.codec.DateFormat;
 import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.PublicFieldPropertyDescriptor;
 import com.jaxws.json.feature.JSONWebService;
 import com.jaxws.json.serializer.JSONObjectCustomizer;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.ContentDisposition;
@@ -294,10 +295,13 @@ public class WSJSONPopulator {
 		Class 					clazz 	= object.getClass();
 		BeanInfo 				info 	= Introspector.getBeanInfo(clazz);
 		PropertyDescriptor[] 	props 	= info.getPropertyDescriptors();
+		 if(props.length == 0){
+         	// There is no property descriptor, then use public fields, RPC document require this
+         	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(),clazz);
+         }
 
 		//iterate over class fields
-		for (int i = 0; i < props.length; ++i) {
-			PropertyDescriptor 	prop 				= props[i];
+		for (PropertyDescriptor prop : props) {
 			Method 				writeMethod 		= prop.getWriteMethod();
 		    JSONWebService 		writeMethodConfig 	= writeMethod != null ? writeMethod.getAnnotation(JSONWebService.class) : null;
 		    String 				expectedJSONPropName= (writeMethodConfig != null && !writeMethodConfig.name().isEmpty()) ? writeMethodConfig.name() : prop.getName();
@@ -321,6 +325,9 @@ public class WSJSONPopulator {
 		                	try{
 		                		writeMethod.invoke(object, new Object[]{convertedValue});
 		                	}catch(Throwable exp){
+		                		if(prop instanceof PublicFieldPropertyDescriptor){
+		                    		 value = ((PublicFieldPropertyDescriptor)prop).getValue(object);
+		                    	 }
 		                		if(traceEnabled){
 		                			traceLog.warn(String.format("Exception while writing property \"%s\". Input %s. Expected type %s",
 		                					expectedJSONPropName, value, prop.getPropertyType().getSimpleName()));

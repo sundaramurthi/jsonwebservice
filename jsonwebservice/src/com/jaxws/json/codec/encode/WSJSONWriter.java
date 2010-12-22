@@ -40,6 +40,7 @@ import javax.xml.bind.annotation.XmlType;
 import com.jaxws.json.codec.DateFormat;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONFault;
+import com.jaxws.json.codec.PublicFieldPropertyDescriptor;
 import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.feature.JSONObject;
 import com.jaxws.json.feature.JSONWebService;
@@ -590,10 +591,13 @@ public class WSJSONWriter {
         	BeanInfo info = (clazz.isAnnotationPresent(JSONObject.class) && 
         			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) ? Introspector
                     .getBeanInfo(clazz, clazz.getSuperclass()) : Introspector
-                    .getBeanInfo(clazz);
+                    .getBeanInfo(clazz,Object.class);
 
             PropertyDescriptor[] props = info.getPropertyDescriptors();
-
+            if(props.length == 0){
+            	// There is no property descriptor, then use public fields, RPC document require this
+            	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(),clazz);
+            }
             boolean hasData = false;
             
             /*
@@ -646,7 +650,12 @@ public class WSJSONWriter {
                      Object value = null;
                      try{
                     	 value	= accessor.invoke(object, new Object[0]);
-                     }catch(Throwable th){/*TODO trace*/}
+                     }catch(Throwable th){
+                    	 if(property instanceof PublicFieldPropertyDescriptor){
+                    		 value = ((PublicFieldPropertyDescriptor)property).getValue(object);
+                    	 }
+                    	 /*TODO trace*/
+                     }
                     /*
                    	 *  Step 5.10.2.4.1: Read property value from object. If value null and exclude is true continue next property.
                    	 */

@@ -5,19 +5,18 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Map.Entry;
+
+import javax.jws.soap.SOAPBinding.Style;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
-import com.jaxws.json.codec.encode.WSJSONWriter;
 import com.sun.xml.bind.v2.model.nav.ReflectionNavigator;
 import com.sun.xml.bind.v2.runtime.IllegalAnnotationsException;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
-import com.sun.xml.ws.api.model.wsdl.WSDLPart;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -97,7 +96,7 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 		if(!endPointDocuments.containsKey(this.codec.getEndpoint().getPortName())){
 			WSEndpoint<?> 		endPoint 	= codec.getEndpoint();
 			JAXBContextImpl 	context 	= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
-			
+			Style 				style 		= endPoint.getSEIModel().getPort().getBinding().getStyle();
 			Properties  		templates 	= new Properties();
 			try {
 				templates.load(JSONHttpMetadataPublisher.class.getResourceAsStream("codec.properties"));
@@ -145,19 +144,19 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 							.getBinding().get(
 									javaMethod.getRequestPayloadName());
 					
-					String requestJSON = getJSONAsString(operation.getInParts(), navigator
+					String requestJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getInParts(), navigator
 							.getMethodParameters(javaMethod
-									.getSEIMethod()));
+									.getSEIMethod()), style, context,this.codec);
 					
 					methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#",
 							requestPayloadEnabled ? 
 									String.format("{\"%s\":%s}", javaMethod.getRequestPayloadName().getLocalPart(),requestJSON) :
 										requestJSON);
 					
-					String responeJSON = getJSONAsString(operation.getOutParts(),
+					String responeJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getOutParts(),
 							new Type[] { navigator
 									.getReturnType(javaMethod
-											.getSEIMethod()) }).replaceAll("$", "");
+											.getSEIMethod())}, style, context, this.codec).replaceAll("$", "");
 					
 					methodTemplate = methodTemplate.replaceAll("#OUTPUT_JSON#",
 							javaMethod.getMEP().isOneWay() ? "ONE-WAY" :
@@ -194,28 +193,5 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 		}
 	}
 	
-	/**
-	 * Private utility to conver parameter list to JSON DOC
-	 * @param parameters
-	 * @return
-	 */
-	private String getJSONAsString(Map<String,WSDLPart> parts , Type[] types){
-		try{
-			HashMap<String,Object> parameterMap = new HashMap<String, Object>();
-			for(Entry<String, WSDLPart> part : parts.entrySet()){
-				Class<?> clazz = ((Class<?>)types[part.getValue().getIndex()]);
-				if(clazz.isPrimitive()){
-					parameterMap.put(part.getKey(), clazz.getSimpleName());
-				} else if(clazz.isEnum()){
-					parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
-				}else{
-					parameterMap.put(part.getKey(), clazz.newInstance());
-				}
-			}
-			return WSJSONWriter.writeMetadata(parameterMap, codec.getCustomSerializer());
-		}catch(Throwable e){
-			// IGNORE
-			return "{\"ERROR_IN_DOC\":\""+ e.getMessage() +"\"}";
-		}
-	}
+	
 }

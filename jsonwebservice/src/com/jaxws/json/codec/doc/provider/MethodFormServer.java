@@ -3,22 +3,20 @@ package com.jaxws.json.codec.doc.provider;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
+import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.namespace.QName;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
-import com.jaxws.json.codec.encode.WSJSONWriter;
+import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.sun.xml.bind.v2.model.nav.ReflectionNavigator;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
-import com.sun.xml.ws.api.model.wsdl.WSDLPart;
 import com.sun.xml.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
@@ -94,7 +92,8 @@ public class MethodFormServer implements HttpMetadataProvider {
 	 */
 	public void process() {
 		WSEndpoint<?> 		endPoint 		= this.codec.getEndpoint();
-		JAXBContextImpl 	context 	= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
+		JAXBContextImpl 	context 		= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
+		Style 				style 			= endPoint.getSEIModel().getPort().getBinding().getStyle();
 		
 		WSDLPort port = endPoint.getPort();
 		if (!operationDocuments.containsKey(port.getBinding().getName())) {
@@ -120,9 +119,9 @@ public class MethodFormServer implements HttpMetadataProvider {
 					.getBinding().get(
 							javaMethod.getRequestPayloadName());
 					
-					String requestJSON = getJSONAsString(operation.getInParts(), navigator
+					String requestJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getInParts(), navigator
 							.getMethodParameters(javaMethod
-									.getSEIMethod()));
+									.getSEIMethod()),style, context, this.codec );
 					
 					contents.put(javaMethod.getRequestPayloadName().getLocalPart(), 
 							content.toString().replaceAll("#INPUT_JSON#", String.format("{\"%s\":%s}",operation.getName().getLocalPart(),
@@ -152,30 +151,5 @@ public class MethodFormServer implements HttpMetadataProvider {
 		else
 			ouStream.getOutput().write("add operation name in query string after 'form'. formxxxx E.g ?formgetChart".getBytes());
 		ouStream.getOutput().flush();
-	}
-	
-	/**
-	 * Private utility to conver parameter list to JSON DOC
-	 * @param parameters
-	 * @return
-	 */
-	private String getJSONAsString(Map<String,WSDLPart> parts , Type[] types){
-		try{
-			HashMap<String,Object> parameterMap = new HashMap<String, Object>();
-			for(Entry<String, WSDLPart> part : parts.entrySet()){
-				Class<?> clazz = ((Class<?>)types[part.getValue().getIndex()]);
-				if(clazz.isPrimitive()){
-					parameterMap.put(part.getKey(), clazz.getSimpleName());
-				} else if(clazz.isEnum()){
-					parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
-				}else{
-					parameterMap.put(part.getKey(), clazz.newInstance());
-				}
-			}
-			return WSJSONWriter.writeMetadata(parameterMap, codec.getCustomSerializer());
-		}catch(Throwable e){
-			// IGNORE
-			return "{\"ERROR_IN_DOC\":\""+ e.getMessage() +"\"}";
-		}
 	}
 }
