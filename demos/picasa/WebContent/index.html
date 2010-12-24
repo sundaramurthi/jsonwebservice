@@ -19,6 +19,7 @@
 		 var SERVICES = {};
 		    new Ajax.Request('/album/json/picasa?model', {
 		      method:'get',
+		      contentType: 'unknown',
 		      onSuccess: function(transport){
 		         SERVICES = transport.responseText.evalJSON();
 		         if(console){

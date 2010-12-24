@@ -123,7 +123,7 @@
 		
 		<operation name="listPhotosByAlbumObject">
 			<input name="listPhotosByAlbumObjectInput" message="tns:listPhotosByAlbumObjectInput" />
-			<output name="listPhotosOutput" message="tns:listPhotosOutput" />
+			<output name="listPhotosByAlbumOutput" message="tns:listPhotosOutput" />
 		</operation>
 		
 		<operation name="getPhotoById">
