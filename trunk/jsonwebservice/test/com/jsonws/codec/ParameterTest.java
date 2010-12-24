@@ -68,8 +68,8 @@ public class ParameterTest extends JSONCodecTest {
 		System.out.println("IN: " + getUiElements);
 		String response 		= postOnEndPoint(getUiElements);
 		System.out.println("OUT: " + response);
-		String expectedRespone 	= "{\"response\":{\"entry\":[{\"id\":\"1\",\"link\":[],\"title\":\"title\"},{\"link\":[],\"summary\":\"xxxx\"}]},\"statusFlag\":true}";
-		assertEquals(response, expectedRespone);
+		String expectedRespone 	= "{\"response\":{\"entry\":[{\"group\":{\"content\":{},\"thumbnail\":[]},\"id\":\"1\",\"link\":[],\"title\":\"title\"},{\"link\":[],\"summary\":\"xxxx\"}]},\"statusFlag\":true}";
+		assertEquals(expectedRespone,response);
 	}
 	
 	

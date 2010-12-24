@@ -3,7 +3,7 @@
     <wb-module deploy-name="picasa">
         <wb-resource deploy-path="/" source-path="/WebContent"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <property name="context-root" value="picasa"/>
         <property name="java-output-path" value="/picasa/build/classes"/>
+        <property name="context-root" value="album"/>
     </wb-module>
 </project-modules>
