@@ -1,20 +1,14 @@
 package com.jaxws.json.codec.doc.provider;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.jws.soap.SOAPBinding.Style;
-
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
-import com.sun.xml.bind.v2.model.nav.ReflectionNavigator;
-import com.sun.xml.bind.v2.runtime.IllegalAnnotationsException;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.server.WSEndpoint;
@@ -96,7 +90,6 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 		if(!endPointDocuments.containsKey(this.codec.getEndpoint().getPortName())){
 			WSEndpoint<?> 		endPoint 	= codec.getEndpoint();
 			JAXBContextImpl 	context 	= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
-			Style 				style 		= endPoint.getSEIModel().getPort().getBinding().getStyle();
 			Properties  		templates 	= new Properties();
 			try {
 				templates.load(JSONHttpMetadataPublisher.class.getResourceAsStream("codec.properties"));
@@ -129,48 +122,31 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	        StringBuffer 	methods = new StringBuffer();
         
 	        int count = 0;
-	        ReflectionNavigator navigator = null;
-			try {
-				navigator = context.getTypeInfoSet().getNavigator();
-				SEIModel seiModel = endPoint.getSEIModel();
-				for (JavaMethod javaMethod : seiModel.getJavaMethods()) {
-					String methodTemplate = templates.getProperty(
-							"template.default.method", "");
-					methodTemplate = methodTemplate.replaceAll("#METHOD_NAME#",
-							javaMethod.getOperationName());
-					methodTemplate = methodTemplate.replaceAll("#TR_CLASS#",
-							(count % 2) == 1 ? "odd" : "even");
-					WSDLBoundOperation operation = seiModel.getPort()
-							.getBinding().get(
-									javaMethod.getRequestPayloadName());
-					
-					String requestJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getInParts(), navigator
-							.getMethodParameters(javaMethod
-									.getSEIMethod()), style, context,this.codec);
-					
-					methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#",
-							requestPayloadEnabled ? 
-									String.format("{\"%s\":%s}", javaMethod.getRequestPayloadName().getLocalPart(),requestJSON) :
-										requestJSON);
-					
-					String responeJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getOutParts(),
-							new Type[] { navigator
-									.getReturnType(javaMethod
-											.getSEIMethod())}, style, context, this.codec).replaceAll("$", "");
-					
-					methodTemplate = methodTemplate.replaceAll("#OUTPUT_JSON#",
-							javaMethod.getMEP().isOneWay() ? "ONE-WAY" :
-							JSONCodec.responsePayloadEnabled ? 
-								String.format("{\"%s\":%s}", javaMethod.getResponsePayloadName().getLocalPart() ,responeJSON)
-								: responeJSON);
+			SEIModel seiModel = endPoint.getSEIModel();
+			for (WSDLBoundOperation operation : seiModel.getPort().getBinding().getBindingOperations()) {
+				String methodTemplate = templates.getProperty(
+						"template.default.method", "");
+				methodTemplate = methodTemplate.replaceAll("#METHOD_NAME#",
+						operation.getName().getLocalPart());
+				methodTemplate = methodTemplate.replaceAll("#TR_CLASS#",
+						(count % 2) == 1 ? "odd" : "even");
+				String requestJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getInParts(), context, this.codec);
+				
+				methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#",
+						requestPayloadEnabled ? 
+								String.format("{\"%s\":%s}", operation.getOperation().getInput().getName(),requestJSON) :
+									requestJSON);
+				
+				String responeJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getOutParts(), context, this.codec).replaceAll("$", "");
+				
+				methodTemplate = methodTemplate.replaceAll("#OUTPUT_JSON#",operation.getOperation().isOneWay() ? "ONE-WAY" :
+						JSONCodec.responsePayloadEnabled ? 
+							String.format("{\"%s\":%s}", operation.getOperation().getOutput().getName() ,responeJSON)
+							: responeJSON);
 
-					methods.append(methodTemplate);
-					count++;
-				}
-			} catch (IllegalAnnotationsException e) {
-				e.printStackTrace();
+				methods.append(methodTemplate);
+				count++;
 			}
-	      
 			endPointDocuments.put(this.codec.getEndpoint().getPortName().getLocalPart() + requestPayloadEnabled
 					+ JSONCodec.responsePayloadEnabled,
 					templateMain.replace("#METHODS#", methods.toString()));

@@ -1,15 +1,13 @@
 package com.jaxws.json.codec.doc;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.jws.soap.SOAPBinding.Style;
-
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.codec.encode.WSJSONWriter;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -85,15 +83,10 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	 * @param parameters
 	 * @return
 	 */
-	public static String getJSONAsString(Map<String,WSDLPart> parts , Type[] types, Style style, JAXBContextImpl context,JSONCodec codec){
+	public static String getJSONAsString(Map<String,WSDLPart> parts , JAXBContextImpl context,JSONCodec codec){
 		try{
-			if(style == Style.RPC){
-				return WSJSONWriter.writeMetadata(getJSONAsMap(parts, types), codec.getCustomSerializer());
-			} else {//Style.DOCUMENT
-				assert parts.size() == 1; //TODO test one way
-				Class<?> type = context.getGlobalType(parts.values().iterator().next().getDescriptor().name()).jaxbType;
-				return WSJSONWriter.writeMetadata(type.newInstance(), codec.getCustomSerializer());
-			}
+			// RPC and DOCUMENT
+			return WSJSONWriter.writeMetadata(getJSONAsMap(parts, context), codec.getCustomSerializer());
 		}catch(Throwable e){
 			// IGNORE
 			return "{\"ERROR_IN_DOC\":\""+ e.getMessage() +"\"}";
@@ -105,12 +98,12 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	 * @param parameters
 	 * @return
 	 */
-	public static HashMap<String,Object> getJSONAsMap(Map<String,WSDLPart> parts , Type[] types){
+	public static HashMap<String,Object> getJSONAsMap(Map<String,WSDLPart> parts, JAXBContextImpl context){
 		HashMap<String,Object> parameterMap = new HashMap<String, Object>();
 		try{
 			for(Entry<String, WSDLPart> part : parts.entrySet()){
-				Class<?> clazz = ((Class<?>)types[part.getValue().getIndex()]);
-				if(clazz.isPrimitive()){
+				Class<?> clazz = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
+				if(WSJSONPopulator.isJSONPrimitive(clazz)){
 					parameterMap.put(part.getKey(), clazz.getSimpleName());
 				} else if(clazz.isEnum()){
 					parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
