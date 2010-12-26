@@ -150,7 +150,7 @@ public class WSJSONPopulator {
 	 * @throws IntrospectionException
 	 */
 	@SuppressWarnings("unchecked")
-	public Object convert(Class clazz, Type type, Object value, JSONWebService customizeInfo, Method method) throws IllegalArgumentException, 
+	public Object convert(Class<?> clazz, Type type, Object value, JSONWebService customizeInfo, Method method) throws IllegalArgumentException, 
 					IllegalAccessException, 
 					InvocationTargetException, InstantiationException, 
 					NoSuchMethodException, IntrospectionException {
@@ -172,7 +172,7 @@ public class WSJSONPopulator {
         else if (value instanceof Map) {
         	// Case 6: Object inside object conversion
             Object convertedValue = clazz.newInstance();
-            this.populateObject(convertedValue, (Map) value, customizeInfo);
+            this.populateObject(convertedValue, (Map<String,Object>) value, customizeInfo);
             return convertedValue;
         } else if(clazz.equals(JAXBElement.class)){
 			// Case 7: is it JAXBElement bound with object?
@@ -229,8 +229,7 @@ public class WSJSONPopulator {
 	 * @throws JSONException
 	 * @throws InstantiationException
 	 */
-	@SuppressWarnings("unchecked")
-    public void populateObject(Object object, Map elements, JSONWebService customizeInfo, List<MIMEPart> attachments)
+    public void populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo, List<MIMEPart> attachments)
         throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
         IntrospectionException, IllegalArgumentException,
         InstantiationException {
@@ -250,8 +249,8 @@ public class WSJSONPopulator {
 	 * @throws JSONException
 	 * @throws InstantiationException
 	 */
-	@SuppressWarnings("unchecked")
-    private void populateObject(Object object, Map elements, JSONWebService customizeInfo)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	private void populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo)
         throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
         IntrospectionException, IllegalArgumentException,
         InstantiationException {
@@ -292,7 +291,7 @@ public class WSJSONPopulator {
         } FIXME*/
 		// demap
 		
-		Class 					clazz 	= object.getClass();
+		Class<?> 					clazz 	= object.getClass();
 		BeanInfo 				info 	= Introspector.getBeanInfo(clazz);
 		PropertyDescriptor[] 	props 	= info.getPropertyDescriptors();
 		 if(props.length == 0){
@@ -318,7 +317,7 @@ public class WSJSONPopulator {
 		            }
 		            //use only public setters
 		            if (Modifier.isPublic(writeMethod.getModifiers())) {
-		            	Class[] paramTypes 	= writeMethod.getParameterTypes();
+		            	Class<?>[] paramTypes 	= writeMethod.getParameterTypes();
 		                Type[] genericTypes = writeMethod.getGenericParameterTypes();
 		                if (paramTypes.length == 1) {
 		                	Object convertedValue = this.convert(paramTypes[0], genericTypes[0], value, writeMethodConfig, writeMethod);
@@ -341,7 +340,7 @@ public class WSJSONPopulator {
 						JSONWebService 		readMethodConfig 	= readMethod.getAnnotation(JSONWebService.class);
 						if(readMethodConfig == null || readMethodConfig.deserialize()){
 							//  add configuration
-							Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
+							Collection<?> objectList = (Collection<?>) readMethod.invoke(object, new Object[] {});
 							if(objectList != null){
 								if(traceEnabled){
 									traceLog.info(String.format("Only list read method found for property %s adding new values to existing collection. " +
@@ -387,9 +386,9 @@ public class WSJSONPopulator {
 							if(elements.containsKey(elm.name())){
 								try{
 									Object jsonValue = elements.get(elm.name());
-									List<Map> objects = new ArrayList<Map>();
+									List<Map<String,Object>> objects = new ArrayList<Map<String,Object>>();
 									if(jsonValue instanceof Map){// Single object XSD choice with maxOccur 1
-										objects.add((Map)jsonValue);
+										objects.add((Map<String,Object>)jsonValue);
 									}else if(jsonValue instanceof List){// List of object XSD choice with maxOccur greater than 1
 										objects.addAll((List)jsonValue);
 									}else if(traceEnabled){
@@ -513,40 +512,40 @@ public class WSJSONPopulator {
      * @throws IntrospectionException
      */
     @SuppressWarnings("unchecked")
-    private Object convertToMap(Class clazz, Type type, Object value, JSONWebService customizeInfo,Method accessor)
+    private Object convertToMap(Class<?> clazz, Type type, Object value, JSONWebService customizeInfo,Method accessor)
             throws IllegalArgumentException, IllegalAccessException,
             InvocationTargetException, InstantiationException, NoSuchMethodException,
             IntrospectionException {
         if (value == null)
             return null;
         else if (value instanceof Map) {
-            Class itemClass = Object.class;
+            Class<?> itemClass = Object.class;
             Type itemType = null;
             if (type != null && type instanceof ParameterizedType) {
                 ParameterizedType ptype = (ParameterizedType) type;
                 itemType = ptype.getActualTypeArguments()[1];
                 if (itemType.getClass().equals(Class.class)) {
-                    itemClass = (Class) itemType;
+                    itemClass = (Class<?>) itemType;
                 } else {
-                    itemClass = (Class) ((ParameterizedType) itemType).getRawType();
+                    itemClass = (Class<?>) ((ParameterizedType) itemType).getRawType();
                 }
             }
-            Map values = (Map) value;
+            Map<String,Object> values = (Map<String,Object>) value;
 
-            Map newMap = null;
+            Map<String,Object> newMap = null;
             try {
-                newMap = (Map) clazz.newInstance();
+                newMap = (Map<String,Object>) clazz.newInstance();
             } catch (InstantiationException ex) {
                 // fallback if clazz represents an interface or abstract class
-                newMap = new HashMap();
+                newMap = new HashMap<String,Object>();
             }
 
             //create an object for each element
-            Iterator iter = values.entrySet().iterator();
+            Iterator<Map.Entry<String,Object>> iter = values.entrySet().iterator();
             while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                String key = (String) entry.getKey();
-                Object v = entry.getValue();
+                Map.Entry<String,Object> 	entry 	= iter.next();
+                String 						key 	= entry.getKey();
+                Object 						v 		= entry.getValue();
 
                 if (itemClass.equals(Object.class)) {
                     //String, Object
@@ -564,7 +563,7 @@ public class WSJSONPopulator {
                 } else if (v instanceof Map) {
                     //map of beans
                     Object newObject = itemClass.newInstance();
-                    this.populateObject(newObject, (Map) v, null);
+                    this.populateObject(newObject, (Map<String,Object>) v, null);
                     newMap.put(key, newObject);
                 } else if(traceEnabled){
                 	traceLog.error(String.format("Incompatible types for property %s in class %s",
@@ -589,15 +588,15 @@ public class WSJSONPopulator {
      * @param Method
      * @return
      */
-    @SuppressWarnings("unchecked")
-    private Object convertToArray(Class clazz, Type type, Object value, JSONWebService customizeInfo, Method accessor)
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private Object convertToArray(Class<?> clazz, Type type, Object value, JSONWebService customizeInfo, Method accessor)
             throws IllegalArgumentException, IllegalAccessException,
             InvocationTargetException, InstantiationException, NoSuchMethodException,
             IntrospectionException {
         if (value == null)
             return null;
         else if (value instanceof List) {
-            Class arrayType = clazz.getComponentType();
+            Class<?> arrayType = clazz.getComponentType();
             List values = (List) value;
             Object newArray = Array.newInstance(arrayType, values.size());
 
@@ -621,7 +620,7 @@ public class WSJSONPopulator {
                         newObject = convertToCollection(arrayType, type, listValue, customizeInfo, accessor);
                     } else {
                         newObject = arrayType.newInstance();
-                        this.populateObject(newObject, (Map) listValue, customizeInfo);
+                        this.populateObject(newObject, (Map<String,Object>) listValue, customizeInfo);
                     }
 
                     Array.set(newArray, j, newObject);
@@ -654,28 +653,28 @@ public class WSJSONPopulator {
      * @throws NoSuchMethodException
      * @throws IntrospectionException
      */
-    @SuppressWarnings("unchecked")
-    private Object convertToCollection(Class clazz, Type type, Object value,JSONWebService customizeInfo, Method accessor)
+    @SuppressWarnings({"unchecked","rawtypes"})
+    private Object convertToCollection(Class<?> clazz, Type type, Object value,JSONWebService customizeInfo, Method accessor)
             throws IllegalArgumentException, IllegalAccessException,
             InvocationTargetException, InstantiationException, NoSuchMethodException,
             IntrospectionException {
         if (value == null)
             return null;
         else if (value instanceof List) {
-            Class itemClass = Object.class;
+            Class<?> itemClass = Object.class;
             Type itemType = null;
             if (type != null && type instanceof ParameterizedType) {
                 ParameterizedType ptype = (ParameterizedType) type;
                 itemType = ptype.getActualTypeArguments()[0];
                 if (itemType.getClass().equals(Class.class)) {
-                    itemClass = (Class) itemType;
+                    itemClass = (Class<?>) itemType;
                 } else {
-                    itemClass = (Class) ((ParameterizedType) itemType).getRawType();
+                    itemClass = (Class<?>) ((ParameterizedType) itemType).getRawType();
                 }
             }
-            List values = (List) value;
+			List values = (List) value;
 
-            Collection newCollection = null;
+			Collection newCollection = null;
             try {
                 newCollection = (Collection) clazz.newInstance();
             } catch (InstantiationException ex) {
@@ -744,7 +743,7 @@ public class WSJSONPopulator {
      * Deserializer Case 2: primitive class 
      * @param method 
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked","rawtypes"})
 	private Object convertPrimitive(final Class clazz,final  Object value,final JSONWebService customizeInfo,final Method method) {
         if (value == null) {
             if (Short.TYPE.equals(clazz) || Short.class.equals(clazz))
