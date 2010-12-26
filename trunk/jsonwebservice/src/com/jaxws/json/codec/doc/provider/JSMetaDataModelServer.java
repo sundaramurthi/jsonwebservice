@@ -1,7 +1,6 @@
 package com.jaxws.json.codec.doc.provider;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,10 +12,7 @@ import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.jaxws.json.codec.encode.WSJSONWriter;
-import com.sun.xml.bind.v2.model.nav.ReflectionNavigator;
-import com.sun.xml.bind.v2.runtime.IllegalAnnotationsException;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.server.BoundEndpoint;
@@ -89,6 +85,7 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 		WSEndpoint<?> 		endPoint 		= this.codec.getEndpoint();
 		Map<String,Object>  service 		= new HashMap<String, Object>();
 		metadataModel.put(endPoint.getServiceName().getLocalPart(), service );
+		JAXBContextImpl 	context 	= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
 		
 		Module 				modules 		= endPoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
 		for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
@@ -97,29 +94,18 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 				service.put(endPointObj.getEndpoint().getPortName().getLocalPart(), portJSONMap);
 				
 				SEIModel 	seiModel 		= endPointObj.getEndpoint().getSEIModel();
-				try {
-					ReflectionNavigator navigator = ((JAXBContextImpl)seiModel.getJAXBContext()).getTypeInfoSet().getNavigator();
+				for (WSDLBoundOperation operation : seiModel.getPort().getBinding().getBindingOperations()) {
 					
-					for (JavaMethod javaMethod : seiModel.getJavaMethods()) {
-						WSDLBoundOperation operation = seiModel.getPort().getBinding().get(
-								javaMethod.getRequestPayloadName());
-						Map<String,Object>    operationMap = new HashMap<String, Object>();
-						portJSONMap.put(javaMethod.getOperationName(), operationMap );
-						
-						operationMap.put(javaMethod.getRequestMessageName(), JSONHttpMetadataPublisher.getJSONAsMap(operation.getInParts(),
-								navigator
-								.getMethodParameters(javaMethod
-										.getSEIMethod())));
-						
-						operationMap.put(javaMethod.getResponseMessageName(),JSONHttpMetadataPublisher.getJSONAsMap(operation.getOutParts(),
-								new Type[] { navigator
-										.getReturnType(javaMethod
-												.getSEIMethod()) }));
-					}
-				} catch (IllegalAnnotationsException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					Map<String,Object>    operationMap = new HashMap<String, Object>();
+					portJSONMap.put(operation.getName().getLocalPart(), operationMap );
+					
+					operationMap.put(operation.getOperation().getInput().getName(), 
+							JSONHttpMetadataPublisher.getJSONAsMap(operation.getInParts(), context));
+					
+					operationMap.put(operation.getOperation().getOutput().getName(),JSONHttpMetadataPublisher.getJSONAsMap(operation.getOutParts(),
+							context));
 				}
+				
 				portJSONMap.put("address", endPoint.getPort().getAddress().toString());
 			}
 		}

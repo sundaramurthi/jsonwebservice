@@ -6,15 +6,12 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.namespace.QName;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
-import com.sun.xml.bind.v2.model.nav.ReflectionNavigator;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.model.wsdl.WSDLPort;
@@ -93,7 +90,6 @@ public class MethodFormServer implements HttpMetadataProvider {
 	public void process() {
 		WSEndpoint<?> 		endPoint 		= this.codec.getEndpoint();
 		JAXBContextImpl 	context 		= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
-		Style 				style 			= endPoint.getSEIModel().getPort().getBinding().getStyle();
 		
 		WSDLPort port = endPoint.getPort();
 		if (!operationDocuments.containsKey(port.getBinding().getName())) {
@@ -110,26 +106,15 @@ public class MethodFormServer implements HttpMetadataProvider {
 			}catch(Throwable th){}
 			Map<String, String> contents = new HashMap<String, String>();
 			
-			ReflectionNavigator navigator = null;
-			try {
-				navigator = context.getTypeInfoSet().getNavigator();
-				SEIModel seiModel = endPoint.getSEIModel();
-				for (JavaMethod javaMethod : seiModel.getJavaMethods()) {
-					WSDLBoundOperation operation = seiModel.getPort()
-					.getBinding().get(
-							javaMethod.getRequestPayloadName());
-					
-					String requestJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getInParts(), navigator
-							.getMethodParameters(javaMethod
-									.getSEIMethod()),style, context, this.codec );
-					
-					contents.put(javaMethod.getRequestPayloadName().getLocalPart(), 
-							content.toString().replaceAll("#INPUT_JSON#", String.format("{\"%s\":%s}",operation.getName().getLocalPart(),
-									requestJSON))
-							.replaceAll("#METHOD_NAME#", javaMethod.getRequestPayloadName().getLocalPart())
-							.replaceAll("#END_POINT_URL#", "#BASEADDRESS#" + httpAdapter.getValidPath()));
-				}
-			}catch(Throwable th){}
+			SEIModel seiModel = endPoint.getSEIModel();
+			for (WSDLBoundOperation operation : seiModel.getPort().getBinding().getBindingOperations()) {
+				String requestJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getInParts(), context, this.codec );
+				contents.put(operation.getOperation().getName().getLocalPart(), 
+						content.toString().replaceAll("#INPUT_JSON#", String.format("{\"%s\":%s}",operation.getName().getLocalPart(),
+								requestJSON))
+						.replaceAll("#METHOD_NAME#", operation.getName().getLocalPart())
+						.replaceAll("#END_POINT_URL#", "#BASEADDRESS#" + httpAdapter.getValidPath()));
+			}
 			operationDocuments.put(port.getBinding().getName(), contents);
 		}
 	}
