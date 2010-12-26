@@ -6,7 +6,7 @@ import java.net.MalformedURLException;
 import com.jsonws.JSONCodecTest;
 
 /**
- * @author ssaminathan
+ * @author Sundaramurthi Saminathan
  *
  */
 public class ParameterTest extends JSONCodecTest {
@@ -111,5 +111,22 @@ public class ParameterTest extends JSONCodecTest {
 		System.out.println("OUT: " + response);
 		String expectedRespone 	= "{\"albumID\":1,\"statusFlag\":true}";
 		assertEquals(response, expectedRespone);
+	}
+	
+	
+	public void testListMapKeyResponse(){
+		// TODO
+	}
+	
+	public void testListMapKeyValueResponse(){
+		// TODO
+	}
+	
+	public void testListMapKeyRequest(){
+		// TODO
+	}
+	
+	public void testListMapKeyValueRequest(){
+		// TODO
 	}
 }

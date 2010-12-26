@@ -21,12 +21,12 @@ public class CodecTestDefault extends JSONCodecTest {
 	}
 	
 	public void testCodecValidMapObjectInput() throws MalformedURLException, IOException{
-		Map 	logInfo		= new HashMap();
-		Map 	requestcontext 	= new HashMap();
+		Map<String,Object> 	logInfo		= new HashMap<String,Object>();
+		Map<String,Object> 	requestcontext 	= new HashMap<String,Object>();
 		requestcontext.put("email", "test@tt.com");
 		requestcontext.put("passwd", "xx");
 		logInfo.put("requestcontext", requestcontext );
-		Map 	clientLogin		= new HashMap();
+		Map<String,Object> 	clientLogin		= new HashMap<String,Object>();
 		clientLogin.put("clientLogin", logInfo );
 		ByteArrayOutputStream  JSON 		= new ByteArrayOutputStream();
 		new WSJSONWriter(JSON, clientLogin, null).write(null, null, null, null, null);
@@ -43,6 +43,7 @@ public class CodecTestDefault extends JSONCodecTest {
 		String response 		= postOnEndPoint(getUiElements);
 		System.out.println(response);
 		String expectedRespone 	= "{\"uiElements\":{\"elements\":[{\"name\":\"LOGIN\",\"value\":\"Login\"}]},\"statusFlag\":true}";
+		assertEquals(response, expectedRespone);
 	}
 
 	

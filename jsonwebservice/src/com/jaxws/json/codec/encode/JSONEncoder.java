@@ -96,6 +96,7 @@ public class JSONEncoder {
 	 * @throws JAXBException 
 	 * @throws JSONException 
 	 */
+	@SuppressWarnings("unchecked")
 	public ContentType encode(OutputStream output) throws IOException {
 		if(traceEnabled)traceLog.info("Response encoding started." + new Date());
 		/*
@@ -203,8 +204,7 @@ public class JSONEncoder {
 					SOAPFault faultObj = message.readAsSOAPMessage().getSOAPBody().getFault();
 					HashMap<String,String> detail = new HashMap<String, String>(); 
 					try {
-						for (Iterator<Element> iterator = faultObj.getDetail().getChildElements(); iterator
-								.hasNext();) {
+						for (Iterator<Element> iterator = faultObj.getDetail().getChildElements(); iterator.hasNext();) {
 							Element type = iterator.next();
 							detail.put(type.getLocalName(), type.getTextContent());
 							for(int att = type.getAttributes().getLength() -1;att >-1;att--){
@@ -231,7 +231,7 @@ public class JSONEncoder {
 						if(JSONCodec.responsePayloadEnabled){
 							responseJSONMap.put(payload,this.packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 						}else{
-							responseJSONMap.putAll((Map<? extends String, ? extends Object>) this.packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
+							responseJSONMap.putAll((Map<String, ? extends Object>) this.packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 						}
 					} catch (Exception e1) {
 						responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
@@ -310,7 +310,8 @@ public class JSONEncoder {
             return (BufferedImage)image;
 
         } else {
-            MediaTracker tracker = new MediaTracker(new Component(){}); // not sure if this is the right thing to do.
+            @SuppressWarnings("serial")
+			MediaTracker tracker = new MediaTracker(new Component(){}); // not sure if this is the right thing to do.
             tracker.addImage(image, 0);
             try {
                 tracker.waitForAll();
