@@ -1,6 +1,5 @@
 package com.jaxws.json.codec;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -11,9 +10,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.jws.WebParam;
 import javax.jws.soap.SOAPBinding.Style;
-import javax.xml.namespace.QName;
 import javax.xml.ws.handler.MessageContext;
 
 import org.jvnet.mimepull.MIMEPart;
@@ -22,11 +19,13 @@ import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.feature.JSONWebService;
 import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.bind.api.CompositeStructure;
+import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.api.message.Packet;
-import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
+import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
+import com.sun.xml.ws.api.model.wsdl.WSDLPart;
 import com.sun.xml.ws.message.jaxb.JAXBMessage;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.model.ParameterImpl;
@@ -61,56 +60,49 @@ public class MessageBodyBuilder {
 		
 	}
 
+	@SuppressWarnings("unchecked")
 	public Message handleMessage(Packet packet,String payloadName) throws Exception{
 		boolean OUT_BOUND = packet.invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY) != null && 
 							(Boolean)packet.invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-		SEIModel seiModel = this.codec.getSEIModel(packet);
+		SEIModel 			seiModel 	= this.codec.getSEIModel(packet);
+		JAXBContextImpl 	context 	= (JAXBContextImpl)seiModel.getJAXBContext();
 		Style style = seiModel.getPort().getBinding().getStyle();
 		if(!OUT_BOUND){
 			// Request message
-			JavaMethod requestMethod = seiModel.getJavaMethod(new QName(seiModel.getTargetNamespace(),payloadName));
-			if(requestMethod == null || !packet.invocationProperties.containsKey(JSONCodec.JSON_MAP_KEY)){
+			WSDLBoundOperation operation 	= seiModel.getPort().getBinding().getOperation(seiModel.getTargetNamespace(),payloadName);
+			if(operation == null || !packet.invocationProperties.containsKey(JSONCodec.JSON_MAP_KEY)){
 				throw new RuntimeException("Operation %s input parameter(s) not found or invalid.");
 			}
-			Map<String,Object> operationParameters = (Map<String, Object>) packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY);
-			/*
-			 * requestMethod.getMethod() == Returns implementation method.
-			 * requestMethod.getSEIMethod() == Returns interface method.
-			 */
-			WSJSONPopulator jsonPopulator = new WSJSONPopulator(JSONCodec.globalMapKeyPattern,
+			Method 				seiMethod 	= seiModel.getJavaMethod(operation.getName()).getSEIMethod();
+			
+			Map<String,Object> 	operationParameters = (Map<String, Object>) packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY);
+			
+			WSJSONPopulator 	jsonPopulator 		= new WSJSONPopulator(JSONCodec.globalMapKeyPattern,
 					JSONCodec.globalMapValuePattern,JSONCodec.dateFormat,
 					codec.getCustomSerializer()
 					,(DebugTrace) packet.invocationProperties.get(JSONCodec.TRACE));
-			Collection<Object> parameterObjects = new ArrayList<Object>();
-			int pos = 0;
-			Method seiMethod 	= requestMethod.getSEIMethod();
-			for(Class<?> parameterType : seiMethod.getParameterTypes()){
-	            String paramName = "arg"+pos;// Copy from runtime model builder
-	            for (Annotation annotation : seiMethod.getParameterAnnotations()[pos]) {
-	                if (annotation.annotationType() == WebParam.class) {
-	                    WebParam webParam = (WebParam) annotation;
-	                    if (webParam.name().length() > 0){
-	                        paramName = webParam.name();
-	                    }
-	                }
+			Collection<Object>	parameterObjects	= new ArrayList<Object>();
+			for(Map.Entry<String, WSDLPart> part : operation.getInParts().entrySet()){
+				Class<?> parameterType = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
+				if(!operationParameters.containsKey(part.getKey())){
+	            	throw new RuntimeException(String.format("Request parameter %s can't be null. B.P 1.1 vilation", part.getKey()));
 	            }
-	            if(!operationParameters.containsKey(paramName)){
-	            	throw new RuntimeException(String.format("Request parameter %s can't be null. B.P 1.1 vilation", paramName));
-	            }
-	            Object val = null;
+				
+				Object val = null;
 	            if(!WSJSONPopulator.isJSONPrimitive(parameterType)){
 		            val = parameterType.newInstance();
 		            jsonPopulator.populateObject(val,
-		            		(Map<?, ?>)operationParameters.get(paramName),seiMethod.getAnnotation(JSONWebService.class), 
+		            		(Map<String,Object>)operationParameters.get(part.getKey()),seiMethod != null ? seiMethod.getAnnotation(JSONWebService.class) : null, 
 		            		(List<MIMEPart>) packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS));
 	            } else {
-	            	val	= jsonPopulator.convert(parameterType, null, operationParameters.get(paramName), seiMethod.getAnnotation(JSONWebService.class), null);
+	            	val	= jsonPopulator.convert(parameterType, null, operationParameters.get(part.getKey()),
+	            			seiMethod != null ? seiMethod.getAnnotation(JSONWebService.class) : null, null);
 	            }
 	            parameterObjects.add(val);
-	            pos++;
 			}
+			
 			// TODO find better way with out using JavaMethodImpl
-			List<ParameterImpl> requestParameters = ((JavaMethodImpl)requestMethod).getRequestParameters();
+			List<ParameterImpl> requestParameters = ((JavaMethodImpl)seiModel.getJavaMethod(operation.getName())).getRequestParameters();
 			if(requestParameters != null && requestParameters.size() == 1){
 				ParameterImpl parameter = requestParameters.get(0);
 				if(parameter.isWrapperStyle()){
@@ -157,12 +149,11 @@ public class MessageBodyBuilder {
 			Map<String,Object> responseParameters = new HashMap<String, Object>();
 			if(style == Style.RPC ){
 				com.sun.xml.bind.api.CompositeStructure responseWraper = (com.sun.xml.bind.api.CompositeStructure)jaxbObjectAccessor.get(message);
-				if(responseWraper != null && responseWraper.bridges.length == 1){
-					responseParameters.put(responseWraper.bridges[0].getTypeReference().tagName.getLocalPart(),
-							responseWraper.values[0]);
-				}else{
-					//One way.
-					//responseParameters.put("ONE_WAY","o");
+				if(responseWraper != null){
+					for(int index = 0; index < responseWraper.bridges.length; index++){
+						responseParameters.put(responseWraper.bridges[index].getTypeReference().tagName.getLocalPart(),
+							responseWraper.values[index]);
+					}
 				}
 			}else{
 				// Docunemnt
