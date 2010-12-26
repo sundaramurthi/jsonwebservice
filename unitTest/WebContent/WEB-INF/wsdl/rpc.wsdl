@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions targetNamespace="http://jsonwebservice.test.com/parameter"
+	xmlns:tns="http://jsonwebservice.test.com/parameter"
+	xmlns:json="http://schemas.jsonsoap.org/wsdl/json/"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+	<types>
+		<xsd:schema targetNamespace="http://jsonwebservice.test.com/parameter">
+			<xsd:simpleType name="enumConst">
+		    	<xsd:restriction base="xsd:string">
+		      		<xsd:enumeration value="CONST1"/>
+		      		<xsd:enumeration value="CONST2"/>
+		      		<xsd:enumeration value="CONST3"/>
+		    	</xsd:restriction>
+		 	 </xsd:simpleType> 
+		 	 
+		 	 <xsd:complexType name="Object">
+		 	 	<xsd:sequence>
+		 	 		<xsd:element name="property1" type="xsd:int"/>
+		 	 	</xsd:sequence>
+		 	 </xsd:complexType>
+		 	 
+		 	 <xsd:complexType name="ObjectReservedFields">
+		 	 	<xsd:sequence>
+		 	 		<xsd:element name="boolean" type="xsd:boolean"/>
+		 	 		<xsd:element name="int" type="xsd:int"/>
+		 	 		<xsd:element name="float" type="xsd:float"/>
+		 	 		<xsd:element name="String" type="xsd:string"/>
+		 	 		<xsd:element name="enum" type="tns:enumConst"/>
+		 	 	</xsd:sequence>
+		 	 </xsd:complexType>
+		</xsd:schema>
+	</types>
+
+	<message name="emptyMessage"/>
+	
+	<message name="stringMessage">
+		<part name="string" type="xsd:string"/>
+	</message>
+	
+	<message name="stringOutMessage">
+		<part name="stringOut" type="xsd:string"/>
+	</message>
+	
+	<message name="integerMessage">
+		<part name="integer" type="xsd:int"/>
+	</message>
+	
+	<message name="integerOutMessage">
+		<part name="intOut" type="xsd:int"/>
+	</message>
+	
+	<message name="integerReservedMessage">
+		<part name="int" type="xsd:int"/>
+	</message>
+	
+	<message name="booleanMessage">
+		<part name="bool" type="xsd:boolean"/>
+	</message>
+	
+	<message name="booleanOutMessage">
+		<part name="boolOut" type="xsd:boolean"/>
+	</message>
+	
+	<message name="booleanReservedMessage">
+		<part name="boolean" type="xsd:boolean"/>
+	</message>
+	
+	<message name="enumMessage">
+		<part name="enumConst" type="tns:enumConst"/>
+	</message>
+	
+	<message name="enumOutMessage">
+		<part name="enumConstOut" type="tns:enumConst"/>
+	</message>
+	
+	<message name="objectMessage">
+		<part name="object" type="tns:Object"/>
+	</message>
+	
+	<message name="objectOutMessage">
+		<part name="objectOut" type="tns:Object"/>
+	</message>
+	
+	<message name="objectReservedFields">
+		<part name="objectReservedFields" type="tns:ObjectReservedFields"/>
+	</message>
+	
+	<!-- more than one parts -->
+	<message name="numNumMessage">
+		<part name="integer1" type="xsd:int"/>
+		<part name="integer2" type="xsd:int"/>
+	</message>
+	
+	<message name="numStringMessage">
+		<part name="integer" type="xsd:int"/>
+		<part name="string" type="xsd:string"/>
+	</message>
+	
+	<message name="stringStringMessage">
+		<part name="string1" type="xsd:string"/>
+		<part name="string2" type="xsd:string"/>
+	</message>
+	
+	<message name="objectStringMessage">
+		<part name="object" type="tns:Object"/>
+		<part name="string" type="xsd:string"/>
+	</message>
+	
+	<message name="stringObjectMessage">
+		<part name="string" type="xsd:string"/>
+		<part name="object" type="tns:Object"/>
+	</message>
+	
+	
+	<portType name="ParameterTest">
+		<operation name="test1EmptyInOut">
+			<input 	name="test1EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test1EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test2StringInEmptyOut">
+			<input 	name="test2StringIn" 	message="tns:stringMessage" />
+			<output name="test2EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test3EmptyInStringOut">
+			<input 	name="test3EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test3StringOut" 	message="tns:stringMessage" />
+		</operation>
+		
+		<operation name="test4StringInStringOut">
+			<input 	name="test4StringIn" 	message="tns:stringMessage" />
+			<output name="test4StringOut" 	message="tns:stringOutMessage" />
+		</operation>
+		
+		<operation name="test5IntInEmptyOut">
+			<input 	name="test5IntIn" 		message="tns:integerMessage" />
+			<output name="test5EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test6EmptyInIntOut">
+			<input 	name="test6EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test6IntOut" 		message="tns:integerMessage" />
+		</operation>
+		
+		<operation name="test7IntInIntOut">
+			<input 	name="test7IntIn" 		message="tns:integerMessage" />
+			<output name="test7IntOut" 		message="tns:integerOutMessage" />
+		</operation>
+		
+		<operation name="test8IntInStringOut">
+			<input 	name="test8IntIn" 		message="tns:integerMessage" />
+			<output name="test8StringOut" 	message="tns:stringMessage" />
+		</operation>
+		
+		<operation name="test9StringInIntOut">
+			<input 	name="test9StringIn" 	message="tns:stringMessage" />
+			<output name="test9IntOut" 		message="tns:integerMessage" />
+		</operation>
+		
+		<operation name="test10BooleanInEmptyOut">
+			<input 	name="test10BooleanIn" 	message="tns:booleanMessage" />
+			<output name="test10EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test11EmptyInBooleanOut">
+			<input 	name="test11EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test11BooleanOut" 		message="tns:booleanMessage" />
+		</operation>
+		
+		<operation name="test12BooleanInBooleanOut">
+			<input 	name="test12BooleanIn" 		message="tns:booleanMessage" />
+			<output name="test12BooleanOut" 		message="tns:booleanOutMessage" />
+		</operation>
+		
+		<!-- Enumeration test  -->
+		<operation name="test13EmptyInEnumOut">
+			<input 	name="test13EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test13EnumOut" 		message="tns:enumMessage" />
+		</operation>
+		
+		<operation name="test14EnumInEmptyOut">
+			<input name="test14EnumIn" 		message="tns:enumMessage" />
+			<output 	name="test14EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test15EnumInEnumOut">
+			<input name="test15EnumIn" 		message="tns:enumMessage" />
+			<output 	name="test15EnumOut" 	message="tns:enumOutMessage" />
+		</operation>
+		
+		<!-- Object test  -->
+		<operation name="test16EmptyInObjectOut">
+			<input 	name="test16EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test16ObjectOut" 		message="tns:objectMessage" />
+		</operation>
+		
+		<operation name="test17ObjectInEmptyOut">
+			<input name="test17ObjectIn" 		message="tns:objectMessage" />
+			<output 	name="test17EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test18ObjectInObjectOut">
+			<input name="test18ObjectIn" 		message="tns:objectMessage" />
+			<output 	name="test18ObjectOut" 	message="tns:objectOutMessage" />
+		</operation>
+		
+		<operation name="test19ObjectInStringOut">
+			<input name="test19ObjectIn" 		message="tns:objectMessage" />
+			<output 	name="test19StringOut" 	message="tns:stringMessage" />
+		</operation>
+		
+		<operation name="test20StringInObjectOut">
+			<input name="test20StringIn" 		message="tns:stringMessage" />
+			<output 	name="test20ObjectOut" 	message="tns:objectMessage" />
+		</operation>
+		
+		<operation name="test21ObjectInNumberOut">
+			<input name="test21ObjectIn" 		message="tns:objectMessage" />
+			<output 	name="test21NumberOut" 	message="tns:integerMessage" />
+		</operation>
+		
+		<operation name="test22NumberInObjectOut">
+			<input name="test22NumberIn" 		message="tns:integerMessage" />
+			<output 	name="test22ObjectOut" 	message="tns:objectMessage" />
+		</operation>
+		
+		<operation name="test23ObjectInEnumOut">
+			<input name="test23ObjectIn" 		message="tns:objectMessage" />
+			<output 	name="test23EnumOut" 	message="tns:enumMessage" />
+		</operation>
+		
+		<operation name="test24EnumInObjectOut">
+			<input name="test24EnumIn" 			message="tns:enumMessage" />
+			<output 	name="test24ObjectOut" 	message="tns:objectMessage" />
+		</operation>
+		
+		<!-- Identical inout names. -->
+		<operation name="test25StringInStringOut">
+			<input 	name="test25StringIn" 	message="tns:stringMessage" />
+			<output name="test25StringOut" 	message="tns:stringMessage" />
+		</operation>
+		
+		<operation name="test26IntInIntOut">
+			<input 	name="test26IntIn" 		message="tns:integerMessage" />
+			<output name="test26IntOut" 		message="tns:integerMessage" />
+		</operation>
+		
+		<operation name="test27EnumInEnumOut">
+			<input name="test27EnumIn" 		message="tns:enumMessage" />
+			<output 	name="test27EnumOut" 	message="tns:enumMessage" />
+		</operation>
+		
+		<operation name="test28ObjectInObjectOut">
+			<input name="test28ObjectIn" 		message="tns:objectMessage" />
+			<output 	name="test28ObjectOut" 	message="tns:objectMessage" />
+		</operation>
+		
+		<!-- JAVA Reserved name  -->
+		<operation name="test29ReservedInIntOut">
+			<input 	name="test29ReservedIn" 	message="tns:integerReservedMessage" />
+			<output name="test29IntOut" 		message="tns:integerMessage" />
+		</operation>
+		
+		<operation name="test30IntInReservedOut">
+			<input 	name="test30IntIn" 			message="tns:integerMessage" />
+			<output name="test30ReservedOut" 	message="tns:integerReservedMessage" />
+		</operation>
+		
+		<operation name="test31ReservedInBooleanOut">
+			<input 	name="test31ReservedIn" 	message="tns:booleanReservedMessage" />
+			<output name="test31BooleanOut" 	message="tns:booleanMessage" />
+		</operation>
+		
+		<operation name="test32ObjectReservedInBooleanOut">
+			<input 	name="test32ObjectReservedIn" 	message="tns:objectReservedFields" />
+			<output name="test32BooleanOut" 	message="tns:booleanMessage" />
+		</operation>
+		
+		<!-- More tha one in-out -->
+		<operation name="test33NumNumInEmptyOut">
+			<input 	name="test33NumNumIn" 	message="tns:numNumMessage" />
+			<output name="test33EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test34EmptyInNumNumOut">
+			<input 	name="test34EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test34NumNumOut" 	message="tns:numNumMessage" />
+		</operation>
+		
+		<operation name="test35NumStringInEmptyOut">
+			<input 	name="test35NumStringIn" 	message="tns:numStringMessage" />
+			<output name="test35EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test36EmptyInNumStringOut">
+			<input 	name="test36EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test36NumString" 	message="tns:numStringMessage" />
+		</operation>
+		
+		<operation name="test37StringStringInEmptyOut">
+			<input 	name="test37StringStringIn" 	message="tns:stringStringMessage" />
+			<output name="test37EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test38EmptyInStringStringOut">
+			<input 	name="test38EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test38StringString" 	message="tns:stringStringMessage" />
+		</operation>
+		
+		<operation name="test39ObjectStringInEmptyOut">
+			<input 	name="test39ObjectStringIn" 	message="tns:objectStringMessage" />
+			<output name="test39EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test40EmptyInObjectStringOut">
+			<input 	name="test40EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test40ObjectString" 	message="tns:objectStringMessage" />
+		</operation>
+		
+		<operation name="test41StringObjectInEmptyOut">
+			<input 	name="test41StringObjectIn" 	message="tns:stringObjectMessage" />
+			<output name="test41EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test42EmptyInStringObjectOut">
+			<input 	name="test42EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test42StringObject" 	message="tns:stringObjectMessage" />
+		</operation>
+		
+	</portType>
+
+	<binding name="ParameterTestService" type="tns:ParameterTest">
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<operation name="test1EmptyInOut">			<json:operation soapAction="http://jsonwebservice.test.com/parameter/test1EmptyInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test2StringInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test2StringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test3EmptyInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test3EmptyInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test4StringInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test4StringInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test5IntInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test5IntInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test6EmptyInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test6EmptyInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test7IntInIntOut">			<json:operation soapAction="http://jsonwebservice.test.com/parameter/test7IntInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test8IntInStringOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test8IntInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test9StringInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test9StringInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test10BooleanInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test10BooleanInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test11EmptyInBooleanOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test11EmptyInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test12BooleanInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test12BooleanInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test13EmptyInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test13EmptyInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test14EnumInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test14EnumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test15EnumInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test15EnumInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test16EmptyInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test16EmptyInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test17ObjectInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test17ObjectInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test18ObjectInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test18ObjectInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test19ObjectInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test19ObjectInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test20StringInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test20StringInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test21ObjectInNumberOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test21ObjectInNumberOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test22NumberInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test22NumberInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test23ObjectInEnumOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test23ObjectInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test24EnumInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test24EnumInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test25StringInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test25StringInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test26IntInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test26IntInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test27EnumInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test27EnumInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test28ObjectInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test28ObjectInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test29ReservedInIntOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test29ReservedInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test30IntInReservedOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test30IntInReservedOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test31ReservedInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test31ReservedInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test32ObjectReservedInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test32ObjectReservedInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test33NumNumInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test33NumNumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test34EmptyInNumNumOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test34EmptyInNumNumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test35NumStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test35NumStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test36EmptyInNumStringOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test36EmptyInNumStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test37StringStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test37StringStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test38EmptyInStringStringOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test38EmptyInStringStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test39ObjectStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test39ObjectStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test40EmptyInObjectStringOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test40EmptyInObjectStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test41StringObjectInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test41StringObjectInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test42EmptyInStringObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test42EmptyInStringObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		
+	</binding>
+	
+	<service name="RPCTestService">
+		<port name="ParameterPort" binding="tns:ParameterTestService">
+			<json:address location="http://localhost:8080/unitTest/json/parameter" />
+		</port>
+	</service>
+
+</definitions>		
