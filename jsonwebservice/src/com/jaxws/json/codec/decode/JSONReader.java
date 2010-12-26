@@ -130,9 +130,8 @@ public class JSONReader {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map object() throws JSONFault {
-        Map ret = new HashMap();
+    private Map<String,Object> object() throws JSONFault {
+        Map<String,Object> ret = new HashMap<String,Object>();
         Object next = this.read();
         if (next != OBJECT_END) {
             String key = (String) next;
@@ -162,9 +161,8 @@ public class JSONReader {
                         this.c + ")","JSONReader",null);
     }
 
-    @SuppressWarnings("unchecked")
-    private List array() throws JSONFault {
-        List ret = new ArrayList();
+    private List<Object> array() throws JSONFault {
+        List<Object> ret = new ArrayList<Object>();
         Object value = this.read();
 
         while (this.token != ARRAY_END) {

@@ -158,6 +158,8 @@ public class FormDecoder {
 	 */
 	private Message getFormData() {
 		ServletRequest request = (ServletRequest) this.packet.get(MessageContext.SERVLET_REQUEST);
+		
+		@SuppressWarnings("unchecked")
 		Map<String,Object> parameter = request.getParameterMap();
 		Map<String,Object> jsonMap	= new HashMap<String, Object>();
 		for(Entry<String, Object> paramEntry : parameter.entrySet()){
@@ -183,6 +185,7 @@ public class FormDecoder {
 		if(parameter.indexOf('.') > -1){
 			String key = parameter.substring(0, parameter.indexOf('.'));
 			// TODO IF key is idex like 0..x then its array
+			@SuppressWarnings("unchecked")
 			Map<String,Object> jsonMap	= mapValue.containsKey(key)? (Map<String,Object>)mapValue.get(key) : new HashMap<String, Object>();
 			if(!mapValue.containsKey(key))
 				mapValue.put(key, jsonMap);
