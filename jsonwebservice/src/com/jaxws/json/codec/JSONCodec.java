@@ -10,10 +10,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -52,7 +50,6 @@ import com.sun.xml.ws.server.UnsupportedMediaException;
 import com.sun.xml.ws.transport.Headers;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
-import com.sun.xml.ws.util.ByteArrayBuffer;
 import com.sun.xml.ws.util.ServiceFinder;
 
 /**
@@ -433,7 +430,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		return jsonObjectCustomizer;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setEndpoint(WSEndpoint endpoint) {
 		this.endpoint = endpoint;
         endpoint.getComponentRegistry().add(this);
@@ -703,29 +700,4 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		}
 		return null;
 	}
-	/**
-	 * @param buf
-	 * @param caption
-	 * @param headers
-	 * @throws IOException
-	 */
-	private void dump(ByteArrayBuffer buf, String caption, Map<String, List<String>> headers) throws IOException {
-	        System.out.println("---["+caption +"]---");
-	        if (headers != null) {
-	            for (Entry<String, List<String>> header : headers.entrySet()) {
-	                if (header.getValue().isEmpty()) {
-	                    // I don't think this is legal, but let's just dump it,
-	                    // as the point of the dump is to uncover problems.
-	                    System.out.println(header.getValue());
-	                } else {
-	                    for (String value : header.getValue()) {
-	                        System.out.println(header.getKey() + ": " + value);
-	                    }
-	                }
-	            }
-	        }
-	        buf.writeTo(System.out);
-	        System.out.println("--------------------");
-	 }
-	
 }
