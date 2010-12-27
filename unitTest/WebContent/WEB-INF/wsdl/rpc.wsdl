@@ -1,35 +1,93 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<definitions targetNamespace="http://jsonwebservice.test.com/parameter"
-	xmlns:tns="http://jsonwebservice.test.com/parameter"
+<definitions targetNamespace="http://jsonwebservice.test.com/rpc"
+	xmlns:tns="http://jsonwebservice.test.com/rpc"
 	xmlns:json="http://schemas.jsonsoap.org/wsdl/json/"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns="http://schemas.xmlsoap.org/wsdl/">
 
 	<types>
-		<xsd:schema targetNamespace="http://jsonwebservice.test.com/parameter">
+		<xsd:schema targetNamespace="http://jsonwebservice.test.com/rpc">
 			<xsd:simpleType name="enumConst">
-		    	<xsd:restriction base="xsd:string">
-		      		<xsd:enumeration value="CONST1"/>
-		      		<xsd:enumeration value="CONST2"/>
-		      		<xsd:enumeration value="CONST3"/>
-		    	</xsd:restriction>
-		 	 </xsd:simpleType> 
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="CONST1"/>
+					<xsd:enumeration value="CONST2"/>
+					<xsd:enumeration value="CONST3"/>
+				</xsd:restriction>
+			</xsd:simpleType> 
 		 	 
-		 	 <xsd:complexType name="Object">
-		 	 	<xsd:sequence>
-		 	 		<xsd:element name="property1" type="xsd:int"/>
-		 	 	</xsd:sequence>
-		 	 </xsd:complexType>
+			<xsd:complexType name="Object">
+				<xsd:sequence>
+					<xsd:element name="property1" type="xsd:int"/>
+				</xsd:sequence>
+			</xsd:complexType>
 		 	 
-		 	 <xsd:complexType name="ObjectReservedFields">
-		 	 	<xsd:sequence>
-		 	 		<xsd:element name="boolean" type="xsd:boolean"/>
-		 	 		<xsd:element name="int" type="xsd:int"/>
+			<xsd:complexType name="ObjectReservedFields">
+				<xsd:sequence>
+					<xsd:element name="boolean" type="xsd:boolean"/>
+					<xsd:element name="int" type="xsd:int"/>
 		 	 		<xsd:element name="float" type="xsd:float"/>
 		 	 		<xsd:element name="String" type="xsd:string"/>
 		 	 		<xsd:element name="enum" type="tns:enumConst"/>
-		 	 	</xsd:sequence>
+				</xsd:sequence>
+			</xsd:complexType>
+		 	 
+			<xsd:complexType name="MapObject">
+				<xsd:sequence>
+					<xsd:element name="keyProperty1" type="xsd:int"/>
+					<xsd:element name="keyProperty2" type="xsd:string"/>
+					<xsd:element name="valueProperty1" type="xsd:int"/>
+					<xsd:element name="valueProperty2" type="xsd:string"/>
+					<xsd:element name="property1" type="xsd:boolean"/>
+				</xsd:sequence>
+			</xsd:complexType>
+		 	 
+		 	 <xsd:complexType name="MapObjectList">
+			 	 <xsd:sequence>
+			 	 	<xsd:element name="map" type="tns:MapObject" minOccurs="0" maxOccurs="unbounded"/>
+			 	 </xsd:sequence>
+			 </xsd:complexType>	 
+			 
+		 	 <xsd:complexType name="GlobalKeyMapObject">
+		 	 	<xsd:complexContent>
+		 	 		<xsd:extension base="tns:MapObject">
+		 	 		</xsd:extension>
+		 	 	</xsd:complexContent>
 		 	 </xsd:complexType>
+		 	 
+		 	 <xsd:complexType name="GlobalKeyMapObjectList">
+			 	 <xsd:sequence>
+			 	 	<xsd:element name="map" type="tns:GlobalKeyMapObject" minOccurs="0" maxOccurs="unbounded"/>
+			 	 </xsd:sequence>
+			 </xsd:complexType>	 
+			 
+			 <xsd:complexType name="XmlElementsObj">
+			 	 <xsd:choice minOccurs="0" maxOccurs="unbounded">
+			 	 	<xsd:element name="object" type="tns:Object" />
+			 	 	<xsd:element name="objectReserved" type="tns:ObjectReservedFields" />
+			 	 	<xsd:element name="mapObject" type="tns:MapObject" />
+			 	 </xsd:choice>
+			 </xsd:complexType>
+		 	 
+		 	 <xsd:complexType name="XmlElementsWrapperObj">
+		 	 	<xsd:sequence>
+		 	  	<xsd:element name="choiceList" type="tns:XmlElementsObj"/>
+				</xsd:sequence>
+		 	 </xsd:complexType>
+		 	 
+		 	 <xsd:complexType name="XmlElementsSeqObj">
+			 	 <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+			 	 	<xsd:element name="object" type="tns:Object" />
+			 	 	<xsd:element name="objectReserved" type="tns:ObjectReservedFields" />
+			 	 	<xsd:element name="mapObject" type="tns:MapObject" />
+			 	 </xsd:sequence>
+			 </xsd:complexType>
+		 	 
+		 	 <xsd:complexType name="XmlElementsSeqWrapperObj">
+		 	 	<xsd:sequence>
+		 	  	<xsd:element name="sequenceList" type="tns:XmlElementsSeqObj"/>
+				</xsd:sequence>
+		 	 </xsd:complexType>
+		 	 
 		</xsd:schema>
 	</types>
 
@@ -98,6 +156,11 @@
 		<part name="string" type="xsd:string"/>
 	</message>
 	
+	<message name="stringNumMessage">
+		<part name="string" type="xsd:string"/>
+		<part name="integer" type="xsd:int"/>
+	</message>
+	
 	<message name="stringStringMessage">
 		<part name="string1" type="xsd:string"/>
 		<part name="string2" type="xsd:string"/>
@@ -113,6 +176,35 @@
 		<part name="object" type="tns:Object"/>
 	</message>
 	
+	<!--  custom property -->
+	<message name="mapObjectMessage">
+		<part name="mapObject" type="tns:MapObject"/>
+	</message>
+	
+	<message name="mapObjectListMessage">
+		<part name="mapObjectList" type="tns:MapObjectList"/>
+	</message>
+	
+	<message name="globalKeyMapObjectListMessage">
+		<part name="globalKeyMapObjectList" type="tns:GlobalKeyMapObjectList"/>
+	</message>
+	
+	<!-- JAXB annot test -->
+	<message name="xmlElementsObjMessage">
+		<part name="xmlElementsObj" type="tns:XmlElementsObj"/>
+	</message>
+	
+	<message name="xmlElementsWrapperObjMessage">
+		<part name="xmlElementsWrapperObj" type="tns:XmlElementsWrapperObj"/>
+	</message>
+	
+	<message name="xmlElementsSeqObjMessage">
+		<part name="xmlElementsSeqObj" type="tns:XmlElementsSeqObj"/>
+	</message>
+	
+	<message name="xmlElementsSeqWrapperObjMessage">
+		<part name="xmlElementsSeqWrapperObj" type="tns:XmlElementsSeqWrapperObj"/>
+	</message>
 	
 	<portType name="ParameterTest">
 		<operation name="test1EmptyInOut">
@@ -330,58 +422,215 @@
 			<output name="test42StringObject" 	message="tns:stringObjectMessage" />
 		</operation>
 		
+		<!--  Part index test with test35NumStringInEmptyOut -->
+		<operation name="test43StringNumInEmptyOut">
+			<input 	name="test43StringNumIn" 	message="tns:stringNumMessage" />
+			<output name="test43EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+	</portType>
+
+	<portType name="CustomizeTest">
+		<operation name="test1DefaultMapObjectOut">
+			<input 	name="test1EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test1MapObjectOut" 	message="tns:mapObjectMessage" />
+		</operation>
+		
+		<operation name="test2DefaultMapObjectIn">
+			<input 	name="test2MapObjectIn" 	message="tns:mapObjectMessage" />
+			<output name="test2EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test3DefaultMapObjectListOut">
+			<input 	name="test3EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test3MapObjectListOut" 	message="tns:mapObjectListMessage" />
+		</operation>
+		
+		<operation name="test4DefaultMapObjectListInOut">
+			<input 	name="test4MapObjectListIn" 	message="tns:mapObjectListMessage" />
+			<output name="test4MapObjectListOut" 	message="tns:mapObjectListMessage" />
+		</operation>
+		
+		<operation name="test5GlobalKeyMapObjectListOut">
+			<input 	name="test5EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test5GlobalKeyMapObjectListOut" 	message="tns:globalKeyMapObjectListMessage" />
+		</operation>
+		
+		<operation name="test6GlobalKeyMapObjectListInOut">
+			<input 	name="test6GlobalKeyMapObjectListIn" 		message="tns:globalKeyMapObjectListMessage" />
+			<output name="test6GlobalKeyMapObjectListOut" 	message="tns:globalKeyMapObjectListMessage" />
+		</operation>
+		
+		<operation name="test7GlobalKeyMapObjectListAnatEmptyOut">
+			<input 	name="test7EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test7GlobalKeyMapObjectListOut" 	message="tns:globalKeyMapObjectListMessage" />
+		</operation>
+		
+		<operation name="test8GlobalKeyMapObjectListAnatEmptyInOut">
+			<input 	name="test8GlobalKeyMapObjectListIn" 		message="tns:globalKeyMapObjectListMessage" />
+			<output name="test8GlobalKeyMapObjectListOut" 	message="tns:globalKeyMapObjectListMessage" />
+		</operation>
+		
+		<operation name="test9GlobalKeyMapObjectListAnatOut">
+			<input 	name="test9EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test9GlobalKeyMapObjectListOut" 	message="tns:globalKeyMapObjectListMessage" />
+		</operation>
+		
+		<operation name="test10GlobalKeyMapObjectListAnatInOut">
+			<input 	name="test10GlobalKeyMapObjectListIn" 		message="tns:globalKeyMapObjectListMessage" />
+			<output name="test10GlobalKeyMapObjectListOut" 	message="tns:globalKeyMapObjectListMessage" />
+		</operation>
+	</portType>	
+	
+	<portType name="JAXBAnnotationTest">
+		<operation name="test1EmptyInXmlElementsOut">
+			<input 	name="test1EmptyIn" 				message="tns:emptyMessage" />
+			<output name="test1XmlElementsOut" 	message="tns:xmlElementsObjMessage" />
+		</operation>
+		
+		<operation name="test2XmlElementsInEmptyOut">
+			<input 	name="test1XmlElementsIn" 				message="tns:xmlElementsObjMessage" />
+			<output name="test1EmptyOut" 							message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test3XmlElementsInXmlElementsOut">
+			<input 	name="test3XmlElementsIn" 				message="tns:xmlElementsObjMessage" />
+			<output name="test3XmlElementsOut" 				message="tns:xmlElementsObjMessage" />
+		</operation>
+		
+		<operation name="test4EmptyInXmlElementsWrapOut">
+			<input 	name="test4EmptyIn" 				message="tns:emptyMessage" />
+			<output name="test4XmlElementsWrapOut" 	message="tns:xmlElementsWrapperObjMessage" />
+		</operation>
+		
+		<operation name="test5XmlElementsWrapInEmptyOut">
+			<input 	name="test5XmlElementsWrapIn" 		message="tns:xmlElementsWrapperObjMessage" />
+			<output name="test5EmptyOut" 							message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test6XmlElmWrapInXmlElmWrapOut">
+			<input 	name="test6XmlElementsWrapIn" 		message="tns:xmlElementsWrapperObjMessage" />
+			<output name="test6XmlElementsWrapOut" 		message="tns:xmlElementsWrapperObjMessage" />
+		</operation>
+		
+		<operation name="test7EmptyInXmlElementsSeqOut">
+			<input 	name="test7EmptyIn" 				message="tns:emptyMessage" />
+			<output name="test7XmlElementsSeqOut" 	message="tns:xmlElementsSeqObjMessage" />
+		</operation>
+		
+		<operation name="test8XmlElementsSeqInEmptyOut">
+			<input 	name="test8XmlElementsSeqIn" 				message="tns:xmlElementsSeqObjMessage" />
+			<output name="test8EmptyOut" 							message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test9XmlElementsSeqInXmlElementsSeqOut">
+			<input 	name="test9XmlElementsSeqIn" 				message="tns:xmlElementsSeqObjMessage" />
+			<output name="test9XmlElementsSeqOut" 				message="tns:xmlElementsSeqObjMessage" />
+		</operation>
+		
+		<operation name="test10EmptyInXmlElementsSeqWrapOut">
+			<input 	name="test10EmptyIn" 				message="tns:emptyMessage" />
+			<output name="test10XmlElementsSeqWrapOut" 	message="tns:xmlElementsSeqWrapperObjMessage" />
+		</operation>
+		
+		<operation name="test11XmlElementsSeqWrapInEmptyOut">
+			<input 	name="test11XmlElementsSeqWrapIn" 		message="tns:xmlElementsSeqWrapperObjMessage" />
+			<output name="test11EmptyOut" 							message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test12XmlElmWrapSeqInXmlElmSeqWrapOut">
+			<input 	name="test12XmlElementsSeqWrapIn" 		message="tns:xmlElementsSeqWrapperObjMessage" />
+			<output name="test12XmlElementsSeqWrapOut" 		message="tns:xmlElementsSeqWrapperObjMessage" />
+		</operation>
 	</portType>
 
 	<binding name="ParameterTestService" type="tns:ParameterTest">
 		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
-		<operation name="test1EmptyInOut">			<json:operation soapAction="http://jsonwebservice.test.com/parameter/test1EmptyInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test2StringInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test2StringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test3EmptyInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test3EmptyInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test4StringInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test4StringInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test5IntInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test5IntInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test6EmptyInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test6EmptyInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test7IntInIntOut">			<json:operation soapAction="http://jsonwebservice.test.com/parameter/test7IntInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test8IntInStringOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test8IntInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test9StringInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test9StringInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test10BooleanInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test10BooleanInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test11EmptyInBooleanOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test11EmptyInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test12BooleanInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test12BooleanInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test13EmptyInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test13EmptyInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test14EnumInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test14EnumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test15EnumInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test15EnumInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test16EmptyInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test16EmptyInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test17ObjectInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test17ObjectInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test18ObjectInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test18ObjectInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test19ObjectInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test19ObjectInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test20StringInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test20StringInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test21ObjectInNumberOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test21ObjectInNumberOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test22NumberInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test22NumberInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test23ObjectInEnumOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test23ObjectInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test24EnumInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test24EnumInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test25StringInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test25StringInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test26IntInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test26IntInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test27EnumInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/parameter/test27EnumInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test28ObjectInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test28ObjectInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test29ReservedInIntOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test29ReservedInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test30IntInReservedOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test30IntInReservedOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test31ReservedInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test31ReservedInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test32ObjectReservedInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test32ObjectReservedInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test33NumNumInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test33NumNumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test34EmptyInNumNumOut">	<json:operation soapAction="http://jsonwebservice.test.com/parameter/test34EmptyInNumNumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test35NumStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test35NumStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test36EmptyInNumStringOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test36EmptyInNumStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test37StringStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test37StringStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test38EmptyInStringStringOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test38EmptyInStringStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test39ObjectStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test39ObjectStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test40EmptyInObjectStringOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test40EmptyInObjectStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test41StringObjectInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test41StringObjectInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		<operation name="test42EmptyInStringObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/parameter/test42EmptyInStringObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test1EmptyInOut">			<json:operation soapAction="http://jsonwebservice.test.com/rpc/test1EmptyInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test2StringInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test2StringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test3EmptyInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test3EmptyInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test4StringInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test4StringInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test5IntInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test5IntInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test6EmptyInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test6EmptyInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test7IntInIntOut">			<json:operation soapAction="http://jsonwebservice.test.com/rpc/test7IntInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test8IntInStringOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test8IntInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test9StringInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test9StringInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test10BooleanInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test10BooleanInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test11EmptyInBooleanOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test11EmptyInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test12BooleanInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test12BooleanInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test13EmptyInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test13EmptyInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test14EnumInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test14EnumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test15EnumInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test15EnumInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test16EmptyInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test16EmptyInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test17ObjectInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test17ObjectInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test18ObjectInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test18ObjectInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test19ObjectInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test19ObjectInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test20StringInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test20StringInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test21ObjectInNumberOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test21ObjectInNumberOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test22NumberInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test22NumberInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test23ObjectInEnumOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test23ObjectInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test24EnumInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test24EnumInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test25StringInStringOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test25StringInStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test26IntInIntOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test26IntInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test27EnumInEnumOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/test27EnumInEnumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test28ObjectInObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test28ObjectInObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test29ReservedInIntOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test29ReservedInIntOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test30IntInReservedOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test30IntInReservedOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test31ReservedInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test31ReservedInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test32ObjectReservedInBooleanOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test32ObjectReservedInBooleanOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test33NumNumInEmptyOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test33NumNumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test34EmptyInNumNumOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/test34EmptyInNumNumOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test35NumStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test35NumStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test36EmptyInNumStringOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test36EmptyInNumStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test37StringStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test37StringStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test38EmptyInStringStringOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test38EmptyInStringStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test39ObjectStringInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test39ObjectStringInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test40EmptyInObjectStringOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test40EmptyInObjectStringOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test41StringObjectInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test41StringObjectInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test42EmptyInStringObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test42EmptyInStringObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test43StringNumInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test43StringNumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		
 	</binding>
 	
+	<binding name="CustomizeTestService" type="tns:CustomizeTest">
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<operation name="test1DefaultMapObjectOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test1DefaultMapObjectOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test2DefaultMapObjectIn">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test2DefaultMapObjectIn" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test3DefaultMapObjectListOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test3DefaultMapObjectListOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test4DefaultMapObjectListInOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test4DefaultMapObjectListInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test5GlobalKeyMapObjectListOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test5GlobalKeyMapObjectListOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test6GlobalKeyMapObjectListInOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test6GlobalKeyMapObjectListInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test7GlobalKeyMapObjectListAnatEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test7GlobalKeyMapObjectListAnatEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test8GlobalKeyMapObjectListAnatEmptyInOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test8GlobalKeyMapObjectListAnatEmptyInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test9GlobalKeyMapObjectListAnatOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test9GlobalKeyMapObjectListAnatOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test10GlobalKeyMapObjectListAnatInOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test10GlobalKeyMapObjectListAnatInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+	</binding>
+	
+	<binding name="JAXBAnnotationTestService" type="tns:JAXBAnnotationTest">
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<operation name="test1EmptyInXmlElementsOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test1EmptyInXmlElementsOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test2XmlElementsInEmptyOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test2XmlElementsInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test3XmlElementsInXmlElementsOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test3XmlElementsInXmlElementsOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test4EmptyInXmlElementsWrapOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test4EmptyInXmlElementsWrapOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test5XmlElementsWrapInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test5XmlElementsWrapInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test6XmlElmWrapInXmlElmWrapOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test6XmlElmWrapInXmlElmWrapOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test7EmptyInXmlElementsSeqOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test7EmptyInXmlElementsSeqOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test8XmlElementsSeqInEmptyOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test8XmlElementsSeqInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test9XmlElementsSeqInXmlElementsSeqOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test9XmlElementsSeqInXmlElementsSeqOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test10EmptyInXmlElementsSeqWrapOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test10EmptyInXmlElementsSeqWrapOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test11XmlElementsSeqWrapInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test11XmlElementsSeqWrapInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test12XmlElmWrapSeqInXmlElmSeqWrapOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test12XmlElmWrapSeqInXmlElmSeqWrapOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+	</binding>		
+		
 	<service name="RPCTestService">
 		<port name="ParameterPort" binding="tns:ParameterTestService">
 			<json:address location="http://localhost:8080/unitTest/json/parameter" />
+		</port>
+		<port name="CustomizePort" binding="tns:CustomizeTestService">
+			<json:address location="http://localhost:8080/unitTest/json/customize" />
+		</port>
+		<port name="JAXBAnnotationPort" binding="tns:JAXBAnnotationTestService">
+			<json:address location="http://localhost:8080/unitTest/json/jaxbannotation" />
 		</port>
 	</service>
 

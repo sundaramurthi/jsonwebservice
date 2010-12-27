@@ -9,8 +9,8 @@ public class AllTests {
 		TestSuite suite = new TestSuite("Test for com.jsonws");
 		//$JUnit-BEGIN$
 		suite.addTestSuite(ParameterTest.class);
-		
-		
+		suite.addTestSuite(CustomizeTest.class);
+		suite.addTestSuite(JAXBAnnotationTest.class);
 		//$JUnit-END$
 		return suite;
 	}

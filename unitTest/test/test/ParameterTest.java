@@ -4,8 +4,14 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebservice.parameter.ParameterTest*/{
-
+	
+	protected void setUp() throws Exception {
+		END_POINT = "http://localhost:8080/unitTest/json/parameter";
+		super.setUp();
+	}
+	
 	public void test1EmptyInOut() throws MalformedURLException, IOException {
+		
 		String in 	= "{\"test1EmptyInOut\":{}}";
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
@@ -382,7 +388,7 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 	}
 
 	public void test39ObjectStringInEmptyOut() throws MalformedURLException, IOException {
-		String in 	= "{\"test39ObjectStringInEmptyOut\":{\"object\":{},\"string\":\"DD\"}}";
+		String in 	= "{\"test39ObjectStringInEmptyOut\":{\"object\":{\"property1\":45},\"string\":\"DD\"}}";
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
@@ -400,7 +406,7 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 	}
 
 	public void test41StringObjectInEmptyOut() throws MalformedURLException, IOException {
-		String in 	= "{\"test39ObjectStringInEmptyOut\":{\"string\":\"DD\",\"object\":{}}}";
+		String in 	= "{\"test41StringObjectInEmptyOut\":{\"string\":\"KK\",\"object\":{\"property1\":32}}}";
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
@@ -414,6 +420,15 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
 		String expected 	= "{\"string\":\"DD\",\"statusFlag\":true,\"object\":{\"property1\":1}}";
+		assertEquals(out, expected);
+	}
+	
+	public void test43StringNumInEmptyOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test43StringNumInEmptyOut\":{\"string\":\"KKK\",\"integer\":24}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
 
