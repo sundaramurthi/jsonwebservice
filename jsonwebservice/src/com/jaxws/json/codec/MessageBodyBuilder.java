@@ -2,13 +2,12 @@ package com.jaxws.json.codec;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.ws.handler.MessageContext;
@@ -23,6 +22,7 @@ import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.api.message.Packet;
+import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.model.wsdl.WSDLPart;
@@ -62,8 +62,9 @@ public class MessageBodyBuilder {
 
 	@SuppressWarnings("unchecked")
 	public Message handleMessage(Packet packet,String payloadName) throws Exception{
-		boolean OUT_BOUND = packet.invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY) != null && 
-							(Boolean)packet.invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+		Map<String, Object> invocationProperties = packet.invocationProperties;
+		boolean OUT_BOUND = invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY) != null && 
+							(Boolean)invocationProperties.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 		SEIModel 			seiModel 	= this.codec.getSEIModel(packet);
 		JAXBContextImpl 	context 	= (JAXBContextImpl)seiModel.getJAXBContext();
 		Style style = seiModel.getPort().getBinding().getStyle();
@@ -73,17 +74,24 @@ public class MessageBodyBuilder {
 			if(operation == null || !packet.invocationProperties.containsKey(JSONCodec.JSON_MAP_KEY)){
 				throw new RuntimeException("Operation %s input parameter(s) not found or invalid.");
 			}
-			Method 				seiMethod 	= seiModel.getJavaMethod(operation.getName()).getSEIMethod();
+			JavaMethod 			javaMethod 	= seiModel.getJavaMethod(operation.getName());
+			Method 				seiMethod 	= javaMethod.getSEIMethod();
+			JSONWebService	jsonwebService	= javaMethod.getMethod().getAnnotation(JSONWebService.class);
+			// Put codec specific properties in invoke
+			invocationProperties.put(JSONCodec.globalMapKeyPattern_KEY, (jsonwebService == null || jsonwebService.listMapKey().isEmpty())?
+					JSONCodec.globalMapKeyPattern : Pattern.compile(jsonwebService.listMapKey()));
+			//
 			
-			Map<String,Object> 	operationParameters = (Map<String, Object>) packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY);
+			Map<String,Object> 	operationParameters = (Map<String, Object>) invocationProperties.remove(JSONCodec.JSON_MAP_KEY);
 			
-			WSJSONPopulator 	jsonPopulator 		= new WSJSONPopulator(JSONCodec.globalMapKeyPattern,
+			WSJSONPopulator 	jsonPopulator 		= new WSJSONPopulator((Pattern)invocationProperties.get(JSONCodec.globalMapKeyPattern_KEY),
 					JSONCodec.globalMapValuePattern,JSONCodec.dateFormat,
 					codec.getCustomSerializer()
 					,(DebugTrace) packet.invocationProperties.get(JSONCodec.TRACE));
-			Collection<Object>	parameterObjects	= new ArrayList<Object>();
+			
+			Object[]			parameterObjects	= new Object[operation.getInParts().size()];
 			for(Map.Entry<String, WSDLPart> part : operation.getInParts().entrySet()){
-				Class<?> parameterType = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
+				Class<?> 		parameterType 	= context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
 				if(!operationParameters.containsKey(part.getKey())){
 	            	throw new RuntimeException(String.format("Request parameter %s can't be null. B.P 1.1 vilation", part.getKey()));
 	            }
@@ -92,28 +100,28 @@ public class MessageBodyBuilder {
 	            if(!WSJSONPopulator.isJSONPrimitive(parameterType)){
 		            val = parameterType.newInstance();
 		            jsonPopulator.populateObject(val,
-		            		(Map<String,Object>)operationParameters.get(part.getKey()),seiMethod != null ? seiMethod.getAnnotation(JSONWebService.class) : null, 
+		            		(Map<String,Object>)operationParameters.get(part.getKey()),jsonwebService, 
 		            		(List<MIMEPart>) packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS));
 	            } else {
 	            	val	= jsonPopulator.convert(parameterType, null, operationParameters.get(part.getKey()),
 	            			seiMethod != null ? seiMethod.getAnnotation(JSONWebService.class) : null, null);
 	            }
-	            parameterObjects.add(val);
+	            parameterObjects[part.getValue().getIndex()] = val;
 			}
 			
 			// TODO find better way with out using JavaMethodImpl
-			List<ParameterImpl> requestParameters = ((JavaMethodImpl)seiModel.getJavaMethod(operation.getName())).getRequestParameters();
+			List<ParameterImpl> requestParameters = ((JavaMethodImpl)javaMethod).getRequestParameters();
 			if(requestParameters != null && requestParameters.size() == 1){
 				ParameterImpl parameter = requestParameters.get(0);
 				if(parameter.isWrapperStyle()){
 					// RPC literal
 					List<ParameterImpl> childParameters = ((WrapperParameter)parameter).getWrapperChildren();
-					if(parameterObjects.size() != childParameters.size())
+					if(parameterObjects.length != childParameters.size())
 						throw new RuntimeException("Invalid count of parameters");
 					Object	obj	= null;
 					if(style == Style.RPC){
 						CompositeStructure cs = new CompositeStructure();
-						cs.values	= parameterObjects.toArray();
+						cs.values	= parameterObjects;
 						cs.bridges	= new Bridge[childParameters.size()];
 						for(ParameterImpl parameterChild : childParameters){
 							cs.bridges[parameterChild.getIndex()] = parameterChild.getBridge();
@@ -124,14 +132,14 @@ public class MessageBodyBuilder {
 						obj	 = type.newInstance();
 						for(ParameterImpl parameterChild : childParameters){
 							type.getField(parameterChild.getPartName()).set(obj,
-									parameterObjects.toArray()[parameterChild.getIndex()]);
+									parameterObjects[parameterChild.getIndex()]);
 						}
 					}
 					return JAXBMessage.create(parameter.getBridge(), obj, this.codec.soapVersion);
 				}else{
 					// BARE
-					assert(parameterObjects.size() == 1);
-					return JAXBMessage.create(parameter.getBridge(), parameterObjects.toArray()[0], this.codec.soapVersion);
+					assert(parameterObjects.length == 1);
+					return JAXBMessage.create(parameter.getBridge(), parameterObjects[0], this.codec.soapVersion);
 				}
 				// TODO how to do with doc/litral 
 			}else{
