@@ -401,11 +401,13 @@ public class WSJSONPopulator {
 										populateObject(ob, v, writeMethodConfig);
 										populatedObjects.add(ob);
 									}
-									if(writeMethod != null){
-										writeMethod.invoke(object, populatedObjects);
-									}else if (prop.getReadMethod() != null){
-										Method readMethod = prop.getReadMethod();
-										Collection objectList = (Collection) readMethod.invoke(object, new Object[] {});
+									Method readMethod = prop.getReadMethod();
+									if(writeMethod != null && readMethod != null && readMethod.invoke(object) == null){
+										// init list if read method returns null
+										writeMethod.invoke(object, new ArrayList<Object>());
+									}
+									if (readMethod != null){
+										Collection objectList = (Collection) readMethod.invoke(object);
 										if(objectList != null){
 											objectList.addAll(populatedObjects);
 										}else{
