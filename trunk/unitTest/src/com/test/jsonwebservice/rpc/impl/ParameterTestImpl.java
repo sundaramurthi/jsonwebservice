@@ -1,18 +1,18 @@
-package com.test.jsonwebservice.parameter.impl;
+package com.test.jsonwebservice.rpc.impl;
 
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.ws.Holder;
 
-import com.test.jsonwebservice.parameter.EnumConst;
-import com.test.jsonwebservice.parameter.Object;
-import com.test.jsonwebservice.parameter.ObjectReservedFields;
-import com.test.jsonwebservice.parameter.ParameterTest;
+import com.test.jsonwebservice.rpc.EnumConst;
+import com.test.jsonwebservice.rpc.Object;
+import com.test.jsonwebservice.rpc.ObjectReservedFields;
+import com.test.jsonwebservice.rpc.ParameterTest;
 
 @SOAPBinding(style=Style.RPC)
 @WebService(name = "ParameterTest", targetNamespace = "http://jsonwebservice.test.com/parameter",
-		endpointInterface="com.test.jsonwebservice.parameter.ParameterTest")
+		endpointInterface="com.test.jsonwebservice.rpc.ParameterTest")
 public class ParameterTestImpl implements ParameterTest {
 
 	public void test1EmptyInOut() {
@@ -255,6 +255,11 @@ public class ParameterTestImpl implements ParameterTest {
 		o.setProperty1(1);
 		object.value	= o;
 		
+	}
+
+	public void test43StringNumInEmptyOut(String string, int integer) {
+		if(string == null || integer == 0)
+			throw new RuntimeException();
 	}
 
 }
