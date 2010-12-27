@@ -291,8 +291,8 @@ public class WSJSONPopulator {
         } FIXME*/
 		// demap
 		
-		Class<?> 					clazz 	= object.getClass();
-		BeanInfo 				info 	= Introspector.getBeanInfo(clazz);
+		Class<?> 				clazz 	= object.getClass();
+		BeanInfo 				info 	= Introspector.getBeanInfo(clazz,Object.class);
 		PropertyDescriptor[] 	props 	= info.getPropertyDescriptors();
 		 if(props.length == 0){
          	// There is no property descriptor, then use public fields, RPC document require this
@@ -660,7 +660,7 @@ public class WSJSONPopulator {
             IntrospectionException {
         if (value == null)
             return null;
-        else if (value instanceof List) {
+        else if (Collection.class.isAssignableFrom(value.getClass())) {
             Class<?> itemClass = Object.class;
             Type itemType = null;
             if (type != null && type instanceof ParameterizedType) {
@@ -672,7 +672,7 @@ public class WSJSONPopulator {
                     itemClass = (Class<?>) ((ParameterizedType) itemType).getRawType();
                 }
             }
-			List values = (List) value;
+            Collection values = (Collection) value;
 
 			Collection newCollection = null;
             try {
@@ -687,9 +687,7 @@ public class WSJSONPopulator {
             }
 
             //create an object for each element
-            for (int j = 0; j < values.size(); j++) {
-                Object listValue = values.get(j);
-
+            for (Object listValue : values) {
                 if (itemClass.equals(Object.class)) {
                     //Object[]
                     newCollection.add(listValue);
@@ -718,15 +716,16 @@ public class WSJSONPopulator {
                 			accessor.getDeclaringClass().getSimpleName()));
                 }
             }
-
             return newCollection;
         } else if (value instanceof Map) {
         	if(traceEnabled){
-        		traceLog.warn(String.format("Incompatible types for property %s in class %s. " +
-	        			"JSON in MAP format but server expect list. Map to list conversion in JSON codec not implemented.",
+        		traceLog.info(String.format("Expecting array, but found MAP. for property %s in class %s. Using values as List",
 	        			accessor.getName(),
 	        			accessor.getDeclaringClass().getSimpleName()));
         	}
+        	Map<String,Object> 	listVal 	= (Map<String,Object>)value;
+        	Object 				colection 	=  convertToCollection(clazz, type, listVal.values(), customizeInfo, accessor);
+        	return colection;
         } else{
         	if(traceEnabled){
         		traceLog.error(String.format("Incompatible types for property %s in class %s",
