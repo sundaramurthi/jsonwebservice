@@ -736,15 +736,22 @@ public class WSJSONWriter {
 	 	                    		Collection<?> valueList = (Collection<?>)value;
 	 	                    		if(!valueList.isEmpty()){
 	 	                    			// use first object to identify type
-	 	                    			Object firstObject = valueList.toArray()[0];
-	 	                    			for(XmlElement elm : xmlElms.value()){
-	 										Class<?> elType = elm.type();
-	 	                    				if(elType.isAssignableFrom(firstObject.getClass())){
-	 	                    					name = elm.name();
-	 	                    					//
-	 	                    					break;
-	 	                    				}
+	 	                    			Map<String,List<Object>> group = new HashMap<String,List<Object>>();
+	 	                    			for(Object ob : valueList){
+	 	                    				for(XmlElement elm : xmlElms.value()){
+		 	                    				if(((Class<?>)elm.type()).isAssignableFrom(ob.getClass())){
+		 	                    					name = elm.name();
+		 	                    					if(!group.containsKey(name))
+		 	                    						group.put(name, new ArrayList<Object>());
+		 	                    					group.get(name).add(ob);
+		 	                    				}
+		 	                    			}
 	 	                    			}
+	 	                    			for(Map.Entry<String, List<Object>> entry : group.entrySet()){
+	 	                    				hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
+	 	                                    // TODO this.setExprStack(expr);
+	 	                    			}
+	 	                    			continue nextProperty;
 	 	                    		} else {
 	 	                    			// If choice element id empty, don't print it at all
 	 	                    			if(!this.metaDataMode){
