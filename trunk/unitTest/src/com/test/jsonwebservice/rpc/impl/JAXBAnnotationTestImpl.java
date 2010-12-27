@@ -26,6 +26,8 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 		List<java.lang.Object> objectList = elements.getObjectOrObjectReservedOrMapObject();
 		Object ob = new Object();ob.setProperty1(1);
 		objectList.add(ob);
+		ob = new Object();ob.setProperty1(2);
+		objectList.add(ob);
 		ObjectReservedFields obRes = new ObjectReservedFields();
 		obRes.setBoolean(true);obRes.setEnum(EnumConst.CONST_2);obRes.setFloat(1.2f);obRes.setInt(1);obRes.setString("SS");
 		objectList.add(obRes);
@@ -36,26 +38,44 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 	}
 
 	public void test2XmlElementsInEmptyOut(XmlElementsObj xmlElementsObj) {
-		if(xmlElementsObj == null || xmlElementsObj.getObjectOrObjectReservedOrMapObject().isEmpty()){
+		if(xmlElementsObj == null || xmlElementsObj.getObjectOrObjectReservedOrMapObject().isEmpty()
+				|| xmlElementsObj.getObjectOrObjectReservedOrMapObject().size() < 3){
 			throw new RuntimeException();
 		}
 	}
 
 	public void test3XmlElementsInXmlElementsOut(
 			Holder<XmlElementsObj> xmlElementsObj) {
-		// TODO Auto-generated method stub
+		if(xmlElementsObj == null || xmlElementsObj.value == null){
+			throw new RuntimeException();
+		}
 
 	}
 
 	public XmlElementsWrapperObj test4EmptyInXmlElementsWrapOut() {
-		// TODO Auto-generated method stub
-		return null;
+		XmlElementsWrapperObj elementsWrap = new XmlElementsWrapperObj();
+		XmlElementsObj elements = new XmlElementsObj();
+		List<java.lang.Object> objectList = elements.getObjectOrObjectReservedOrMapObject();
+		Object ob = new Object();ob.setProperty1(1);
+		objectList.add(ob);
+		ob = new Object();ob.setProperty1(2);
+		objectList.add(ob);
+		ObjectReservedFields obRes = new ObjectReservedFields();
+		obRes.setBoolean(true);obRes.setEnum(EnumConst.CONST_2);obRes.setFloat(1.2f);obRes.setInt(1);obRes.setString("SS");
+		objectList.add(obRes);
+		MapObject	mapOb = new MapObject();
+		mapOb.setKeyProperty1(1);mapOb.setKeyProperty2("KK");mapOb.setProperty1(true);mapOb.setValueProperty1(2);mapOb.setValueProperty2("DD");
+		objectList.add(mapOb);
+		elementsWrap.setChoiceList(elements);
+		return elementsWrap;
 	}
 
 	public void test5XmlElementsWrapInEmptyOut(
 			XmlElementsWrapperObj xmlElementsWrapperObj) {
-		// TODO Auto-generated method stub
-
+		if(xmlElementsWrapperObj == null || xmlElementsWrapperObj.getChoiceList() == null
+				|| xmlElementsWrapperObj.getChoiceList().getObjectOrObjectReservedOrMapObject().isEmpty() ){
+			throw new RuntimeException();
+		}
 	}
 
 	public void test6XmlElmWrapInXmlElmWrapOut(
