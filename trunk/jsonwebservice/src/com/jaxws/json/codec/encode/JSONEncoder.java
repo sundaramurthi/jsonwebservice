@@ -11,8 +11,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.activation.DataHandler;
 import javax.imageio.ImageIO;
@@ -174,11 +176,12 @@ public class JSONEncoder {
 		/*
 		 * Step 3: add all custom output content, log trace, status etc
 		 */
-		for (Iterator<String> iterator = packet.invocationProperties.keySet().iterator(); iterator.hasNext();) {
-			String type = iterator.next();
-			if(MessageContext.MESSAGE_OUTBOUND_PROPERTY.equals(type))
+		for (Entry<String, Object> property : invocationProperties.entrySet()) {
+			if(MessageContext.MESSAGE_OUTBOUND_PROPERTY.equals(property.getKey()) ||
+					JSONCodec.globalMapKeyPattern_KEY.equals(property.getKey()) ||
+					JSONCodec.globalMapValuePattern_KEY.equals(property.getKey()))
 				continue;
-			responseJSONMap.put(type.toString(),packet.invocationProperties.get(type));
+			responseJSONMap.put(property.getKey(), property.getValue());
 		}
 		
 		final Message 				message 			= packet.getMessage();
@@ -229,9 +232,9 @@ public class JSONEncoder {
 					try {
 						new MessageBodyBuilder(this.codec).handleMessage(this.packet,payload);
 						if(JSONCodec.responsePayloadEnabled){
-							responseJSONMap.put(payload,this.packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
+							responseJSONMap.put(payload,invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 						}else{
-							responseJSONMap.putAll((Map<String, ? extends Object>) this.packet.invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
+							responseJSONMap.putAll((Map<String, ? extends Object>) invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 						}
 					} catch (Exception e1) {
 						responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
@@ -266,7 +269,8 @@ public class JSONEncoder {
 		}
 		// JSON data write.
 		writer.write(JSONCodec.dateFormat,JSONCodec.excludeProperties,
-				JSONCodec.includeProperties,JSONCodec.globalMapKeyPattern,
+				JSONCodec.includeProperties,
+				(Pattern) invocationProperties.get(JSONCodec.globalMapKeyPattern_KEY),
 				JSONCodec.globalMapValuePattern);
 		
 		//Process all response attachments
