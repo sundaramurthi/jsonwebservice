@@ -430,7 +430,12 @@ public class WSJSONPopulator {
 					} else if(f.isAnnotationPresent(XmlElement.class)){
 						// Handle default value
 						XmlElement 		element 	= f.getAnnotation(XmlElement.class);
-						if(!element.defaultValue().equals(NULL)){
+						// JSON property name is same as in XML annotation, but class property name is different. 
+						if(!element.name().equals(NULL) && elements.containsKey(element.name())){
+							writeMethod.invoke(object,
+									convert(prop.getPropertyType(), f.getType(), elements.get(element.name()), 
+											writeMethod.getAnnotation(JSONWebService.class), writeMethod));
+						}else if(!element.defaultValue().equals(NULL)){
 							if(traceEnabled)
 								traceLog.info(String.format("Input do not have %s. Populating default value: %s",
 										expectedJSONPropName, element.defaultValue()));
