@@ -11,6 +11,7 @@ public class AllTests {
 		suite.addTestSuite(ParameterTest.class);
 		suite.addTestSuite(CustomizeTest.class);
 		suite.addTestSuite(JAXBAnnotationTest.class);
+		suite.addTestSuite(AttachmentTest.class);
 		//$JUnit-END$
 		return suite;
 	}
