@@ -80,42 +80,74 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 
 	public void test6XmlElmWrapInXmlElmWrapOut(
 			Holder<XmlElementsWrapperObj> xmlElementsWrapperObj) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public XmlElementsSeqWrapperObj test10EmptyInXmlElementsSeqWrapOut() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void test11XmlElementsSeqWrapInEmptyOut(
-			XmlElementsSeqWrapperObj xmlElementsSeqWrapperObj) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void test12XmlElmWrapSeqInXmlElmSeqWrapOut(
-			Holder<XmlElementsSeqWrapperObj> xmlElementsSeqWrapperObj) {
-		// TODO Auto-generated method stub
-		
+		if(xmlElementsWrapperObj == null || xmlElementsWrapperObj.value == null
+				|| xmlElementsWrapperObj.value.getChoiceList() == null ||
+				xmlElementsWrapperObj.value.getChoiceList().getObjectOrObjectReservedOrMapObject().isEmpty()){
+			throw new RuntimeException();
+		}
 	}
 
 	public XmlElementsSeqObj test7EmptyInXmlElementsSeqOut() {
-		// TODO Auto-generated method stub
-		return null;
+		XmlElementsSeqObj xmlElementSeq = new XmlElementsSeqObj();
+		List<java.lang.Object> objectList = xmlElementSeq.getObjectAndObjectReservedAndMapObject();
+		Object ob = new Object();ob.setProperty1(1);
+		objectList.add(ob);
+		ob = new Object();ob.setProperty1(2);
+		objectList.add(ob);
+		ObjectReservedFields obRes = new ObjectReservedFields();
+		obRes.setBoolean(true);obRes.setEnum(EnumConst.CONST_1);obRes.setFloat(1.2f);obRes.setInt(1);obRes.setString("rr");
+		objectList.add(obRes);
+		MapObject	mapOb = new MapObject();
+		mapOb.setKeyProperty1(1);mapOb.setKeyProperty2("tt77");mapOb.setProperty1(true);mapOb.setValueProperty1(2);mapOb.setValueProperty2("FF");
+		objectList.add(mapOb);
+		return xmlElementSeq;
 	}
 
 	public void test8XmlElementsSeqInEmptyOut(
 			XmlElementsSeqObj xmlElementsSeqObj) {
-		// TODO Auto-generated method stub
-		
+		if(xmlElementsSeqObj == null || xmlElementsSeqObj.getObjectAndObjectReservedAndMapObject().isEmpty()){
+			throw new RuntimeException();
+		}
 	}
 
 	public void test9XmlElementsSeqInXmlElementsSeqOut(
 			Holder<XmlElementsSeqObj> xmlElementsSeqObj) {
-		// TODO Auto-generated method stub
-		
+		if(xmlElementsSeqObj == null || xmlElementsSeqObj.value == null){
+			throw new RuntimeException();
+		}
+	}
+	
+	public XmlElementsSeqWrapperObj test10EmptyInXmlElementsSeqWrapOut() {
+		XmlElementsSeqWrapperObj warpObj = new XmlElementsSeqWrapperObj();
+		XmlElementsSeqObj xmlElementSeq = new XmlElementsSeqObj();
+		List<java.lang.Object> objectList = xmlElementSeq.getObjectAndObjectReservedAndMapObject();
+		Object ob = new Object();ob.setProperty1(1);
+		objectList.add(ob);
+		ob = new Object();ob.setProperty1(2);
+		objectList.add(ob);
+		ObjectReservedFields obRes = new ObjectReservedFields();
+		obRes.setBoolean(true);obRes.setEnum(EnumConst.CONST_1);obRes.setFloat(1.2f);obRes.setInt(1);obRes.setString("DD");
+		objectList.add(obRes);
+		MapObject	mapOb = new MapObject();
+		mapOb.setKeyProperty1(1);mapOb.setKeyProperty2("FF");mapOb.setProperty1(true);mapOb.setValueProperty1(2);mapOb.setValueProperty2("FF");
+		objectList.add(mapOb);
+		warpObj.setSequenceList(xmlElementSeq );
+		return warpObj;
 	}
 
+	public void test11XmlElementsSeqWrapInEmptyOut(
+			XmlElementsSeqWrapperObj xmlElementsSeqWrapperObj) {
+		if(xmlElementsSeqWrapperObj == null || xmlElementsSeqWrapperObj.getSequenceList() == null
+				|| xmlElementsSeqWrapperObj.getSequenceList().getObjectAndObjectReservedAndMapObject().isEmpty()){
+			throw new RuntimeException();
+		}
+	}
+
+	public void test12XmlElmWrapSeqInXmlElmSeqWrapOut(
+			Holder<XmlElementsSeqWrapperObj> xmlElementsSeqWrapperObj) {
+		if(xmlElementsSeqWrapperObj == null || xmlElementsSeqWrapperObj.value == null
+				|| xmlElementsSeqWrapperObj.value.getSequenceList().getObjectAndObjectReservedAndMapObject().isEmpty()){
+			throw new RuntimeException();
+		}
+	}
 }
