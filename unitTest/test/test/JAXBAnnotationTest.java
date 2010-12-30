@@ -97,7 +97,7 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"object\":[{\"property1\":1},{\"property1\":2}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}]}}";
 		assertEquals(out, expected);
 	}
 	
@@ -125,8 +125,37 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"object\":[{\"property1\":1},{\"property1\":2}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}]}}}";
 		assertEquals(out, expected);
 	}
 
+	public void test13EmptyInXmlElementRefsOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test13EmptyInXmlElementRefsOut\":{}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
+		assertEquals(out, expected);
+		// THIS is not supported type
+	}
+
+	public void test14XmlElementRefsInEmptyOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test14XmlElementRefsInEmptyOut\":{\"xmlElementRefsObj\":{}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
+		assertEquals(out, expected);
+		// THIS is not supported type
+	}
+
+	public void test15XmlElementRefsInXmlElementRefsOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test15XmlElementRefsInXmlElementRefsOut\":{\"xmlElementRefsObj\":{}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
+		assertEquals(out, expected);
+		// THIS is not supported type
+	}
 }

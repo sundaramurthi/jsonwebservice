@@ -90,6 +90,26 @@
 				</xsd:sequence>
 		 	 </xsd:complexType>
 		 	 
+		 	 <xsd:simpleType name="InputFieldType">
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="TEXT" />
+					<xsd:enumeration value="PASSWORD" />
+					<xsd:enumeration value="SELECT" />
+					<xsd:enumeration value="CHECKBOX" />
+				</xsd:restriction>	
+			</xsd:simpleType>
+			
+		 	<xsd:complexType name="XmlElementRefsObj">
+				<xsd:sequence minOccurs="1" maxOccurs="unbounded">
+					<xsd:element name="name" type="xsd:string" />
+					<xsd:element name="type" type="tns:InputFieldType" />
+					<xsd:element name="lable" type="xsd:string" />
+					<xsd:element name="value" type="xsd:string" />
+					<xsd:element name="validateRegex" type="xsd:string" />
+					<xsd:element name="depends" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			</xsd:complexType>
+		 	 
 		</xsd:schema>
 	</types>
 
@@ -206,6 +226,10 @@
 	
 	<message name="xmlElementsSeqWrapperObjMessage">
 		<part name="xmlElementsSeqWrapperObj" type="tns:XmlElementsSeqWrapperObj"/>
+	</message>
+	
+	<message name="xmlElementRefsObjMessage">
+		<part name="xmlElementRefsObj" type="tns:XmlElementRefsObj"/>
 	</message>
 	
 	<!--  Attachemnt messages -->
@@ -502,8 +526,8 @@
 		</operation>
 		
 		<operation name="test2XmlElementsInEmptyOut">
-			<input 	name="test1XmlElementsIn" 				message="tns:xmlElementsObjMessage" />
-			<output name="test1EmptyOut" 							message="tns:emptyMessage" />
+			<input 	name="test2XmlElementsIn" 				message="tns:xmlElementsObjMessage" />
+			<output name="test2EmptyOut" 							message="tns:emptyMessage" />
 		</operation>
 		
 		<operation name="test3XmlElementsInXmlElementsOut">
@@ -555,6 +579,22 @@
 			<input 	name="test12XmlElementsSeqWrapIn" 		message="tns:xmlElementsSeqWrapperObjMessage" />
 			<output name="test12XmlElementsSeqWrapOut" 		message="tns:xmlElementsSeqWrapperObjMessage" />
 		</operation>
+		
+		<operation name="test13EmptyInXmlElementRefsOut">
+			<input 	name="test13EmptyIn" 						message="tns:emptyMessage" />
+			<output name="test13XmlElementRefsOut" 	message="tns:xmlElementRefsObjMessage" />
+		</operation>
+		
+		<operation name="test14XmlElementRefsInEmptyOut">
+			<input 	name="test14XmlElementRefsIn" 				message="tns:xmlElementRefsObjMessage" />
+			<output name="test14EmptyOut" 							message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test15XmlElementRefsInXmlElementRefsOut">
+			<input 	name="test15XmlElementRefsIn" 				message="tns:xmlElementRefsObjMessage" />
+			<output name="test15XmlElementRefsOut" 				message="tns:xmlElementRefsObjMessage" />
+		</operation>
+		
 	</portType>
 
 	<portType name="AttachmentTest">
@@ -666,6 +706,9 @@
 		<operation name="test10EmptyInXmlElementsSeqWrapOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test10EmptyInXmlElementsSeqWrapOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test11XmlElementsSeqWrapInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test11XmlElementsSeqWrapInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test12XmlElmWrapSeqInXmlElmSeqWrapOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test12XmlElmWrapSeqInXmlElmSeqWrapOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test13EmptyInXmlElementRefsOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test13EmptyInXmlElementRefsOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test14XmlElementRefsInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test14XmlElementRefsInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test15XmlElementRefsInXmlElementRefsOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test15XmlElementRefsInXmlElementRefsOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 	</binding>		
 	
 	<binding name="AttachmentTestService" type="tns:AttachmentTest">

@@ -30,22 +30,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ChartInput }
-     * 
-     */
-    public ChartInput createChartInput() {
-        return new ChartInput();
-    }
-
-    /**
-     * Create an instance of {@link Colors }
-     * 
-     */
-    public Colors createColors() {
-        return new Colors();
-    }
-
-    /**
      * Create an instance of {@link Visibility }
      * 
      */
@@ -62,11 +46,27 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link Colors }
+     * 
+     */
+    public Colors createColors() {
+        return new Colors();
+    }
+
+    /**
      * Create an instance of {@link ChartConfig }
      * 
      */
     public ChartConfig createChartConfig() {
         return new ChartConfig();
+    }
+
+    /**
+     * Create an instance of {@link DataSettings }
+     * 
+     */
+    public DataSettings createDataSettings() {
+        return new DataSettings();
     }
 
     /**
@@ -78,11 +78,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link DataSettings }
+     * Create an instance of {@link ChartInput }
      * 
      */
-    public DataSettings createDataSettings() {
-        return new DataSettings();
+    public ChartInput createChartInput() {
+        return new ChartInput();
     }
 
 }

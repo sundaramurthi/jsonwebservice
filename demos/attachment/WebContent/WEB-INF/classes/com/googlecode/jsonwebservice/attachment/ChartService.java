@@ -17,7 +17,7 @@ import javax.xml.ws.WebServiceFeature;
  * Generated source version: 2.2
  * 
  */
-@WebServiceClient(name = "ChartService", targetNamespace = "http://jsonwebservice.googlecode.com/attachment", wsdlLocation = "file:/C:/Documents%20and%20Settings/ssaminathan/workspace/attachment/WebContent/WEB-INF/wsdl/attachment.wsdl")
+@WebServiceClient(name = "ChartService", targetNamespace = "http://jsonwebservice.googlecode.com/attachment", wsdlLocation = "file:/C:/Documents%20and%20Settings/ssaminathan/workspace/attachment-json/WebContent/WEB-INF/wsdl/attachment.wsdl")
 public class ChartService
     extends Service
 {
@@ -30,7 +30,7 @@ public class ChartService
         URL url = null;
         WebServiceException e = null;
         try {
-            url = new URL("file:/C:/Documents%20and%20Settings/ssaminathan/workspace/attachment/WebContent/WEB-INF/wsdl/attachment.wsdl");
+            url = new URL("file:/C:/Documents%20and%20Settings/ssaminathan/workspace/attachment-json/WebContent/WEB-INF/wsdl/attachment.wsdl");
         } catch (MalformedURLException ex) {
             e = new WebServiceException(ex);
         }

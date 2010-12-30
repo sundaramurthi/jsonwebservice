@@ -11,6 +11,7 @@ import com.test.jsonwebservice.rpc.JAXBAnnotationTest;
 import com.test.jsonwebservice.rpc.MapObject;
 import com.test.jsonwebservice.rpc.Object;
 import com.test.jsonwebservice.rpc.ObjectReservedFields;
+import com.test.jsonwebservice.rpc.XmlElementRefsObj;
 import com.test.jsonwebservice.rpc.XmlElementsObj;
 import com.test.jsonwebservice.rpc.XmlElementsSeqObj;
 import com.test.jsonwebservice.rpc.XmlElementsSeqWrapperObj;
@@ -149,5 +150,20 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 				|| xmlElementsSeqWrapperObj.value.getSequenceList().getObjectAndObjectReservedAndMapObject().isEmpty()){
 			throw new RuntimeException();
 		}
+	}
+
+	public XmlElementRefsObj test13EmptyInXmlElementRefsOut() {
+		// Its hard to support this type.  TODO investigate better, Even in java generated classes its confusing
+		throw new UnsupportedOperationException();
+	}
+
+	public void test14XmlElementRefsInEmptyOut(
+			XmlElementRefsObj xmlElementRefsObj) {
+		throw new UnsupportedOperationException();
+	}
+
+	public void test15XmlElementRefsInXmlElementRefsOut(
+			Holder<XmlElementRefsObj> xmlElementRefsObj) {
+		throw new UnsupportedOperationException();
 	}
 }
