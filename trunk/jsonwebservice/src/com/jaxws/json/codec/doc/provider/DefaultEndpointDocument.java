@@ -10,7 +10,10 @@ import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.model.SEIModel;
+import com.sun.xml.ws.api.model.wsdl.WSDLBoundFault;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
+import com.sun.xml.ws.api.model.wsdl.WSDLFault;
+import com.sun.xml.ws.api.model.wsdl.WSDLPart;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -143,7 +146,18 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 						JSONCodec.responsePayloadEnabled ? 
 							String.format("{\"%s\":%s}", operation.getOperation().getOutput().getName() ,responeJSON)
 							: responeJSON);
-
+				
+				StringBuffer faultIno	= new StringBuffer();
+				for(WSDLBoundFault fault : operation.getFaults()){
+					WSDLFault wsdlFault = fault.getFault();
+					Map<String,WSDLPart> faultParts = new HashMap<String, WSDLPart>();
+					for(WSDLPart s: wsdlFault.getMessage().parts()){
+						faultParts.put(s.getName(), s);
+					}
+					faultIno.append(String.format("{\"%s\":%s}", fault.getName(), 
+							JSONHttpMetadataPublisher.getJSONAsString(faultParts, context, this.codec)));
+				}
+				methodTemplate = methodTemplate.replaceAll("#FAULT_JSON#", faultIno.toString());
 				methods.append(methodTemplate);
 				count++;
 			}

@@ -11,6 +11,7 @@ import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.codec.encode.WSJSONWriter;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
+import com.sun.xml.ws.api.model.ParameterBinding;
 import com.sun.xml.ws.api.model.wsdl.WSDLPart;
 import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.HttpMetadataPublisher;
@@ -102,13 +103,17 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		HashMap<String,Object> parameterMap = new HashMap<String, Object>();
 		try{
 			for(Entry<String, WSDLPart> part : parts.entrySet()){
-				Class<?> clazz = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
-				if(WSJSONPopulator.isJSONPrimitive(clazz)){
-					parameterMap.put(part.getKey(), clazz.getSimpleName());
-				} else if(clazz.isEnum()){
-					parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
+				if(part.getValue().getBinding() == ParameterBinding.BODY){
+					Class<?> clazz = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
+					if(WSJSONPopulator.isJSONPrimitive(clazz)){
+						parameterMap.put(part.getKey(), clazz.getSimpleName());
+					} else if(clazz.isEnum()){
+						parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
+					}else{
+						parameterMap.put(part.getKey(), clazz.newInstance());
+					}
 				}else{
-					parameterMap.put(part.getKey(), clazz.newInstance());
+					parameterMap.put(part.getKey(), part.getValue().getBinding().kind);
 				}
 			}
 		}catch(Throwable e){

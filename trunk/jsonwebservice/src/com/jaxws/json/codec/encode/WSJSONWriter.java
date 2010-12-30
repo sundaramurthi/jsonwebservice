@@ -1041,11 +1041,16 @@ public class WSJSONWriter {
  		
  		if(WSJSONPopulator.isJSONPrimitive(propertyType)){
   			// Go with null
-  			if(Number.class.isAssignableFrom(propertyType)){
+  			if(Number.class.isAssignableFrom(propertyType) 
+  					|| Integer.TYPE.equals(propertyType)
+  					|| Byte.TYPE.equals(propertyType)
+  					|| Short.TYPE.equals(propertyType)
+  					|| Long.TYPE.equals(propertyType)){
   				return 0;	
   			}else if(propertyType.isAssignableFrom(String.class)){
   				return "";
-  			}else if(propertyType.isAssignableFrom(Boolean.class)){
+  			}else if(propertyType.isAssignableFrom(Boolean.class)
+  					|| Boolean.TYPE.equals(propertyType)){
   				return false;
   			}else if(propertyType.isAssignableFrom(Date.class)){
   				return new Date();
@@ -1055,6 +1060,8 @@ public class WSJSONWriter {
   					 b.append((b.length() != 0 ? "|" :"") + ((Enum<?>)cont).name());
   				}
   				return b.toString();
+  			}else if(Float.TYPE.equals(propertyType) || Double.TYPE.equals(propertyType)){
+  				return 0.0;	
   			}else {
   				return null;
   			}
