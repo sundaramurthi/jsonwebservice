@@ -1,0 +1,440 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<style>
+body { background-color: #E7F3FF; color: #827B60;}
+h3 {height: 25px; margin: 0;}
+table { border: 1px solid #CCCCCC; border-collapse: collapse; }
+table td, table th { padding: 0.2em 0.3em; border: 1px solid #CCCCCC; vertical-align: top; }
+textarea {width: 99%; margin-bottom: 0.5em; padding: 1px;}
+.string input,select { border: none;background: transparent; }
+.number input{ border: none;background: transparent; }
+div.object { padding: 1.5em; border: 1px solid #CCCCCC; background-color: #eeeeee; height: 1%; position: relative; }
+.objecttable { background-color: #ffffff; }
+div.array { padding: 1.5em; border: 1px solid #CCCCCC; background-color: #eeeeff; height: 1%; position: relative; }
+.arraytable { background-color: #ffffee; }
+.wrap { display: table; margin: 0.3em; }
+.string { color: #000000; }
+.number { color: #0000ff; }
+.boolean { color: #ff8000; }
+.void { color: #0000ff; }
+.widgets { position: absolute; top: 1em; right: 1.5em; width: 9px; height: 20px; }
+.statson { padding: 0.5em; background-color: #ffffff; border: 1px solid #a0a0a0; }
+#statscon { display: none; }
+#stats table { border: none; }
+#stats table tr { border: none; }
+#stats table td { border: none; }
+</style>
+<script type="text/javascript" ><!-- 
+/*  Prototype JavaScript framework, version 1.6.0.3
+ *  (c) 2005-2008 Sam Stephenson
+ *
+ *  Prototype is freely distributable under the terms of an MIT-style license.
+ *  For details, see the Prototype web site: http://www.prototypejs.org/
+ *
+ *--------------------------------------------------------------------------*/
+Array.prototype.toJSONString=function(){var a=['['],b,i,l=this.length,v;function p(s){if(b){a.push(',');}
+a.push(s);b=true;}
+for(i=0;i<l;i+=1){v=this[i];switch(typeof v){case'undefined':case'function':case'unknown':break;case'object':if(v){if(typeof v.toJSONString==='function'){p(v.toJSONString());}}else{p("null");}
+break;default:p(v.toJSONString());}}
+a.push(']');return a.join('');};Boolean.prototype.toJSONString=function(){return String(this);};Date.prototype.toJSONString=function(){function f(n){return n<10?'0'+n:n;}
+return'"'+this.getFullYear()+'-'+
+f(this.getMonth()+1)+'-'+
+f(this.getDate())+'T'+
+f(this.getHours())+':'+
+f(this.getMinutes())+':'+
+f(this.getSeconds())+'"';};Number.prototype.toJSONString=function(){return isFinite(this)?String(this):"null";};Object.prototype.toJSONString=function(){var a=['{'],b,i,v;function p(s){if(b){a.push(',');}
+a.push(i.toJSONString(),':',s);b=true;}
+for(i in this){if(this.hasOwnProperty(i)){v=this[i];switch(typeof v){case'undefined':case'function':case'unknown':break;case'object':if(v){if(typeof v.toJSONString==='function'){p(v.toJSONString());}}else{p("null");}
+break;default:p(v.toJSONString());}}}
+a.push('}');return a.join('');};(function(s){var m={'\b':'\\b','\t':'\\t','\n':'\\n','\f':'\\f','\r':'\\r','"':'\\"','\\':'\\\\'};s.parseJSON=function(){try{if(/^("(\\.|[^"\\\n\r])*?"|[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t])+?$/.test(this)){return eval('('+this+')');}}catch(e){}
+throw new SyntaxError("parseJSON");};s.toJSONString=function(){if(/["\\\x00-\x1f]/.test(this)){return'"'+this.replace(/([\x00-\x1f\\"])/g,function(a,b){var c=m[b];if(c){return c;}
+c=b.charCodeAt();return'\\u00'+
+Math.floor(c/16).toString(16)+
+(c%16).toString(16);})+'"';}
+return'"'+this+'"';};})(String.prototype);
+
+// parse.js
+function $(ele)
+{
+   var t = document.getElementById(ele);
+   if(t == null) t = document.getElementsByName(ele);
+   if(t.length == 1) t = t.item(0);
+   return t;
+}
+
+function escapeHTML(str)
+{
+   //code portion borrowed from prototype library
+   var div = document.createElement('div');
+   var text = document.createTextNode(str);
+   div.appendChild(text);
+   return div.innerHTML;
+   //end portion
+}
+
+function wordwrap(str)
+{
+   parts = str.split(" ");
+
+   for(i = 0; i < parts.length; i++)
+   {
+      if(parts[i].length <= 30) continue;
+
+      t = parts[i].length;
+      p = "";
+
+      for(var j = 0; j < (parts[i].length - 30); j += 30) p += parts[i].substring(j, j + 30) + "<wbr />";
+      parts[i] = p + parts[i].substring(j, parts[i].length);
+   }
+
+   return parts.join(" ");
+}
+var isAttachment = false;
+var elementCount = 0;
+var arrayCount = 0;
+var objectCount = 0;
+var nestingLevel = 0;
+
+function doStats(){
+   var out = "<input type='button' id='statst' onclick='showStats();' value='Show Statistics' style='float: right;' />\n"
+    + "<div class='clear'></div>\n"
+     + "<div id='statscon'>\n<table>\n<tr>\n<td>Number of Arrays:</td>\n<td>" + arrayCount + "</td>\n</tr>\n"
+      + "<tr>\n<td>Number of Objects:</td>\n<td>" + objectCount + "</td>\n</tr>\n"
+       + "<tr>\n<td>Total number of all elements:</td>\n<td>" + elementCount + "</td>\n</tr>\n"
+        + "<tr>\n<td>Nesting depth:</td>\n<td>" + nestingLevel + "</td>\n</tr>\n"
+         + "</table>\n</div>\n</div>\n";
+   return out;
+}
+
+function parseValue(val, parent, level, propLabel){
+   elementCount++;
+   if(parent == null) parent = "";
+   if(level == null) level = 1;
+
+   if(typeof(val) == "object") {
+      if(level > nestingLevel) nestingLevel = level;
+      if(val instanceof Array){
+         arrayCount++;
+         parent = parent + (parent != "" ? " > " : "") + "Array (" + val.length + " item" + (val.length != 1 ? "s)" : ")");
+
+         var out = "<div class='wrap'>\n<div class='array' onmouseover='doFocus(event, this);'>\n<div class='widgets'><img alt='min' src='data:image/gif;base64,R0lGODlhCQAUAIABAAAAAP///yH+FUNyZWF0ZWQgd2l0aCBUaGUgR0lNUAAh+QQBCgABACwAAAAACQAUAAACFIyPqcsNDyECS854otS4+Q+G4lcAADs=' onclick='hideChild(this);' /></div>\n<h3><span class='titled' title='" + parent + "'>Array</span></h3>\n";
+
+         if(val.length > 0){
+            out += "<table class='arraytable'>\n<tr><th>Index</th><th>Value</th></tr>\n";
+            for(prop in val) {
+               if(typeof(val[prop]) == "function") continue;
+               out += "<tr><td>" + prop + "</td><td>" + parseValue(val[prop], parent, level + 1, (propLabel + "." + prop)) + "</td></tr>\n";
+            }
+            out += "</table>\n";
+         }
+         else {
+            
+            return "(empty <span class='titled' title='" + parent + "'>Array</span>)\n";
+         }
+         
+         out += "</div>\n</div>\n";
+         return out;
+      } else {
+         objectCount++;
+         i = 0;
+         for(prop in val){
+            if(typeof(val[prop]) != "function") i++;
+         }
+
+         parent = parent + (parent != "" ? " > " : "") + "Object (" + i + " item" + (i != 1 ? "s)" : ")");
+
+         var out = "<div class='wrap'>\n<div class='object' onmouseover='doFocus(event, this);'>\n<div class='widgets'><img alt='min' src='data:image/gif;base64,R0lGODlhCQAUAIABAAAAAP///yH+FUNyZWF0ZWQgd2l0aCBUaGUgR0lNUAAh+QQBCgABACwAAAAACQAUAAACFIyPqcsNDyECS854otS4+Q+G4lcAADs=' onclick='hideChild(this);' /></div>\n<h3><span class='titled' title='" + parent + "'>Object</span></h3>\n";
+         
+         if(i > 0) {
+            out += "<table class='objecttable'>\n<tr><th>Name</th><th>Value</th></tr>\n";
+            for(prop in val) {
+               if(typeof(val[prop]) == "function") continue;
+               out += "<tr><td>" + prop + "</td><td>" + parseValue(val[prop], parent, level + 1, (propLabel != null ? (propLabel+'.'+prop) : prop)) + "</td></tr>\n";
+            }
+            
+            out += "</table><div class='clear'></div>\n";
+         } else {
+            return "(empty <span class='titled' title='" + parent + "'>Object</span>)\n";
+         }
+         
+         out += "</div>\n</div>\n";
+         return out;
+      }
+   } else {
+      if(typeof(val) == "string"){
+      	if(val.indexOf("|") > -1){
+      		var vls  = val.split("|");  
+      		var rtnStr = "<span class='string'><select name='"+ propLabel +"'>";
+      		for(var i=0; i< vls.length; i++){
+      			rtnStr += "<option value='" + vls[i] +"'>"+ vls[i] +"</option>";
+      		}
+      		rtnStr +="</select></span>";
+      		return rtnStr;
+      	} else{
+      		var upload =  val == "text/xml";
+      		isAttachment = isAttachment || upload || objectCount > 10; // If more then 10 object its always better to post
+       		return "<span class='string'><input type='"+ (upload ? "file" : "text") +"' name='"+ propLabel +"' value='" + wordwrap(val.replace(/\n/g, "<br />")) + "'/></span>";
+       	}
+      }
+      else if(typeof(val) == "number") return "<span class='number'><input type='text' name='"+ propLabel +"' value='" + val + "'/></span>";
+      else if(typeof(val) == "boolean") return "<span class='boolean'><input name='"+ propLabel +"' type='checkbox'"+ (val?" checked='checked'":"")+"'/></span>";
+      else return "<span class='void'>(null)</span>";
+   }
+}
+
+function parse(str) {
+   elementCount = 0;
+   arrayCount = 0;
+   objectCount = 0;
+
+   var obj = null;
+   try
+   {
+      obj = str.parseJSON();
+   }
+   catch(e)
+   {
+      if(e instanceof SyntaxError)
+      {
+         alert("There was a syntax error in your JSON string.\n" + e.message + "\nPlease check your syntax and try again.");
+         $("text").focus();
+         return;
+      }
+
+      alert("There was an unknown error. Perhaps the JSON string contained a deep level of nesting.");
+      $("text").focus();
+      return
+   }
+
+   return parseValue(obj, null, null,null);
+}
+
+function doParse()
+{
+   $("submit").value = "processing...";
+   $("submit").disabled = "disabled";
+
+   setTimeout(doParse2, 50);
+}
+
+function doParse2()
+{
+   var value = $("#METHOD_NAME#_input").value;
+   if(value.substr(0, 4) == "http" || value.substr(0, 4) == "file" || value.substr(0, 3) == "ftp")
+   {
+      getURL(value);
+   }
+   else
+   {
+      var result = parse(escapeHTML(value), null);
+      if(result != null) $("output").innerHTML = "<form target='_blank' action='#END_POINT_URL#' method='" + (isAttachment ? "POST' enctype='multipart/form-data' onsubmit='convertToJSON(this);submitAndReset(this);return false;'><textarea name='JSON' style='display: none;'>{}</textarea>": "GET'>") + 
+            	 result +"<input type='submit' value='Submit'/></form>";
+
+      $("stats").innerHTML = doStats();
+      $("stats").className = "";
+
+      $("submit").value = "Form View";
+      $("submit").disabled = null;
+
+      location.href = "#_output";
+   }
+}
+
+var http = null;
+
+function getURL(str)
+{
+   http.open("get", "get.php?url=" + str);
+   http.onreadystatechange = gotURL;
+   http.send(null);
+}
+
+function gotURL()
+{
+   if(http.readyState == 4)
+   {
+      var result = parse(escapeHTML(http.responseText), null);
+      if(result != null) $("output").innerHTML = result;
+
+      $("stats").innerHTML = doStats();
+
+      $("submit").value = "Form View";
+      $("submit").disabled = null;
+
+      location.href = "#_output";
+   }
+}
+
+function showStats(){
+   if($("statscon").style.display != "block")
+   {
+      $("statscon").style.display = "block";
+      $("stats").className = "statson";
+      $("statst").value = "Hide Statistics";
+   }
+   else
+   {
+      $("statscon").style.display = "none";
+      $("stats").className = "";
+      $("statst").value = "Show Statistics";
+   }
+}
+
+function hideChild(ele){
+   var alt = ele.alt + "";
+   var minimizing = (alt.indexOf("min") != -1);
+
+   var nodes = ele.parentNode.parentNode.childNodes;
+   for(i = 0; i < nodes.length; i++)
+   {
+      if(nodes[i].tagName == "TABLE")
+      {
+         nodes[i].style.display = (minimizing ? "none" : "");
+
+         ele.parentNode.parentNode.style.paddingRight = (minimizing ? "2.0em" : "1.5em");
+         ele.parentNode.style.right = (minimizing ? "1em" : "1.5em");
+
+         ele.src = (minimizing ? "data:image/gif;base64,R0lGODlhCQAUAIABAAAAAP///yH+FUNyZWF0ZWQgd2l0aCBUaGUgR0lNUAAh+QQBCgABACwAAAAACQAUAAACEoyPqcsND2GI0tBUcdu8+w9uBQA7" : "data:image/gif;base64,R0lGODlhCQAUAIABAAAAAP///yH+FUNyZWF0ZWQgd2l0aCBUaGUgR0lNUAAh+QQBCgABACwAAAAACQAUAAACFIyPqcsNDyECS854otS4+Q+G4lcAADs=");
+				 ele.alt = (minimizing ? 'max' : 'min');
+         return;
+      }
+   }
+}
+
+var currentlyFocused = null;
+function doFocus(event, ele)
+{
+   if(currentlyFocused != null) currentlyFocused.style.border = "1px solid #CCCCCC";
+   ele.style.border = "1px solid #ffa000";
+
+   currentlyFocused = ele;
+
+   if(!event) event = window.event;
+   event.cancelBubble = true;
+   if(event.stopPropagation) event.stopPropagation();
+}
+
+function stopFocus()
+{
+   if(currentlyFocused != null) currentlyFocused.style.border = "1px solid #CCCCCC";
+}
+
+//code from Painfully Obvious.
+//based on code from quirksmode.org
+var Client = {
+  viewportWidth: function() {
+   return self.innerWidth || (document.documentElement.clientWidth || document.body.clientWidth);
+  },
+
+  viewportHeight: function() {
+    return self.innerHeight || (document.documentElement.clientHeight || document.body.clientHeight);
+  },
+  
+  viewportSize: function() {
+    return { width: this.viewportWidth(), height: this.viewportHeight() };
+  }
+};
+
+function clearPage()
+{
+   $("stats").innerHTML = "";
+   $("output").innerHTML = "";
+}
+
+function load()
+{
+   try
+   {
+      http = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   catch(e)
+   {
+      try
+      {
+         http = new XMLHttpRequest();
+      }
+      catch(e)
+      {
+      }
+   }
+
+   bodySize = Client.viewportSize();
+   
+   if($("text").focus) $("text").focus();
+}
+
+function convertToJSON(form){
+ 	var obj = escapeHTML($("#METHOD_NAME#_input").value).parseJSON();
+	var  inputs = form.getElementsByTagName("input"); 
+	for (var intCounter = 0; intCounter < inputs.length; intCounter++) {
+		var name = inputs[intCounter].name;
+		if(inputs[intCounter].type != 'file')
+			inputs[intCounter].disabled = true;
+		else if(name.indexOf(".") != -1)
+			inputs[intCounter].name =  name.substring(name.lastIndexOf(".") + 1);
+
+		setPropValue(name, (inputs[intCounter].type == 'checkbox'? inputs[intCounter].checked : inputs[intCounter].value), obj, inputs[intCounter].type, null);
+	}
+	inputs = form.getElementsByTagName("select"); 
+	for (var intCounter = 0; intCounter < inputs.length; intCounter++) {
+		inputs[intCounter].disabled=true;
+		setPropValue(inputs[intCounter].name, inputs[intCounter].value, obj, inputs[intCounter].type, null);
+	}
+	form.getElementsByTagName("textarea")[0].value=obj.toJSONString();
+}
+
+function setPropValue(name,value, obj, type, propLabel){
+	if(typeof(obj) == "object") {
+		if(obj instanceof Array){
+			var index = name.substring(name.lastIndexOf(".") + 1);
+			if(name.substring(0,name.lastIndexOf(".")) == propLabel){
+				obj[index] = value;
+				return true;
+			}
+		}else{
+			for(prop in obj){
+         if((propLabel+'.'+prop) == name){
+         		if(type == 'file'){
+         			delete obj[prop];
+         		}	else {
+         			obj[prop] = value;
+         		}
+         		return true;
+         }else if(type == 'file' && prop == name){// Problem with resubmiting same form name updated in convertToJSON method
+	         	delete obj[prop];
+	         	return true;
+         } else if(typeof(obj[prop]) == "object"){
+         		if(setPropValue(name,value, obj[prop], type, (propLabel != null ? (propLabel+'.'+prop) : prop))) return true;
+         }
+      }
+		}
+	}
+}
+function submitAndReset(form){
+	form.submit();
+	var  inputs = form.getElementsByTagName("input"); 
+	for (var intCounter = 0; intCounter < inputs.length; intCounter++) {
+		inputs[intCounter].disabled = false;
+	}
+	inputs = form.getElementsByTagName("select"); 
+	for (var intCounter = 0; intCounter < inputs.length; intCounter++) {
+		inputs[intCounter].disabled = false;
+	}
+}
+
+window.onload = load;
+-->
+</script>
+</head>
+<body id="body" onmouseover="stopFocus();" onload="doParse('#METHOD_NAME#_input')">
+	<h2>#METHOD_NAME#</h2>
+  <form onsubmit="doParse('#METHOD_NAME#_input'); return false;">
+    <textarea id="#METHOD_NAME#_input" rows="12">#INPUT_JSON#</textarea>
+	  <input type="submit" id="submit" value="Form View" onclick="doParse('#METHOD_NAME#_input'); return false;" /> 
+	  <input type="button" id="reset" value="reset" onclick="clearPage();" />
+    <div id="stats" class="stats"></div>
+  </form>
+  <div id="output"></div>
+</body>
+</html>

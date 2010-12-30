@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="attachment" default="war" basedir=".">
+	<path id ="classpath">
+		<fileset dir="${basedir}/WebContent/WEB-INF/lib" includes="*.jar"/>
+	</path>
+
+	<taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport" classpathref="classpath"/>
+	
+	<!-- ================================= 
+        target: wsimport              
+       ================================= -->
+  <target name="wsimport" description="create pojos">
+  	
+  	<wsimport wsdl="${basedir}/WebContent/WEB-INF/wsdl/${ant.project.name}.wsdl"
+		  destdir="${basedir}/WebContent/WEB-INF/classes"
+		  sourcedestdir="${basedir}/WebContent/WEB-INF/classes"
+		  keep="true"
+  		extension="true"
+  		xendorsed="true"
+		  verbose="true">
+  	</wsimport>
+  </target>
+	
+	<!-- ================================= 
+	          target: war              
+	         ================================= -->
+  <target name="war" depends="wsimport" description="create test war file">
+  	
+  	<javac classpathref="classpath" srcdir="${basedir}/src"
+  				destdir="${basedir}/WebContent/WEB-INF/classes" debug="off" source="1.5"/>
+
+  	<war destfile="${basedir}/${ant.project.name}.war" webxml="${basedir}/WebContent/WEB-INF/web.xml">
+    	<fileset dir="${basedir}/WebContent/"/>
+    	<classes dir="${basedir}/WebContent/WEB-INF/classes"/>
+    </war>
+  </target>
+
+</project>

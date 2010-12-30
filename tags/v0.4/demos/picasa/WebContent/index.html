@@ -1,0 +1,137 @@
+<html>
+	<head>
+		<title>JSON Album service</title>
+		<script type="text/javascript" src="js/prototype-1.6.0.3.js"></script>
+	</head>
+	<script type="text/javascript" src="windows_js_1.3/javascripts/window.js"> </script>
+	<script type="text/javascript" src="windows_js_1.3/javascripts/effects.js"> </script>
+  	<script type="text/javascript" src="windows_js_1.3/javascripts/window_effects.js"> </script>
+  	
+	<link href="windows_js_1.3/themes/default.css" rel="stylesheet" type="text/css"/>
+	<link href="windows_js_1.3/login.css" rel="stylesheet" type="text/css"/>
+	<link href="windows_js_1.3/style.css" rel="stylesheet" type="text/css"/>
+	<link href="windows_js_1.3//themes/spread.css" rel="stylesheet" type="text/css" ></link>
+  	<link href="windows_js_1.3//themes/alert.css" rel="stylesheet" type="text/css" ></link>
+  	<link href="windows_js_1.3//themes/alert_lite.css" rel="stylesheet" type="text/css" ></link>
+  	<link href="windows_js_1.3//themes/alphacube.css" rel="stylesheet" type="text/css" ></link>
+  	
+	<script type="text/javascript">
+		 var SERVICES = {};
+		    new Ajax.Request('/album/json/picasa?model', {
+		      method:'get',
+		      contentType: 'unknown',
+		      onSuccess: function(transport){
+		         SERVICES = transport.responseText.evalJSON();
+		         if(console){
+		           console.log(SERVICES);
+		         }
+		         SERVICES.AlbumService.AlbumServicePort.getUIElements.input.uiElementsProxy.elements ={
+		        		 	LOGIN : "",
+				         	PASS : ""
+				         };
+		         SERVICES.AlbumService.AlbumServicePort.getUIElements.invoke(new function(trs){
+			         console.log(trs);
+		         });
+		       }
+		    });
+
+		    
+		var endPoint = 'http://localhost:8080/album/json/picasa';
+	  	function listAlbums(user){
+	  		new Ajax.Request(endPoint, {
+	  			postBody: '{"listAlbums":{"crediential":{"username":"'+user+'"}}}',
+	  			onFailure: function(transport){
+	  				$('login_error_msg').innerHTML=transport.responseJSON.message;
+	                $('login_error_msg').show(); 
+	                Windows.focusedWindow.updateHeight();
+	                new Effect.Shake(Windows.focusedWindow.getId());
+	  			}, 
+	  			onSuccess: function(transport) {
+		  			Dialog.closeInfo();
+		  			var win = new Window({className: "dialog",  width:650, height:500, zIndex: 100, resizable: true, title: "Albums", showEffect:Effect.BlindDown, hideEffect: Effect.SwitchOff, draggable:true, wiredDrag: true});
+		  			var content = '';
+					for(var entryCount =0; entryCount < transport.responseJSON.albums.entry.length;entryCount++){
+						var entry = transport.responseJSON.albums.entry[entryCount];
+						content += '<table width="100%" style="color: white;"><tr><td width="40%"><img onclick="listPhotos(\''+entry.link[0].href+'\')" src="'+entry.group.thumbnail[0].url+'"/></td><td>'+
+																	entry.title+'<br\>'+
+																	entry.updated.day+'/'+entry.updated.month+'/'+entry.updated.year+'<br\>'+
+																	entry.summary+'<br\>'+
+																'</td></tr></table><br/>';
+					}
+		  			win.getContent().innerHTML= content;
+		  			win.setStatusBar("User info");
+		  			win.showCenter(); 
+		  		}
+	  		});
+	  	}
+
+	  	function listPhotos(albumUrl){
+	  		new Ajax.Request(endPoint, {
+	  			postBody: '{"listPhotos":{"crediential":{"username":"","token":""},"albumUrl":"'+albumUrl+'"}}',
+	  			onFailure: function(transport){
+		  			openInfoDialog(transport.responseJSON.message);
+	  			},
+	  			onSuccess: function(transport) {
+	  				var photos = transport.responseJSON.photos;
+	  				var win = new Window({className: "dialog",  width:750, height:550, zIndex: 101, resizable: true, title: "TODO", showEffect:Effect.BlindDown, hideEffect: Effect.SwitchOff, draggable:true, wiredDrag: true});
+	  				var content = '';
+					for(var entryCount =0; entryCount < photos.entry.length;entryCount++){
+						var entry = photos.entry[entryCount];
+						console.log(entry);
+						content += '<table width="100%" style="color: white;"><tr><td width="40%"><img onclick="showPhoto(\''+entry.group.thumbnail[2].url+'\')" src="'+entry.group.thumbnail[1].url+'"/></td><td>'+
+																	entry.title+'<br\>'+
+																	entry.updated.day+'/'+entry.updated.month+'/'+entry.updated.year+'<br\>'+
+																	entry.summary+'<br\>'+
+																'</td></tr></table><br/>';
+						
+					}
+	  				win.getContent().innerHTML= content;
+		  			win.setStatusBar("User info");
+		  			win.showCenter(); 
+	  			}
+	  		});	
+	  	}
+
+	  	function showPhoto(photoUrl){
+	  		var win = new Window({className: "dialog",  width:780, height:575, zIndex: 102, resizable: true, title: "TODO", showEffect:Effect.Grow, hideEffect: Effect.Shrink, draggable:true, wiredDrag: true});
+	  		win.getContent().innerHTML= '<table width="100%"><tr><td><img src="'+photoUrl+'" alt=""/></td></tr></table>';
+  			win.setStatusBar("User info");
+  			win.showCenter(); 
+	  	}
+
+	  	var timeout = 4;
+	  	function openInfoDialog(msg) {
+		  	if(timeout == 4){
+	  	  		Dialog.info(msg,
+	  	               {width:250, height:100, showProgress: true});
+		  	}
+	  	 	timeout--;
+	  	  	if (timeout >0) {
+	  	  		setTimeout(openInfoDialog, 1000);
+	  	  	}else
+		  	  Dialog.closeInfo();
+	  	}
+
+	</script>
+  
+	<body>
+		<div id="login" style="display:none">
+		  <p><span id='login_error_msg' class="login_error" style="display:none">&nbsp;</span></p>
+		  <div style="clear:both"></div>
+		  <p><span class="login_label">Picasa login</span> <span class="login_input"><input type="text" id="username" value="tester"/></span></p>
+		  <div style="clear:both"></div>
+		  <p><span class="login_label">password</span> <span class="login_input"><input type="password"/></span></p>
+		  <div style="clear:both"></div>
+		</div>
+
+		<script type="text/javascript">
+		Dialog.confirm($('login').innerHTML, {className:"alphacube", width:400, 
+            okLabel: "login", cancelLabel: "cancel",
+            onOk:function(win){
+              listAlbums($('username').value); 
+              return false;
+            }
+       });
+		</script>
+	</body>
+</html>

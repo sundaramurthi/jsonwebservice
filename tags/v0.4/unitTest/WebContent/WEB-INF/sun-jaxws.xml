@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<endpoints version="2.0" 
+	xmlns="http://java.sun.com/xml/ns/jax-ws/ri/runtime" >
+  <endpoint 
+  		name="ParameterTest" 
+  		implementation="com.test.jsonwebservice.rpc.impl.ParameterTestImpl" 
+  		url-pattern="/json/parameter" 
+  		binding="http://jsonplugin.googlecode.com/json/"/>
+  <endpoint 
+  		name="CustomizeTest" 
+  		implementation="com.test.jsonwebservice.rpc.impl.CustomizeTestImpl" 
+  		url-pattern="/json/customize" 
+  		binding="http://jsonplugin.googlecode.com/json/"/>
+  <endpoint 
+  		name="JAXBAnnotationTest" 
+  		implementation="com.test.jsonwebservice.rpc.impl.JAXBAnnotationTestImpl" 
+  		url-pattern="/json/jaxbannotation" 
+  		binding="http://jsonplugin.googlecode.com/json/"/>
+  <endpoint 
+  		name="AttachmentTest" 
+  		implementation="com.test.jsonwebservice.rpc.impl.AttachmentTestImpl" 
+  		url-pattern="/json/attachment" 
+  		binding="http://jsonplugin.googlecode.com/json/"/>					
+</endpoints>
