@@ -134,7 +134,7 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 				
 				methodTemplate = methodTemplate.replaceAll("#INPUT_JSON#",
 						requestPayloadEnabled ? 
-								String.format("{\"%s\":%s}", operation.getOperation().getInput().getName(),requestJSON) :
+								String.format("{\"%s\":%s}", operation.getOperation().getName().getLocalPart(),requestJSON) :
 									requestJSON);
 				
 				String responeJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getOutParts(), context, this.codec).replaceAll("$", "");
