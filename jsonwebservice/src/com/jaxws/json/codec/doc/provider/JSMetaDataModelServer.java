@@ -99,7 +99,7 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 					Map<String,Object>    operationMap = new HashMap<String, Object>();
 					portJSONMap.put(operation.getName().getLocalPart(), operationMap );
 					
-					operationMap.put(operation.getOperation().getInput().getName(), 
+					operationMap.put(operation.getOperation().getName().getLocalPart(), 
 							JSONHttpMetadataPublisher.getJSONAsMap(operation.getInParts(), context));
 					
 					operationMap.put(operation.getOperation().getOutput().getName(),JSONHttpMetadataPublisher.getJSONAsMap(operation.getOutParts(),

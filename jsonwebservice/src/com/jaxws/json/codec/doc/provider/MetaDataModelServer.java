@@ -95,7 +95,7 @@ public class MetaDataModelServer implements HttpMetadataProvider {
 					Map<String,Object>    operationMap = new HashMap<String, Object>();
 					portJSONMap.put(operation.getName().getLocalPart(), operationMap );
 					
-					operationMap.put(operation.getOperation().getInput().getName(), JSONHttpMetadataPublisher.getJSONAsMap(operation.getInParts(),
+					operationMap.put(operation.getOperation().getName().getLocalPart(), JSONHttpMetadataPublisher.getJSONAsMap(operation.getInParts(),
 							context));
 					
 					operationMap.put(operation.getOperation().getOutput().getName(),JSONHttpMetadataPublisher.getJSONAsMap(operation.getOutParts(), context));
