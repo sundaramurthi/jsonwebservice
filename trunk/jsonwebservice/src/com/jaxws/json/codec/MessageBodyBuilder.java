@@ -3,6 +3,7 @@ package com.jaxws.json.codec;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -13,6 +14,9 @@ import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.ws.handler.MessageContext;
 
 import org.jvnet.mimepull.MIMEPart;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.feature.JSONWebService;
@@ -87,7 +91,7 @@ public class MessageBodyBuilder {
 			WSJSONPopulator 	jsonPopulator 		= new WSJSONPopulator((Pattern)invocationProperties.get(JSONCodec.globalMapKeyPattern_KEY),
 					JSONCodec.globalMapValuePattern,JSONCodec.dateFormat,
 					codec.getCustomSerializer()
-					,(DebugTrace) packet.invocationProperties.get(JSONCodec.TRACE));
+					,(DebugTrace)invocationProperties.get(JSONCodec.TRACE));
 			
 			Object[]			parameterObjects	= new Object[operation.getInParts().size()];
 			for(Map.Entry<String, WSDLPart> part : operation.getInParts().entrySet()){
@@ -101,7 +105,7 @@ public class MessageBodyBuilder {
 		            val = parameterType.newInstance();
 		            jsonPopulator.populateObject(val,
 		            		(Map<String,Object>)operationParameters.get(part.getKey()),jsonwebService, 
-		            		(List<MIMEPart>) packet.invocationProperties.get(JSONCodec.MIME_ATTACHMENTS));
+		            		(List<MIMEPart>) invocationProperties.get(JSONCodec.MIME_ATTACHMENTS));
 	            } else {
 	            	val	= jsonPopulator.convert(parameterType, null, operationParameters.get(part.getKey()),
 	            			seiMethod != null ? seiMethod.getAnnotation(JSONWebService.class) : null, null);
@@ -111,6 +115,7 @@ public class MessageBodyBuilder {
 			
 			// TODO find better way with out using JavaMethodImpl
 			List<ParameterImpl> requestParameters = ((JavaMethodImpl)javaMethod).getRequestParameters();
+			invocationProperties.put("RESPONSEPARAMETERS", ((JavaMethodImpl)javaMethod).getResponseParameters());
 			if(requestParameters != null && requestParameters.size() == 1){
 				ParameterImpl parameter = requestParameters.get(0);
 				if(parameter.isWrapperStyle()){
@@ -151,26 +156,47 @@ public class MessageBodyBuilder {
 			if(message == null){
 				throw new RuntimeException("Null response message");
 			}
-			if(!(CAN_HANDLE_RESPONE && message instanceof JAXBMessage)){
-				throw new RuntimeException("Message is not JAXBMessage. JSONCodec at now only handle JAXB messages in response.");
-			}
-			Map<String,Object> responseParameters = new HashMap<String, Object>();
-			if(style == Style.RPC ){
-				com.sun.xml.bind.api.CompositeStructure responseWraper = (com.sun.xml.bind.api.CompositeStructure)jaxbObjectAccessor.get(message);
-				if(responseWraper != null){
-					for(int index = 0; index < responseWraper.bridges.length; index++){
-						responseParameters.put(responseWraper.bridges[index].getTypeReference().tagName.getLocalPart(),
-							responseWraper.values[index]);
+			List<ParameterImpl> responseParameters 	= (List<ParameterImpl>) invocationProperties.remove("RESPONSEPARAMETERS");
+			Map<String,Object> 	responseParametersMap = new HashMap<String, Object>();
+			if(CAN_HANDLE_RESPONE && message instanceof JAXBMessage){
+				if(style == Style.RPC ){
+					com.sun.xml.bind.api.CompositeStructure responseWraper = (com.sun.xml.bind.api.CompositeStructure)jaxbObjectAccessor.get(message);
+					if(responseWraper != null){
+						for(int index = 0; index < responseWraper.bridges.length; index++){
+							responseParametersMap.put(responseWraper.bridges[index].getTypeReference().tagName.getLocalPart(),
+								responseWraper.values[index]);
+						}
+					}
+				}else{
+					// Docunemnt
+					Object object = jaxbObjectAccessor.get(message);
+					for(Field field : object.getClass().getFields()){
+						responseParametersMap.put(field.getName(), field.get(object));
 					}
 				}
-			}else{
-				// Docunemnt
-				Object object = jaxbObjectAccessor.get(message);
-				for(Field field : object.getClass().getFields()){
-					responseParameters.put(field.getName(), field.get(object));
+			} else if(responseParameters != null && responseParameters.size() == 1){
+				// object deserialized. might perform bad.
+				ParameterImpl 		parameter 	= responseParameters.get(0);
+				Iterator<Node> 		paramBody 	= message.readAsSOAPMessage().getSOAPBody().getChildElements(parameter.getName());
+				if(paramBody.hasNext()){
+					Element responseElm = (Element)paramBody.next();
+					if(parameter.isWrapperStyle()){
+						List<ParameterImpl> children = ((WrapperParameter)parameter).getWrapperChildren();
+						for(ParameterImpl param : children){
+							NodeList paramElm = responseElm.getElementsByTagNameNS(param.getName().getNamespaceURI(), 
+									param.getPartName());
+							if(paramElm.getLength() == 1){
+								responseParametersMap.put(param.getPartName(),
+										param.getBridge().unmarshal(paramElm.item(0)));
+							}
+						}
+					}else{
+						responseParametersMap.put(parameter.getPartName(),
+								parameter.getBridge().unmarshal(responseElm));
+					}
 				}
 			}
-			packet.invocationProperties.put(JSONCodec.JSON_MAP_KEY, responseParameters);
+			invocationProperties.put(JSONCodec.JSON_MAP_KEY, responseParametersMap);
 			return message;
 		}
 	}
