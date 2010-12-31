@@ -179,7 +179,8 @@ public class JSONEncoder {
 		for (Entry<String, Object> property : invocationProperties.entrySet()) {
 			if(MessageContext.MESSAGE_OUTBOUND_PROPERTY.equals(property.getKey()) ||
 					JSONCodec.globalMapKeyPattern_KEY.equals(property.getKey()) ||
-					JSONCodec.globalMapValuePattern_KEY.equals(property.getKey()))
+					JSONCodec.globalMapValuePattern_KEY.equals(property.getKey()) ||
+					"RESPONSEPARAMETERS".equals(property))
 				continue;
 			responseJSONMap.put(property.getKey(), property.getValue());
 		}
@@ -228,22 +229,17 @@ public class JSONEncoder {
 				/*
 				 * Step 4.2: message is not fault. valid json response
 				 */
-				if(MessageBodyBuilder.CAN_HANDLE_RESPONE){
-					try {
-						new MessageBodyBuilder(this.codec).handleMessage(this.packet,payload);
-						if(JSONCodec.responsePayloadEnabled){
-							responseJSONMap.put(payload,invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
-						}else{
-							responseJSONMap.putAll((Map<String, ? extends Object>) invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
-						}
-					} catch (Exception e1) {
-						responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
-						responseJSONMap.put(FAULT, new JSONFault("Client.json",
-								"Unknown payload name: " + message.getPayloadLocalPart(),"Codec",null));
+				try {
+					new MessageBodyBuilder(this.codec).handleMessage(this.packet,payload);
+					if(JSONCodec.responsePayloadEnabled){
+						responseJSONMap.put(payload,invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
+					}else{
+						responseJSONMap.putAll((Map<String, ? extends Object>) invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 					}
-				} else {
-					// Until JAX_WS 2.0.1 MessageBodyBuilder.CAN_HANDLE_RESPONE is true, can read using reflection
-					throw new RuntimeException("Encoding can only handled on JAXBMessage which has jaxbObject.");
+				} catch (Exception e1) {
+					responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
+					responseJSONMap.put(FAULT, new JSONFault("Client.json",
+							"Unknown payload name: " + message.getPayloadLocalPart(),"Codec",null));
 				}
 			}
 			
