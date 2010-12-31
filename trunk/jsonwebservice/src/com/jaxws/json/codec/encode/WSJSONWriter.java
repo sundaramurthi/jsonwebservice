@@ -1024,12 +1024,14 @@ public class WSJSONWriter {
  	 * @return
  	 */
  	private Object getMetaDataInstance(Class<?> propertyType, JSONWebService webService, Field field){
+ 		String defaultVal = null;
  		if(field != null && field.isAnnotationPresent(XmlElement.class)){
  			XmlElement element = field.getAnnotation(XmlElement.class);
 			if(!element.defaultValue().equals(NULL)){
 				if(field != null && Collection.class.isAssignableFrom(field.getType())){
 					return element.defaultValue().replace(",", "\",\"");
 				} else if(propertyType.isEnum()){
+					defaultVal	= element.defaultValue();
 					// In case of enum meta data is decided list
 				} else if(Boolean.TYPE.equals(propertyType) || Boolean.class.equals(propertyType)){
 					return Boolean.valueOf(element.defaultValue());
@@ -1056,8 +1058,14 @@ public class WSJSONWriter {
   				return new Date();
   			}else if(propertyType.isEnum()){
   				StringBuffer b = new StringBuffer();
+  				if(defaultVal != null){
+  					// Write default value as first constant in meta data.
+  					b.append(defaultVal);
+  				}
   				for(Object cont: propertyType.getEnumConstants()){
-  					 b.append((b.length() != 0 ? "|" :"") + ((Enum<?>)cont).name());
+  					String name = ((Enum<?>)cont).name();
+  					if(name.equals(defaultVal))continue;
+  					b.append((b.length() != 0 ? "|" :"") + name);
   				}
   				return b.toString();
   			}else if(Float.TYPE.equals(propertyType) || Double.TYPE.equals(propertyType)){
