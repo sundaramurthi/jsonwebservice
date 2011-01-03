@@ -489,21 +489,31 @@ public class WSJSONWriter {
 	                        .getBeanInfo(clazz);
 	
 	                PropertyDescriptor[] props = info.getPropertyDescriptors();
-	                PropertyDescriptor	keyProperty	= null;
+	                PropertyDescriptor	keyProperty		= null;
+	                PropertyDescriptor	valueProperty	= null;
 	                for(PropertyDescriptor prop : props){
 	                	if(listMapKey.matcher(clazz.getName() + "." + prop.getName()).find()){
 	                		keyProperty = prop;
 	                		break;
 	                	}
 	                }
+	                if(listMapValue != null){
+		                for(PropertyDescriptor prop : props){
+		                	if(listMapValue.matcher(clazz.getName() + "." + prop.getName()).find()){
+		                		valueProperty = prop;
+		                		break;
+		                	}
+		                }
+	                }
 	                if(keyProperty != null){
-	                	Method readMethod = keyProperty.getReadMethod();
+	                	Method keyReadMethod 	= keyProperty.getReadMethod();
+	                	Method valueReadMethod 	= valueProperty != null ? valueProperty.getReadMethod() : null;
 	                	HashMap<String,Object> map = new LinkedHashMap<String,Object>();
 	                	while(iterator.hasNext()){
 	                		Object ob = iterator.next();
-	                		map.put(String.valueOf(readMethod.invoke(ob)), ob);
+	                		map.put(String.valueOf(keyReadMethod.invoke(ob)), valueReadMethod != null ? valueReadMethod.invoke(ob) : ob);
 	                	}
-	                	map(map, readMethod, customInfo);
+	                	map(map, keyReadMethod, customInfo);
 	                	return;
 	                }
     			}catch(Throwable th){

@@ -112,4 +112,22 @@ public class CustomizeTest extends JSONCodecTest /*implements
 		String expected 	= "{\"globalKeyMapObjectList\":{\"map\":{\"KEY222\":{\"keyProperty1\":222,\"keyProperty2\":\"KEY222\",\"property1\":false,\"valueProperty1\":222,\"valueProperty2\":\"VALUE222\"},\"KEYXXX\":{\"keyProperty1\":111,\"keyProperty2\":\"KEYXXX\",\"property1\":true,\"valueProperty1\":111,\"valueProperty2\":\"VALUE111\"}}},\"statusFlag\":true}";
 		assertEquals(out, expected);
     }
+    
+    public void test11EmptyInKeyValueMapObjectOut() throws MalformedURLException, IOException{
+    	String in 	= "{\"test11EmptyInKeyValueMapObjectOut\":{}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"mapObject\":{\"map\":{\"ss\":\"DDD\",\"ff\":\"kkk\"}},\"statusFlag\":true}";
+		assertEquals(out, expected);
+    }
+    
+    public void test12EmptyInGlobalKeyValueMapObjectOut() throws MalformedURLException, IOException{
+    	String in 	= "{\"test12EmptyInGlobalKeyValueMapObjectOut\":{}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"mapObject\":{\"map\":{\"11\":111,\"22\":222}},\"statusFlag\":true}";
+		assertEquals(out, expected);
+    }
 }

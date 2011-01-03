@@ -269,7 +269,7 @@ public class JSONEncoder {
 		writer.write(JSONCodec.dateFormat,JSONCodec.excludeProperties,
 				JSONCodec.includeProperties,
 				(Pattern) invocationProperties.get(JSONCodec.globalMapKeyPattern_KEY),
-				JSONCodec.globalMapValuePattern);
+				(Pattern) invocationProperties.get(JSONCodec.globalMapValuePattern_KEY));
 		
 		//Process all response attachments
 		for(Map<String, Object> attachInfo : writer.getAttachments()){
