@@ -60,7 +60,20 @@
 			 	 <xsd:sequence>
 			 	 	<xsd:element name="map" type="tns:GlobalKeyMapObject" minOccurs="0" maxOccurs="unbounded"/>
 			 	 </xsd:sequence>
-			 </xsd:complexType>	 
+			 </xsd:complexType>	
+			 
+		 	 <xsd:complexType name="GlobalKeyValueMapObject">
+		 	 	<xsd:complexContent>
+		 	 		<xsd:extension base="tns:MapObject">
+		 	 		</xsd:extension>
+		 	 	</xsd:complexContent>
+		 	 </xsd:complexType>
+		 	 
+		 	 <xsd:complexType name="GlobalKeyValueMapObjectList">
+			 	 <xsd:sequence>
+			 	 	<xsd:element name="map" type="tns:GlobalKeyValueMapObject" minOccurs="0" maxOccurs="unbounded"/>
+			 	 </xsd:sequence>
+			 </xsd:complexType>	
 			 
 			 <xsd:complexType name="XmlElementsObj">
 			 	 <xsd:choice minOccurs="0" maxOccurs="unbounded">
@@ -210,6 +223,11 @@
 	<message name="globalKeyMapObjectListMessage">
 		<part name="globalKeyMapObjectList" type="tns:GlobalKeyMapObjectList"/>
 	</message>
+	
+	<message name="keyValueMapObjectMessage">
+		<part name="mapObject" type="tns:GlobalKeyValueMapObjectList"/>
+	</message>
+	
 	
 	<!-- JAXB annot test -->
 	<message name="xmlElementsObjMessage">
@@ -517,6 +535,17 @@
 			<input 	name="test10GlobalKeyMapObjectListIn" 		message="tns:globalKeyMapObjectListMessage" />
 			<output name="test10GlobalKeyMapObjectListOut" 	message="tns:globalKeyMapObjectListMessage" />
 		</operation>
+		
+		<operation name="test11EmptyInKeyValueMapObjectOut">
+			<input 	name="test11EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test11KeyValueMapObjectOut" 	message="tns:keyValueMapObjectMessage" />
+		</operation>
+		
+		<operation name="test12EmptyInGlobalKeyValueMapObjectOut">
+			<input 	name="test12EmptyIn" 	message="tns:emptyMessage" />
+			<output name="test12GlobalKeyValueMapObjectOut" 	message="tns:keyValueMapObjectMessage" />
+		</operation>
+		
 	</portType>	
 	
 	<portType name="JAXBAnnotationTest">
@@ -690,6 +719,9 @@
 		<operation name="test8GlobalKeyMapObjectListAnatEmptyInOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test8GlobalKeyMapObjectListAnatEmptyInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test9GlobalKeyMapObjectListAnatOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test9GlobalKeyMapObjectListAnatOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test10GlobalKeyMapObjectListAnatInOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test10GlobalKeyMapObjectListAnatInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test11EmptyInKeyValueMapObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test11EmptyInKeyValueMapObjectOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test12EmptyInGlobalKeyValueMapObjectOut">	<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test12EmptyInGlobalKeyValueMapObjectOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		
 	</binding>
 	
 	<binding name="JAXBAnnotationTestService" type="tns:JAXBAnnotationTest">

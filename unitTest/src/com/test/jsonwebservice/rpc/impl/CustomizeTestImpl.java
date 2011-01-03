@@ -8,6 +8,8 @@ import com.jaxws.json.feature.JSONWebService;
 import com.test.jsonwebservice.rpc.CustomizeTest;
 import com.test.jsonwebservice.rpc.GlobalKeyMapObject;
 import com.test.jsonwebservice.rpc.GlobalKeyMapObjectList;
+import com.test.jsonwebservice.rpc.GlobalKeyValueMapObject;
+import com.test.jsonwebservice.rpc.GlobalKeyValueMapObjectList;
 import com.test.jsonwebservice.rpc.MapObject;
 import com.test.jsonwebservice.rpc.MapObjectList;
 
@@ -151,6 +153,47 @@ public class CustomizeTestImpl implements CustomizeTest {
 			throw new RuntimeException();
 		}
 	}
+	
+	@JSONWebService(listMapKey="com\\.test\\.jsonwebservice\\.rpc\\.GlobalKeyValueMapObject\\.keyProperty2",
+			listMapValue="com\\.test\\.jsonwebservice\\.rpc\\.GlobalKeyValueMapObject\\.valueProperty2")
+    public com.test.jsonwebservice.rpc.GlobalKeyValueMapObjectList test11EmptyInKeyValueMapObjectOut(){
+    	GlobalKeyValueMapObjectList list = new GlobalKeyValueMapObjectList();
+    	GlobalKeyValueMapObject arg0 = new GlobalKeyValueMapObject();
+    	arg0.setKeyProperty2("ss");
+    	arg0.setKeyProperty1(11);
+    	arg0.setProperty1(true);
+    	arg0.setValueProperty1(111);
+    	arg0.setValueProperty2("DDD");
+		list.getMap().add(arg0 );
+		arg0 = new GlobalKeyValueMapObject();
+		arg0.setKeyProperty2("ff");
+    	arg0.setKeyProperty1(22);
+    	arg0.setProperty1(true);
+    	arg0.setValueProperty1(222);
+    	arg0.setValueProperty2("kkk");
+		list.getMap().add(arg0 );
+    	return list;
+    }
+
+	
+    public com.test.jsonwebservice.rpc.GlobalKeyValueMapObjectList test12EmptyInGlobalKeyValueMapObjectOut(){
+    	GlobalKeyValueMapObjectList list = new GlobalKeyValueMapObjectList();
+    	GlobalKeyValueMapObject arg0 = new GlobalKeyValueMapObject();
+    	arg0.setKeyProperty2("ss");
+    	arg0.setKeyProperty1(11);
+    	arg0.setProperty1(true);
+    	arg0.setValueProperty1(111);
+    	arg0.setValueProperty2("DDD");
+		list.getMap().add(arg0 );
+		arg0 = new GlobalKeyValueMapObject();
+		arg0.setKeyProperty2("ff");
+    	arg0.setKeyProperty1(22);
+    	arg0.setProperty1(true);
+    	arg0.setValueProperty1(222);
+    	arg0.setValueProperty2("kkk");
+		list.getMap().add(arg0 );
+    	return list;
+    }
 
 
 }

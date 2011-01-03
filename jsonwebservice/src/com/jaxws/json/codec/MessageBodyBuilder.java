@@ -85,12 +85,14 @@ public class MessageBodyBuilder {
 			// Put codec specific properties in invoke
 			invocationProperties.put(JSONCodec.globalMapKeyPattern_KEY, (jsonwebService == null || jsonwebService.listMapKey().isEmpty())?
 					JSONCodec.globalMapKeyPattern : Pattern.compile(jsonwebService.listMapKey()));
+			invocationProperties.put(JSONCodec.globalMapValuePattern_KEY, (jsonwebService == null || jsonwebService.listMapValue().isEmpty())?
+					JSONCodec.globalMapValuePattern : Pattern.compile(jsonwebService.listMapValue()));
 			//
 			
 			Map<String,Object> 	operationParameters = (Map<String, Object>) invocationProperties.remove(JSONCodec.JSON_MAP_KEY);
 			
 			WSJSONPopulator 	jsonPopulator 		= new WSJSONPopulator((Pattern)invocationProperties.get(JSONCodec.globalMapKeyPattern_KEY),
-					JSONCodec.globalMapValuePattern,JSONCodec.dateFormat,
+					(Pattern)invocationProperties.get(JSONCodec.globalMapValuePattern_KEY),JSONCodec.dateFormat,
 					codec.getCustomSerializer()
 					,(DebugTrace)invocationProperties.get(JSONCodec.TRACE));
 			
