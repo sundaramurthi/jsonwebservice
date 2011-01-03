@@ -19,6 +19,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.jaxws.json.codec.decode.WSJSONPopulator;
+import com.jaxws.json.codec.encode.JSONEncoder;
 import com.jaxws.json.feature.JSONWebService;
 import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.bind.api.CompositeStructure;
@@ -115,7 +116,7 @@ public class MessageBodyBuilder {
 			
 			// TODO find better way with out using JavaMethodImpl
 			List<ParameterImpl> requestParameters = ((JavaMethodImpl)javaMethod).getRequestParameters();
-			invocationProperties.put("RESPONSEPARAMETERS", ((JavaMethodImpl)javaMethod).getResponseParameters());
+			invocationProperties.put(JSONEncoder.RESPONSEPARAMETERS, ((JavaMethodImpl)javaMethod).getResponseParameters());
 			if(requestParameters != null && requestParameters.size() == 1){
 				ParameterImpl parameter = requestParameters.get(0);
 				if(parameter.isWrapperStyle()){
@@ -156,7 +157,7 @@ public class MessageBodyBuilder {
 			if(message == null){
 				throw new RuntimeException("Null response message");
 			}
-			List<ParameterImpl> responseParameters 	= (List<ParameterImpl>) invocationProperties.remove("RESPONSEPARAMETERS");
+			List<ParameterImpl> responseParameters 	= (List<ParameterImpl>) invocationProperties.remove(JSONEncoder.RESPONSEPARAMETERS);
 			Map<String,Object> 	responseParametersMap = new HashMap<String, Object>();
 			if(CAN_HANDLE_RESPONE && message instanceof JAXBMessage){
 				if(style == Style.RPC ){

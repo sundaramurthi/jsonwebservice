@@ -55,6 +55,8 @@ public class JSONEncoder {
 	private static final String ACCEPT 		= "accept";
 	private static final String SOAPACTION 	= "SOAPAction";
 	private static final String FAULT 		= "fault";
+
+	public static final String RESPONSEPARAMETERS = "RESPONSEPARAMETERS";
 	/**
 	 * WS Packet with message to send response.
 	 */
@@ -180,7 +182,7 @@ public class JSONEncoder {
 			if(MessageContext.MESSAGE_OUTBOUND_PROPERTY.equals(property.getKey()) ||
 					JSONCodec.globalMapKeyPattern_KEY.equals(property.getKey()) ||
 					JSONCodec.globalMapValuePattern_KEY.equals(property.getKey()) ||
-					"RESPONSEPARAMETERS".equals(property))
+					RESPONSEPARAMETERS.equals(property.getKey()))
 				continue;
 			responseJSONMap.put(property.getKey(), property.getValue());
 		}
