@@ -238,10 +238,10 @@ public class JSONEncoder {
 					}else{
 						responseJSONMap.putAll((Map<String, ? extends Object>) invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 					}
-				} catch (Exception e1) {
+				} catch (Throwable exp) {
 					responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
 					responseJSONMap.put(FAULT, new JSONFault("Client.json",
-							"Unknown payload name: " + message.getPayloadLocalPart(),"Codec",null));
+							"Error while parsing response: " + payload ,"Codec", null, exp));
 				}
 			}
 			

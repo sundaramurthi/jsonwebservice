@@ -1,5 +1,7 @@
 package com.jaxws.json.codec;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 
 /**
@@ -51,12 +53,23 @@ public class JSONFault extends RuntimeException{
 	 * @param actor
 	 * @param detail
 	 */
-	public JSONFault(String code, String message, String actor,HashMap<String,String> detail, Exception e) {
-		super(e);
+	public JSONFault(String code, String message, String actor,HashMap<String,String> detail, Throwable th) {
+		super(th);
+		if(detail == null){
+			detail = new HashMap<String, String>();
+		}
 		this.code = code;
 		this.message = message;
 		this.actor = actor;
 		this.detail = detail;
+		if(th != null){
+			detail.put("message", th.getMessage());
+			StringWriter stringWriter = new StringWriter();
+			PrintWriter pw = new PrintWriter(stringWriter );
+			th.printStackTrace(pw);
+			pw.close();
+			detail.put("printStackTrace", stringWriter.toString());
+		}
 	}
 	
 	
