@@ -1066,6 +1066,8 @@ public class WSJSONWriter {
   				return false;
   			}else if(propertyType.isAssignableFrom(Date.class)){
   				return new Date();
+  			}else if(propertyType.isAssignableFrom(Calendar.class)){
+  				return Calendar.getInstance();
   			}else if(propertyType.isEnum()){
   				StringBuffer b = new StringBuffer();
   				if(defaultVal != null){
