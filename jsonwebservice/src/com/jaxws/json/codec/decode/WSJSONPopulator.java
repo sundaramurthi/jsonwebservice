@@ -292,7 +292,7 @@ public class WSJSONPopulator {
 		// demap
 		
 		Class<?> 				clazz 	= object.getClass();
-		BeanInfo 				info 	= Introspector.getBeanInfo(clazz,Object.class);
+		BeanInfo 				info 	= Introspector.getBeanInfo(clazz);
 		PropertyDescriptor[] 	props 	= info.getPropertyDescriptors();
 		 if(props.length == 0){
          	// There is no property descriptor, then use public fields, RPC document require this
@@ -809,7 +809,7 @@ public class WSJSONPopulator {
         } else if (isDateTime(clazz)) {
         	return handleAsDate(clazz,value,customizeInfo,method);
         } else if (clazz.isEnum()) {
-            String sValue = (String) value;
+            String sValue = (value instanceof Map) ? ((String)((Map)value).get("_name")) : (String) value;
             return Enum.valueOf(clazz, sValue);
         } else if (value instanceof String) {
             String sValue = (String) value;
