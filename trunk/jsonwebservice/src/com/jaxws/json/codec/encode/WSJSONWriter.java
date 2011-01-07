@@ -1,6 +1,5 @@
 package com.jaxws.json.codec.encode;
 
-import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -18,6 +17,7 @@ import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -132,6 +133,16 @@ public class WSJSONWriter {
 	 * List of response attachments.
 	 */
 	private List<Map<String,Object>> attachments	 = new ArrayList<Map<String,Object>>();
+	
+	/**
+	 * Private bean property cache.
+	 * Standard bean inspector cache only for with out Hierarchy, When Hierarchy specify bean parser always parse bean. Its too slow.
+	 */
+	private static final Map<Class<?>,PropertyDescriptor[]> propertyDescriptorCache = 
+    	Collections.synchronizedMap(new WeakHashMap<Class<?>,PropertyDescriptor[]>());
+	
+	private static final Map<Class<?>,Map<String,java.lang.reflect.Field>> classFieldCache = 
+    	Collections.synchronizedMap(new WeakHashMap<Class<?>,Map<String,java.lang.reflect.Field>>());
     
     /**
      * Writer instance with parameter passed writer object.
@@ -483,14 +494,9 @@ public class WSJSONWriter {
     		if(types.length == 1){
     			try{
 	    			Class<?> clazz = (Class<?>) types[0]; 
-	    			BeanInfo info = (clazz.isAnnotationPresent(JSONObject.class) && 
-	            			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) ? Introspector
-	                        .getBeanInfo(clazz, clazz.getSuperclass()) : Introspector
-	                        .getBeanInfo(clazz);
-	
-	                PropertyDescriptor[] props = info.getPropertyDescriptors();
-	                PropertyDescriptor	keyProperty		= null;
-	                PropertyDescriptor	valueProperty	= null;
+	    			PropertyDescriptor[] 	props 			= getBeanProperties(clazz);
+	                PropertyDescriptor		keyProperty		= null;
+	                PropertyDescriptor		valueProperty	= null;
 	                for(PropertyDescriptor prop : props){
 	                	if(listMapKey.matcher(clazz.getName() + "." + prop.getName()).find()){
 	                		keyProperty = prop;
@@ -563,7 +569,6 @@ public class WSJSONWriter {
         this.add("]");
     }
     
-    
     /**
      * Step 5.9: add as Enumeration.
      * Instrospect an Enum and serialize it as a name/value pair or as a bean including all its own properties
@@ -573,8 +578,8 @@ public class WSJSONWriter {
     		/*
     		 *  Step 5.9.1: If enumeration contains more than name declaration serialize as bean.
     		 */
-			if(Introspector.getBeanInfo(clazz, 
-					Enum.class).getPropertyDescriptors().length != 0){
+    		PropertyDescriptor[] props = getBeanProperties(clazz);
+			if(props.length > 0){
 				this.bean(enumeration, clazz);
 			} else {
 				this.string(enumeration.name());
@@ -583,7 +588,6 @@ public class WSJSONWriter {
 			this.string(enumeration.name());
 		}
     }
-    
     
     /**
      * Step 5.10: serialize as Object
@@ -598,16 +602,8 @@ public class WSJSONWriter {
         	/*
         	 *  Step 5.10.1: If class level JSON annotation present and ask for ignore parent level, then ignore it.
         	 */
-        	BeanInfo info = (clazz.isAnnotationPresent(JSONObject.class) && 
-        			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) ? Introspector
-                    .getBeanInfo(clazz, clazz.getSuperclass()) : Introspector
-                    .getBeanInfo(clazz,Object.class);
-
-            PropertyDescriptor[] props = info.getPropertyDescriptors();
-            if(props.length == 0){
-            	// There is no property descriptor, then use public fields, RPC document require this
-            	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(),clazz);
-            }
+        	PropertyDescriptor[] props = getBeanProperties(clazz);
+        	
             boolean hasData = false;
             
             /*
@@ -702,7 +698,7 @@ public class WSJSONWriter {
                 	/*
                   	 *  Step 5.10.2.4.3: read property custom config. If it is serializable continue process with specified name if any
                   	 */ 
-                	 JSONWebService properyConfig = accessor.getAnnotation(JSONWebService.class);
+                	JSONWebService properyConfig = accessor.getAnnotation(JSONWebService.class);
                 	 if (properyConfig != null) {
                          if (!properyConfig.serialize())
                              continue;
@@ -713,91 +709,90 @@ public class WSJSONWriter {
                      *  Step 5.10.2.4.4: JSON config not present. Then read XML configuration.
                      */ 	 
                     	 try{
-                    		
                     		// XML annotation present at field level.
- 	                    	Field declaredField = getDeclaredField(clazz,name);
- 	                    	
+ 	                    	Field 		declaredField 	= getDeclaredField(clazz,name);
+ 	                    	XmlElement 	xmlElm 			= declaredField.getAnnotation(XmlElement.class);
  	                       /*
  	                        *  Step 5.10.2.4.5: If XML transient ignore property.
  	                        */
- 	                    	if(accessor.isAnnotationPresent(XmlTransient.class) || 
- 	                    			(declaredField != null && declaredField.isAnnotationPresent(XmlTransient.class))){
- 	                    		continue nextProperty;
- 	                    	}else if(declaredField.isAnnotationPresent(XmlMimeType.class)){
+ 	                    	if (declaredField.isAnnotationPresent(XmlMimeType.class)){
  	                    		if(this.metaDataMode){
  	                    			value	= declaredField.getAnnotation(XmlMimeType.class).value();
  	                    		}else{
  	                    			Map<String,Object> attachment = new HashMap<String, Object>();;
- 	                    			attachment .put("name",name);
- 	                    			attachment.put("value",value);
+ 	                    			attachment .put("name", name);
+ 	                    			attachment.put("value", value);
  	                    			attachment.put("mimeType",declaredField.getAnnotation(XmlMimeType.class).value());
  	                    			attachments	 .add(attachment);
  	                    			continue nextProperty;
  	                    		}
- 	                    	}
- 	                    	if(declaredField != null){
-	 	                    	// XML choice list
- 	                    	   /*
- 	                            *  Step 5.10.2.4.4.1: Is it XML choice list?. If assign find right element name.
- 	                            */ 
-	 	                    	if(declaredField.isAnnotationPresent(XmlElements.class) && Collection.class.isAssignableFrom(declaredField.getType())
-	 	                    			&& value instanceof Collection){
-	 	                    		XmlElements xmlElms =  declaredField.getAnnotation(XmlElements.class);
-	 	                    		Collection<?> valueList = (Collection<?>)value;
-	 	                    		if(!valueList.isEmpty()){
-	 	                    			// use first object to identify type
-	 	                    			Map<String,List<Object>> group = new HashMap<String,List<Object>>();
-	 	                    			for(Object ob : valueList){
-	 	                    				for(XmlElement elm : xmlElms.value()){
-		 	                    				if(((Class<?>)elm.type()).isAssignableFrom(ob.getClass())){
-		 	                    					name = elm.name();
-		 	                    					if(!group.containsKey(name))
-		 	                    						group.put(name, new ArrayList<Object>());
-		 	                    					group.get(name).add(ob);
-		 	                    				}
-		 	                    			}
-	 	                    			}
-	 	                    			for(Map.Entry<String, List<Object>> entry : group.entrySet()){
-	 	                    				hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
-	 	                                    // TODO this.setExprStack(expr);
-	 	                    			}
-	 	                    			continue nextProperty;
-	 	                    		} else {
-	 	                    			// If choice element id empty, don't print it at all
-	 	                    			if(!this.metaDataMode){
-	 	                    				continue nextProperty;
-	 	                    			} else {
-	 	                    				name	= "CHOICE";
-	 	                    				Map<String,Object> choices 		= new HashMap<String, Object>(); 
-	 	                    				for(XmlElement elm : xmlElms.value()){
-	 	                    					try{
-	 	                    						choices.put(elm.name(), getMetaDataInstance(elm.type(),null,null));
-	 	                    					}catch(Throwable th){
-	 	                    						// 
-	 	                    						choices.put(elm.name(),"object");
-	 	                    					}
+ 	                    	} else if(xmlElm != null) {// MAjor hits are here
+ 	                    		/*
+  	                            *  Step 5.10.2.4.4.2: Xml elements .
+  	                            */ 
+ 	                    		if(!xmlElm.name().equals(XML_DEFAULT)){
+ 	                    			name = xmlElm.name();
+ 	                    		}
+ 	                    	}else if(declaredField.isAnnotationPresent(XmlElements.class) && Collection.class.isAssignableFrom(declaredField.getType())
+ 	                    			&& value instanceof Collection){
+ 	                    		// XML choice list
+  	                    	   /*
+  	                            *  Step 5.10.2.4.4.1: Is it XML choice list?. If assign find right element name.
+  	                            */ 
+ 	                    		XmlElements xmlElms =  declaredField.getAnnotation(XmlElements.class);
+ 	                    		Collection<?> valueList = (Collection<?>)value;
+ 	                    		if(!valueList.isEmpty()){
+ 	                    			// use first object to identify type
+ 	                    			Map<String,List<Object>> group = new HashMap<String,List<Object>>();
+ 	                    			for(Object ob : valueList){
+ 	                    				for(XmlElement elm : xmlElms.value()){
+	 	                    				if(((Class<?>)elm.type()).isAssignableFrom(ob.getClass())){
+	 	                    					name = elm.name();
+	 	                    					if(!group.containsKey(name))
+	 	                    						group.put(name, new ArrayList<Object>());
+	 	                    					group.get(name).add(ob);
 	 	                    				}
-	 	                    				value = choices;
 	 	                    			}
-	 	                    		}
-	 	                    	}else if(declaredField.isAnnotationPresent(XmlElement.class)){
-	 	                    		/*
-	  	                            *  Step 5.10.2.4.4.2: Xml elements .
-	  	                            */ 
-	 	                    		if(!declaredField.getAnnotation(XmlElement.class).name().equals(XML_DEFAULT)){
-	 	                    			name = declaredField.getAnnotation(XmlElement.class).name();
-	 	                    		}
+ 	                    			}
+ 	                    			for(Map.Entry<String, List<Object>> entry : group.entrySet()){
+ 	                    				hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
+ 	                                    // TODO this.setExprStack(expr);
+ 	                    			}
+ 	                    			continue nextProperty;
+ 	                    		} else {
+ 	                    			// If choice element id empty, don't print it at all
+ 	                    			if(!this.metaDataMode){
+ 	                    				continue nextProperty;
+ 	                    			} else {
+ 	                    				name	= "CHOICE";
+ 	                    				Map<String,Object> choices 		= new HashMap<String, Object>(); 
+ 	                    				for(XmlElement elm : xmlElms.value()){
+ 	                    					try{
+ 	                    						choices.put(elm.name(), getMetaDataInstance(elm.type(),null,null));
+ 	                    					}catch(Throwable th){
+ 	                    						// 
+ 	                    						choices.put(elm.name(),"object");
+ 	                    					}
+ 	                    				}
+ 	                    				value = choices;
+ 	                    			}
+ 	                    		}
+ 	                    	} else if(declaredField.isAnnotationPresent(XmlAttribute.class)){
+ 	                    		/*
+  	                            *  Step 5.10.2.4.4.3: Xml attribute.
+  	                            */ 
+ 	                    		if(!declaredField.getAnnotation(XmlAttribute.class).name().equals(XML_DEFAULT)){
+ 	                    			name = declaredField.getAnnotation(XmlAttribute.class).name();
+ 	                    		}
 	 	                    		
-	 	                    	}else if(declaredField.isAnnotationPresent(XmlAttribute.class)){
-	 	                    		/*
-	  	                            *  Step 5.10.2.4.4.3: Xml attribute.
-	  	                            */ 
-	 	                    		if(!declaredField.getAnnotation(XmlAttribute.class).name().equals(XML_DEFAULT)){
-	 	                    			name = declaredField.getAnnotation(XmlAttribute.class).name();
-	 	                    		}
-		 	                    		
-		 	                    }
- 	                    	}
+	 	                    }else if(accessor.isAnnotationPresent(XmlTransient.class) || 
+ 	                    			(declaredField != null && declaredField.isAnnotationPresent(XmlTransient.class))){
+	 	                    	/**
+	 	                    	 * XmlTransient contains lower periority than XMLElementX annotation. 
+	 	                    	 * Transient fields should not have XMLElement,XMLElements or XmlAttribute
+	 	                    	 */
+ 	                    		continue nextProperty;
+ 	                    	} 
                      	}catch(Throwable th){
                      		LOG.log(Level.FINER,"Processing xml annatation failed for field: "+name);
                      	}
@@ -832,7 +827,7 @@ public class WSJSONWriter {
                 this.add("_name", value, object.getClass().getMethod("name"), hasData);
             }
         } catch (Exception e) {
-            throw new JSONFault("Server.json", "Failed to serialize object "+clazz.getName(), "JSONCodec", null);
+            throw new JSONFault("Server.json", "Failed to serialize object "+clazz.getName(), "JSONCodec", null, e);
         }
 
         this.add("}");
@@ -933,7 +928,7 @@ public class WSJSONWriter {
         try {
 			this.output.write(c);
 		} catch (IOException e) {
-			throw new RuntimeException(e.getMessage());
+			throw new RuntimeException(e);
 		}
     }
 
@@ -1014,10 +1009,11 @@ public class WSJSONWriter {
          	XmlType xmlType = clazz.getAnnotation(XmlType.class);
      		if(xmlType != null && xmlType.propOrder().length == 1 &&
      				xmlType.name().equals(xmlType.propOrder()[0]+"s")){
-     			PropertyDescriptor[] properties = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
-     			if(properties.length == 1 &&
-     					Collection.class.isAssignableFrom(properties[0].getReadMethod().getReturnType())){
-     				return properties[0].getReadMethod().invoke(object, (Object[])null);
+     			PropertyDescriptor[] props = getBeanProperties(clazz);
+     			
+     			if(props.length == 1 &&
+     					Collection.class.isAssignableFrom(props[0].getReadMethod().getReturnType())){
+     				return props[0].getReadMethod().invoke(object, (Object[])null);
      			}
      		}
          } catch (Throwable e) {/*Dont mind*/}
@@ -1099,6 +1095,28 @@ public class WSJSONWriter {
   		}
  	}
 
+ 	
+ 	/**
+ 	 * Utility method to return bean property information.
+ 	 * @param clazz
+ 	 * @return
+ 	 * @throws IntrospectionException
+ 	 */
+ 	private PropertyDescriptor[] getBeanProperties(Class<?> clazz) throws IntrospectionException{
+ 		if(propertyDescriptorCache.containsKey(clazz))
+ 			return propertyDescriptorCache.get(clazz);
+		PropertyDescriptor[] props =  ((clazz.isAnnotationPresent(JSONObject.class) && 
+    			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) 
+    			? Introspector.getBeanInfo(clazz, clazz.getSuperclass()) 
+    					: Introspector.getBeanInfo(clazz,clazz.isEnum() ? Enum.class : Object.class)).getPropertyDescriptors();
+ 		if(props.length == 0 && !clazz.isEnum()){
+        	// There is no property descriptor, then use public fields, RPC document require this
+        	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(), clazz);
+        }
+ 		propertyDescriptorCache.put(clazz, props);
+ 		return props;
+ 	}
+ 	
  	/**
 	 * Utility method to read declaring field including private scope.
 	 * @param clazz
@@ -1106,15 +1124,31 @@ public class WSJSONWriter {
 	 * @return
 	 */
 	private java.lang.reflect.Field getDeclaredField(Class<?> clazz, String fieldName){
-		try {
-			return clazz.getDeclaredField(fieldName);
-		} catch (Throwable e) {
-			if(!Object.class.equals(clazz.getSuperclass())){
-				return getDeclaredField(clazz.getSuperclass(),fieldName);
-			}
-		}
-		return null;
+		if(!classFieldCache.containsKey(clazz)){
+			classFieldCache.put(clazz, getAllFields(clazz));
+		} 
+		return classFieldCache.get(clazz).get(fieldName);
 	}
+	private Map<String, Field> getAllFields(Class<?> clazz) {
+		Map<String, Field> fieldMap = new HashMap<String, Field>();
+		fillDeclaredFields(clazz,fieldMap);
+		return fieldMap;
+	}
+	
+	private void fillDeclaredFields(Class<?> clazz,Map<String, Field> fieldMap){
+		try {
+			for(java.lang.reflect.Field field : clazz.getDeclaredFields()){
+				if(!fieldMap.containsKey(field.getName()))
+					fieldMap.put(field.getName(), field);
+			}
+			if(!Object.class.equals(clazz.getSuperclass())){
+				fillDeclaredFields(clazz.getSuperclass(),fieldMap);
+			}
+		} catch (Throwable e) {
+			//
+		}
+	}
+
 	/**
 	 * Getter to return attachments
 	 * @return
