@@ -17,7 +17,6 @@ import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
-import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -38,12 +36,12 @@ import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
+import com.jaxws.json.codec.BeanAware;
 import com.jaxws.json.codec.DateFormat;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONFault;
 import com.jaxws.json.codec.PublicFieldPropertyDescriptor;
 import com.jaxws.json.codec.decode.WSJSONPopulator;
-import com.jaxws.json.feature.JSONObject;
 import com.jaxws.json.feature.JSONWebService;
 import com.jaxws.json.serializer.JSONObjectCustomizer;
 
@@ -51,7 +49,7 @@ import com.jaxws.json.serializer.JSONObjectCustomizer;
  * @author ssaminathan
  *
  */
-public class WSJSONWriter {
+public class WSJSONWriter extends BeanAware{
     private static final Logger LOG = Logger.getLogger(WSJSONWriter.class.getName());
 
 	private static final String XML_DEFAULT = "##default";
@@ -134,16 +132,6 @@ public class WSJSONWriter {
 	 */
 	private List<Map<String,Object>> attachments	 = new ArrayList<Map<String,Object>>();
 	
-	/**
-	 * Private bean property cache.
-	 * Standard bean inspector cache only for with out Hierarchy, When Hierarchy specify bean parser always parse bean. Its too slow.
-	 */
-	private static final Map<Class<?>,PropertyDescriptor[]> propertyDescriptorCache = 
-    	Collections.synchronizedMap(new WeakHashMap<Class<?>,PropertyDescriptor[]>());
-	
-	private static final Map<Class<?>,Map<String,java.lang.reflect.Field>> classFieldCache = 
-    	Collections.synchronizedMap(new WeakHashMap<Class<?>,Map<String,java.lang.reflect.Field>>());
-    
     /**
      * Writer instance with parameter passed writer object.
      * @param writer
@@ -1094,61 +1082,7 @@ public class WSJSONWriter {
 			}
   		}
  	}
-
  	
- 	/**
- 	 * Utility method to return bean property information.
- 	 * @param clazz
- 	 * @return
- 	 * @throws IntrospectionException
- 	 */
- 	private PropertyDescriptor[] getBeanProperties(Class<?> clazz) throws IntrospectionException{
- 		if(propertyDescriptorCache.containsKey(clazz))
- 			return propertyDescriptorCache.get(clazz);
-		PropertyDescriptor[] props =  ((clazz.isAnnotationPresent(JSONObject.class) && 
-    			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) 
-    			? Introspector.getBeanInfo(clazz, clazz.getSuperclass()) 
-    					: Introspector.getBeanInfo(clazz,clazz.isEnum() ? Enum.class : Object.class)).getPropertyDescriptors();
- 		if(props.length == 0 && !clazz.isEnum()){
-        	// There is no property descriptor, then use public fields, RPC document require this
-        	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(), clazz);
-        }
- 		propertyDescriptorCache.put(clazz, props);
- 		return props;
- 	}
- 	
- 	/**
-	 * Utility method to read declaring field including private scope.
-	 * @param clazz
-	 * @param fieldName
-	 * @return
-	 */
-	private java.lang.reflect.Field getDeclaredField(Class<?> clazz, String fieldName){
-		if(!classFieldCache.containsKey(clazz)){
-			classFieldCache.put(clazz, getAllFields(clazz));
-		} 
-		return classFieldCache.get(clazz).get(fieldName);
-	}
-	private Map<String, Field> getAllFields(Class<?> clazz) {
-		Map<String, Field> fieldMap = new HashMap<String, Field>();
-		fillDeclaredFields(clazz,fieldMap);
-		return fieldMap;
-	}
-	
-	private void fillDeclaredFields(Class<?> clazz,Map<String, Field> fieldMap){
-		try {
-			for(java.lang.reflect.Field field : clazz.getDeclaredFields()){
-				if(!fieldMap.containsKey(field.getName()))
-					fieldMap.put(field.getName(), field);
-			}
-			if(!Object.class.equals(clazz.getSuperclass())){
-				fillDeclaredFields(clazz.getSuperclass(),fieldMap);
-			}
-		} catch (Throwable e) {
-			//
-		}
-	}
-
 	/**
 	 * Getter to return attachments
 	 * @return

@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.jaxws.json.codec.BeanAware;
 import com.jaxws.json.codec.JSONCodec;
-import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.codec.encode.WSJSONWriter;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -105,7 +105,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 			for(Entry<String, WSDLPart> part : parts.entrySet()){
 				if(part.getValue().getBinding() == ParameterBinding.BODY){
 					Class<?> clazz = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
-					if(WSJSONPopulator.isJSONPrimitive(clazz)){
+					if(BeanAware.isJSONPrimitive(clazz)){
 						parameterMap.put(part.getKey(), clazz.getSimpleName());
 					} else if(clazz.isEnum()){
 						parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
