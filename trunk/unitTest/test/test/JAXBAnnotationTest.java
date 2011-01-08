@@ -2,6 +2,7 @@ package test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Collections;
 
 public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		com.test.jsonwebservice.rpc.JAXBAnnotationTest*/ {
@@ -42,8 +43,9 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("OUT: " + out);
 		String expected 	= "{\"statusFlag\":true," +
 				"\"xmlElementsObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
-		"\"object\":[{\"property1\":1},{\"property1\":2},{\"property1\":3}]," +
-		"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}]}}";
+		"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}]," +
+		"\"object\":[{\"property1\":1},{\"property1\":2},{\"property1\":3}]" +
+		"}}";
 		assertEquals(out, expected);
 	}
 
@@ -70,7 +72,11 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}],\"object\":[{\"property1\":1},{\"property1\":2},{\"property1\":3}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"DD\"},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22,\"String\":\"FF\"}]}}}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{" +
+				"\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
+				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"DD\"},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22,\"String\":\"FF\"}]," +
+				"\"object\":[{\"property1\":1},{\"property1\":2},{\"property1\":3}]" +
+				"}}}";
 		assertEquals(out, expected);
 	}
 
@@ -97,7 +103,11 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"object\":[{\"property1\":1},{\"property1\":2}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}]}}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{" +
+				"\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}]," +
+				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}]," +
+				"\"object\":[{\"property1\":1},{\"property1\":2}]" +
+				"}}";
 		assertEquals(out, expected);
 	}
 	
@@ -125,7 +135,11 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"object\":[{\"property1\":1},{\"property1\":2}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}]}}}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{" +
+				"\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}]," +
+				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}]," +
+				"\"object\":[{\"property1\":1},{\"property1\":2}]" +
+				"}}}";
 		assertEquals(out, expected);
 	}
 

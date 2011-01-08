@@ -20,5 +20,10 @@
   		name="AttachmentTest" 
   		implementation="com.test.jsonwebservice.rpc.impl.AttachmentTestImpl" 
   		url-pattern="/json/attachment" 
-  		binding="http://jsonplugin.googlecode.com/json/"/>					
+  		binding="http://jsonplugin.googlecode.com/json/"/>
+  <endpoint 
+  		name="PerformanceTest" 
+  		implementation="com.test.jsonwebservice.rpc.impl.PerformanceTestImpl" 
+  		url-pattern="/json/performance" 
+  		binding="http://jsonplugin.googlecode.com/json/"/>							
 </endpoints>

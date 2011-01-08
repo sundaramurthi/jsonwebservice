@@ -25,6 +25,8 @@ public class JSONCodecTest extends TestCase {
 			buf.append(str);
 			str = bufReader.readLine();
 		}
+		bufReader.close();
+		connection.disconnect();
 		return buf.toString();
 	}
 }
