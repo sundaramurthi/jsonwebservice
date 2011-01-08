@@ -123,6 +123,31 @@
 				</xsd:sequence>
 			</xsd:complexType>
 		 	 
+		 	<xsd:complexType name="BigObject">
+				<xsd:sequence>
+					<xsd:element name="property1" type="xsd:int"/>
+					<xsd:element name="property2" type="xsd:boolean"/>
+					<xsd:element name="property3" type="xsd:string"/>
+					<xsd:element name="property4" type="xsd:int"/>
+					<xsd:element name="property5" type="xsd:date"/>
+					<xsd:element name="property6" type="xsd:string"/>
+					<xsd:element name="property7" type="tns:Object"/>
+					<xsd:element name="property8" type="xsd:int"/>
+					<xsd:element name="property9" type="xsd:string"/>
+					<xsd:element name="property10" type="xsd:string"/>
+					<xsd:element name="property11" type="tns:ObjectReservedFields"/>
+					<xsd:element name="property12" type="tns:InputFieldType"/>
+					<xsd:element name="property13" type="tns:XmlElementsObj"/>
+					<xsd:element name="property14" type="tns:GlobalKeyMapObject"/>
+					<xsd:element name="property15" type="tns:BigObject"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			 
+		  <xsd:complexType name="LargeList">
+				<xsd:sequence>
+					<xsd:element name="bigObject" type="tns:BigObject" minOccurs="1" maxOccurs="unbounded"/>
+		 	  </xsd:sequence>
+		 	</xsd:complexType>  
 		</xsd:schema>
 	</types>
 
@@ -260,6 +285,10 @@
 		<part name="image" type="xsd:base64Binary" xmime:expectedContentTypes="image/jpeg"/>
 	</message>
 	
+	<!-- Performance message -->
+	<message name="largeListMessage">
+		<part name="largeList" type="tns:LargeList"/>
+	</message>
 	
 	<portType name="ParameterTest">
 		<operation name="test1EmptyInOut">
@@ -659,6 +688,18 @@
 		
 	</portType>
 	
+	<portType name="PerformanceTest">
+		<operation name="test1SizeInLargeListOut">
+			<input 	name="test1SizeIn" 				message="tns:integerMessage" />
+			<output name="test1LargeListOut" 		message="tns:largeListMessage" />
+		</operation>
+		
+		<operation name="test2LargeListInSizeOut">
+			<input 	name="test2LargeListIn" message="tns:largeListMessage" />
+			<output name="test2SizeOut" 		message="tns:integerMessage" />
+		</operation>
+	</portType>	
+	
 	<binding name="ParameterTestService" type="tns:ParameterTest">
 		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
 		<operation name="test1EmptyInOut">			<json:operation soapAction="http://jsonwebservice.test.com/rpc/test1EmptyInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
@@ -762,6 +803,12 @@
 					<mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated></output>
 		</operation>
 	</binding>
+	
+	<binding name="PerformanceTestService" type="tns:PerformanceTest">
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<operation name="test1SizeInLargeListOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/performance/test1SizeInLargeListOut"	style="rpc" /><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test2LargeListInSizeOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/performance/test2LargeListInSizeOut"	style="rpc" /><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+	</binding>	
 		
 	<service name="RPCTestService">
 		<port name="ParameterPort" binding="tns:ParameterTestService">
@@ -775,6 +822,9 @@
 		</port>
 		<port name="AttachmentPort" binding="tns:AttachmentTestService">
 			<json:address location="http://localhost:8080/unitTest/json/attachment" />
+		</port>
+		<port name="PerformancePort" binding="tns:PerformanceTestService">
+			<json:address location="http://localhost:8080/unitTest/json/performance" />
 		</port>
 	</service>
 

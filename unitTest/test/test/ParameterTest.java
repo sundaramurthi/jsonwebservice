@@ -177,7 +177,7 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		String expected 	= "{\"enumConstOut\":\"CONST_3\",\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
-
+	
 	public void test16EmptyInObjectOut() throws MalformedURLException, IOException {
 		String in 	= "{\"test16EmptyInObjectOut\":{}}";
 		System.out.println("IN: " + in);
