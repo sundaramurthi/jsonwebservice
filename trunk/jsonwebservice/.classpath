@@ -8,5 +8,5 @@
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
 	<classpathentry kind="lib" path="lib/webservices-api.jar"/>
 	<classpathentry kind="lib" path="lib/webservices-rt.jar" sourcepath="C:/Documents and Settings/ssaminathan/Desktop/metro-2_0_1.src/metro/lib/runtime/xmlsec-src"/>
-	<classpathentry kind="output" path="build/classes"/>
+	<classpathentry kind="output" path="build/bin"/>
 </classpath>

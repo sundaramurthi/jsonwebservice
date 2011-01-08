@@ -1,14 +1,11 @@
 package com.jaxws.json.codec.decode;
 
-import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
-import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -40,6 +37,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.jvnet.mimepull.MIMEPart;
 
+import com.jaxws.json.codec.BeanAware;
 import com.jaxws.json.codec.DateFormat;
 import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
@@ -63,7 +61,7 @@ import com.sun.xml.messaging.saaj.packaging.mime.internet.MimePartDataSource;
  * @see JSONWebService
  *
  */
-public class WSJSONPopulator {
+public class WSJSONPopulator extends BeanAware {
 	/**
 	 * Static string value for JSON/Default null. 
 	 */
@@ -150,10 +148,8 @@ public class WSJSONPopulator {
 	 * @throws IntrospectionException
 	 */
 	@SuppressWarnings("unchecked")
-	public Object convert(Class<?> clazz, Type type, Object value, JSONWebService customizeInfo, Method method) throws IllegalArgumentException, 
-					IllegalAccessException, 
-					InvocationTargetException, InstantiationException, 
-					NoSuchMethodException, IntrospectionException {
+	public Object convert(Class<?> clazz, Type type, Object value, 
+			JSONWebService customizeInfo, Method method) throws Exception {
 		if(this.objectCustomizers.containsKey(clazz)){
 			// Case 1: is it handled by Customizer?
 			return this.objectCustomizers.get(clazz).decode(value);
@@ -230,9 +226,7 @@ public class WSJSONPopulator {
 	 * @throws InstantiationException
 	 */
     public void populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo, List<MIMEPart> attachments)
-        throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
-        IntrospectionException, IllegalArgumentException,
-        InstantiationException {
+        throws Exception {
 		this.attachments	= attachments;
 		this.populateObject(object, elements, customizeInfo);
 	}
@@ -251,9 +245,7 @@ public class WSJSONPopulator {
 	 */
     @SuppressWarnings({ "unchecked", "rawtypes" })
 	private void populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo)
-        throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
-        IntrospectionException, IllegalArgumentException,
-        InstantiationException {
+        throws Exception {
 		// unmap
 		/*if(listMapKey != null ){
 	        Method[] methods1 = object.getClass().getDeclaredMethods();
@@ -291,13 +283,8 @@ public class WSJSONPopulator {
         } FIXME*/
 		// demap
 		
-		Class<?> 				clazz 	= object.getClass();
-		BeanInfo 				info 	= Introspector.getBeanInfo(clazz);
-		PropertyDescriptor[] 	props 	= info.getPropertyDescriptors();
-		 if(props.length == 0){
-         	// There is no property descriptor, then use public fields, RPC document require this
-         	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(),clazz);
-         }
+    	Class<?>				clazz	= object.getClass();
+		PropertyDescriptor[] 	props 	= getBeanProperties(clazz);
 
 		//iterate over class fields
 		for (PropertyDescriptor prop : props) {
@@ -315,32 +302,31 @@ public class WSJSONPopulator {
 		            	}
 		            	continue;
 		            }
-		            //use only public setters
-		            if (Modifier.isPublic(writeMethod.getModifiers())) {
-		            	Class<?>[] paramTypes 	= writeMethod.getParameterTypes();
-		                Type[] genericTypes = writeMethod.getGenericParameterTypes();
-		                if (paramTypes.length == 1) {
-		                	Object convertedValue = this.convert(paramTypes[0], genericTypes[0], value, writeMethodConfig, writeMethod);
-		                	try{
-		                		writeMethod.invoke(object, new Object[]{convertedValue});
-		                	}catch(Throwable exp){
-		                		if(prop instanceof PublicFieldPropertyDescriptor){
-		                    		 value = ((PublicFieldPropertyDescriptor)prop).getValue(object);
-		                    	 }
-		                		if(traceEnabled){
-		                			traceLog.warn(String.format("Exception while writing property \"%s\". Input %s. Expected type %s",
-		                					expectedJSONPropName, value, prop.getPropertyType().getSimpleName()));
-				            	}
-		                	}
-		                }
-		            }
+		            //use only public setters Bean property describer get only accessable setter.
+	                // Bean getter always works on single property get. if (paramTypes.length == 1) {
+                	try{
+                		Class<?>[] 	paramTypes 		= writeMethod.getParameterTypes();
+    	                Type[] 		genericTypes 	= writeMethod.getGenericParameterTypes();
+    	                
+                		Object convertedValue = this.convert(paramTypes[0], genericTypes[0], value, writeMethodConfig, writeMethod);
+                		writeMethod.invoke(object, convertedValue);
+                	}catch(Throwable exp){
+                		if(prop instanceof PublicFieldPropertyDescriptor){
+                			((PublicFieldPropertyDescriptor)prop).setValue(object, value);
+                    	}
+                		if(traceEnabled){
+                			traceLog.warn(String.format("Exception while writing property \"%s\". Input %s. Expected type %s",
+                					expectedJSONPropName, value, prop.getPropertyType().getSimpleName()));
+		            	}
+                	}
+	               // }
 		        } else if (prop.getReadMethod() != null && Collection.class.isAssignableFrom(prop.getPropertyType())) {
 					try {
 						Method 				readMethod 			= prop.getReadMethod();
 						JSONWebService 		readMethodConfig 	= readMethod.getAnnotation(JSONWebService.class);
 						if(readMethodConfig == null || readMethodConfig.deserialize()){
 							//  add configuration
-							Collection<?> objectList = (Collection<?>) readMethod.invoke(object, new Object[] {});
+							Collection<?> objectList = (Collection<?>) readMethod.invoke(object);
 							if(objectList != null){
 								if(traceEnabled){
 									traceLog.info(String.format("Only list read method found for property %s adding new values to existing collection. " +
@@ -520,9 +506,7 @@ public class WSJSONPopulator {
      */
     @SuppressWarnings("unchecked")
     private Object convertToMap(Class<?> clazz, Type type, Object value, JSONWebService customizeInfo,Method accessor)
-            throws IllegalArgumentException, IllegalAccessException,
-            InvocationTargetException, InstantiationException, NoSuchMethodException,
-            IntrospectionException {
+            throws Exception {
         if (value == null)
             return null;
         else if (value instanceof Map) {
@@ -596,10 +580,8 @@ public class WSJSONPopulator {
      * @return
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private Object convertToArray(Class<?> clazz, Type type, Object value, JSONWebService customizeInfo, Method accessor)
-            throws IllegalArgumentException, IllegalAccessException,
-            InvocationTargetException, InstantiationException, NoSuchMethodException,
-            IntrospectionException {
+    private Object convertToArray(Class<?> clazz, Type type, Object value,
+    		JSONWebService customizeInfo, Method accessor) throws Exception {
         if (value == null)
             return null;
         else if (value instanceof List) {
@@ -660,11 +642,9 @@ public class WSJSONPopulator {
      * @throws NoSuchMethodException
      * @throws IntrospectionException
      */
-    @SuppressWarnings({"unchecked","rawtypes"})
-    private Object convertToCollection(Class<?> clazz, Type type, Object value,JSONWebService customizeInfo, Method accessor)
-            throws IllegalArgumentException, IllegalAccessException,
-            InvocationTargetException, InstantiationException, NoSuchMethodException,
-            IntrospectionException {
+    @SuppressWarnings("unchecked")
+    private Object convertToCollection(Class<?> clazz, Type type, Object value,
+    		JSONWebService customizeInfo, Method accessor) throws Exception {
         if (value == null)
             return null;
         else if (Collection.class.isAssignableFrom(value.getClass())) {
@@ -692,36 +672,36 @@ public class WSJSONPopulator {
                     newCollection = new ArrayList();
                 }
             }
-
             //create an object for each element
-            for (Object listValue : values) {
-                if (itemClass.equals(Object.class)) {
-                    //Object[]
-                    newCollection.add(listValue);
-                    if(traceEnabled)
-                    	traceLog.warn(String.format("Unparameterazed list with object type found. accessor: \"%s\" class: %s",
-                    			accessor.getName(),accessor.getDeclaringClass()));
-                } else if (isJSONPrimitive(itemClass)) {
-                    //primitive array
+            if (itemClass.equals(Object.class)) {
+                //Object[]
+            	newCollection.addAll(values);
+                if(traceEnabled)
+                	traceLog.warn(String.format("Unparameterazed list with object type found. accessor: \"%s\" class: %s",
+                			accessor.getName(),accessor.getDeclaringClass()));
+            } else if (isJSONPrimitive(itemClass)) {
+                //primitive array
+            	for (Object listValue : values) {
                     newCollection.add(this.convertPrimitive(itemClass, listValue,
                     		customizeInfo, accessor));
-                } else if (Map.class.isAssignableFrom(itemClass)) {
-                    Object newObject = convertToMap(itemClass, itemType, listValue, customizeInfo, accessor);
-                    newCollection.add(newObject);
-                } else if (List.class.isAssignableFrom(itemClass)) {
-                	// List of list
-                    Object newObject = convertToCollection(itemClass, itemType, listValue, customizeInfo, accessor);
-                    newCollection.add(newObject);
-                } else if (listValue instanceof Map) {
-                    //array of beans
-                    Object newObject = itemClass.newInstance();
-                    this.populateObject(newObject, (Map) listValue, customizeInfo);
-                    newCollection.add(newObject);
-                } else if(traceEnabled){
-                	traceLog.error(String.format("Incompatible types for property %s in class %s",
-                			accessor.getName(),
-                			accessor.getDeclaringClass().getSimpleName()));
-                }
+            	}
+            } else if (Map.class.isAssignableFrom(itemClass)) {
+            	for (Object listValue : values) {
+            		newCollection.add(convertToMap(itemClass, itemType, listValue, customizeInfo, accessor));
+            	}
+            } else if (List.class.isAssignableFrom(itemClass)) {
+            	// List of list
+            	for (Object listValue : values) {
+            		newCollection.add(convertToCollection(itemClass, itemType, listValue, customizeInfo, accessor));
+            	}
+            } else {
+            	for (Object listValue : values) {
+            		if(listValue instanceof Map){
+	            		Object newObject = itemClass.newInstance();
+	                    this.populateObject(newObject, (Map) listValue, customizeInfo);
+	                    newCollection.add(newObject);
+            		}
+            	}
             }
             return newCollection;
         } else if (value instanceof Map) {
@@ -946,50 +926,4 @@ public class WSJSONPopulator {
     		return date;
     	}
     }
-
-    
-    /**
-     * Utility method 
-	 * @param clazz
-	 * @return
-	 */
-	public static boolean isJSONPrimitive(Class<?> clazz) {
-		return 		clazz.isPrimitive() 			
-				|| clazz.equals(String.class)		|| clazz.equals(Locale.class)
-				|| clazz.equals(Boolean.class)		|| clazz.isEnum()
-				|| clazz.equals(Byte.class) 		|| clazz.equals(Character.class)
-				|| clazz.equals(Double.class) 		|| clazz.equals(Float.class)
-				|| clazz.equals(Integer.class) 		|| clazz.equals(Long.class)
-				|| clazz.equals(Short.class) 		|| clazz.equals(BigDecimal.class) 
-				|| clazz.equals(BigInteger.class) 	|| isDateTime(clazz);
-	}
-	
-	/**
-	 * Utility method 
-	 * @param clazz
-	 * @return
-	 */
-	private static boolean isDateTime(Class<?> clazz){
-		return clazz.equals(Timestamp.class) 
-				|| clazz.equals(Calendar.class)
-				|| clazz.equals(Date.class)
-				|| clazz.equals(java.sql.Date.class);
-	}
-	
-	/**
-	 * Utility method to read declaring field including private scope.
-	 * @param clazz
-	 * @param fieldName
-	 * @return
-	 */
-	private java.lang.reflect.Field getDeclaredField(Class<?> clazz, String fieldName){
-		try {
-			return clazz.getDeclaredField(fieldName);
-		} catch (Throwable e) {
-			if(!Object.class.equals(clazz.getSuperclass())){
-				return getDeclaredField(clazz.getSuperclass(),fieldName);
-			}
-		}
-		return null;
-	}
 }
