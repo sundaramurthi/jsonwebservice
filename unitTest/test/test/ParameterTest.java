@@ -432,4 +432,39 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		assertEquals(out, expected);
 	}
 
+	public void test44DateTimeInEmptyOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test44DateTimeInEmptyOut\":{\"dateTime\":{\"day\":1,\"month\":1,\"year\":2011}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+
+	public void test45EmptyInDateTimeOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test45EmptyInDateTimeOut\":{}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"dateTime\":{\"XMLSchemaType\":{\"localPart\":\"dateTime\",\"namespaceURI\":\"http:\\/\\/www.w3.org\\/2001\\/XMLSchema\",\"prefix\":\"\"},\"day\":1,\"eonAndYear\":6,\"fractionalSecond\":0.000,\"hour\":0,\"millisecond\":0,\"minute\":0,\"month\":11,\"second\":0,\"timezone\":60,\"valid\":true,\"year\":6},\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+
+	public void test46DateTimeInDateTimeOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test46DateTimeInDateTimeOut\":{\"dateTime\":{\"day\":1,\"month\":1,\"year\":2011,\"eonAndYear\":2011,\"fractionalSecond\":0.000,\"hour\":0,\"millisecond\":0,\"minute\":0,\"second\":0,\"timezone\":60,\"valid\":true}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"dateTime\":{\"XMLSchemaType\":{\"localPart\":\"dateTime\",\"namespaceURI\":\"http:\\/\\/www.w3.org\\/2001\\/XMLSchema\",\"prefix\":\"\"},\"day\":1,\"eonAndYear\":2011,\"fractionalSecond\":0.000,\"hour\":0,\"millisecond\":0,\"minute\":0,\"month\":1,\"second\":0,\"timezone\":60,\"valid\":true,\"year\":2011},\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+	
+	public void test47DateObjectInDateObjectOut() throws MalformedURLException, IOException{
+		String in 	= "{\"test47DateObjectInDateObjectOut\":{\"dateObject\":{\"date\":{\"day\":1,\"month\":1,\"year\":2011,\"eonAndYear\":2011,\"fractionalSecond\":0.000,\"hour\":0,\"millisecond\":0,\"minute\":0,\"second\":0,\"timezone\":60,\"valid\":true}}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"dateObject\":{\"date\":{\"XMLSchemaType\":{\"localPart\":\"date\",\"namespaceURI\":\"http:\\/\\/www.w3.org\\/2001\\/XMLSchema\",\"prefix\":\"\"},\"day\":1,\"eonAndYear\":2011,\"hour\":-2147483648,\"millisecond\":-2147483648,\"minute\":-2147483648,\"month\":1,\"second\":-2147483648,\"timezone\":60,\"valid\":true,\"year\":2011}},\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
 }

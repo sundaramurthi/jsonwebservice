@@ -32,6 +32,12 @@
 		 	 		<xsd:element name="enum" type="tns:enumConst"/>
 				</xsd:sequence>
 			</xsd:complexType>
+			
+			<xsd:complexType name="DateObject">
+				<xsd:sequence>
+					<xsd:element name="date" type="xsd:date"/>
+				</xsd:sequence>		
+			</xsd:complexType>
 		 	 
 			<xsd:complexType name="MapObject">
 				<xsd:sequence>
@@ -204,6 +210,15 @@
 	<message name="objectReservedFields">
 		<part name="objectReservedFields" type="tns:ObjectReservedFields"/>
 	</message>
+	
+	<message name="dateTimeMessage">
+		<part name="dateTime" type="xsd:dateTime"/>
+	</message>
+	
+	<message name="dateObjectMessage">
+		<part name="dateObject" type="tns:DateObject"/>
+	</message>
+	
 	
 	<!-- more than one parts -->
 	<message name="numNumMessage">
@@ -512,6 +527,27 @@
 			<output name="test43EmptyOut" 	message="tns:emptyMessage" />
 		</operation>
 		
+		<!-- default date time in out -->
+		<operation name="test44DateTimeInEmptyOut">
+			<input name="test44DateTimeIn" 		message="tns:dateTimeMessage" />
+			<output name="test44EmptyOut" 		message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test45EmptyInDateTimeOut">
+			<input name="test45EmptyIn" 			message="tns:emptyMessage" />
+			<output name="test45DateTimeOut" 	message="tns:dateTimeMessage" />
+		</operation>
+		
+		<operation name="test46DateTimeInDateTimeOut">
+			<input name="test46DateTimeIn" 			message="tns:dateTimeMessage" />
+			<output name="test46DateTimeOut" 	message="tns:dateTimeMessage" />
+		</operation>
+		
+		<operation name="test47DateObjectInDateObjectOut">
+			<input name="test47DateObjectIn" 	message="tns:dateObjectMessage" />
+			<output name="test47DateObjectOut" 	message="tns:dateObjectMessage" />
+		</operation>
+		
 	</portType>
 
 	<portType name="CustomizeTest">
@@ -745,7 +781,10 @@
 		<operation name="test41StringObjectInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test41StringObjectInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test42EmptyInStringObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test42EmptyInStringObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test43StringNumInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test43StringNumInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-		
+		<operation name="test44DateTimeInEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test44DateTimeInEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test45EmptyInDateTimeOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test45EmptyInDateTimeOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test46DateTimeInDateTimeOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test46DateTimeInDateTimeOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test47DateObjectInDateObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test47DateObjectInDateObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 	</binding>
 	
 	<binding name="CustomizeTestService" type="tns:CustomizeTest">
