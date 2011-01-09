@@ -8,6 +8,7 @@ public class AllTests {
 	public static Test suite() {
 		TestSuite suite = new TestSuite("Test for com.jsonws");
 		//$JUnit-BEGIN$
+		suite.addTestSuite(WSJSONPopulatorTest.class);
 		suite.addTestSuite(ParameterTest.class);
 		suite.addTestSuite(CustomizeTest.class);
 		suite.addTestSuite(JAXBAnnotationTest.class);
