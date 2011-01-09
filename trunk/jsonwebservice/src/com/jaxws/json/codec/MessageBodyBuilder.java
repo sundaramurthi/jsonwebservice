@@ -105,7 +105,7 @@ public class MessageBodyBuilder {
 				
 				Object val = null;
 	            if(!WSJSONPopulator.isJSONPrimitive(parameterType)){
-		            val = parameterType.newInstance();
+	            	val = jsonPopulator.getNewInstance(parameterType);
 		            jsonPopulator.populateObject(val,
 		            		(Map<String,Object>)operationParameters.get(part.getKey()),jsonwebService, 
 		            		(List<MIMEPart>) invocationProperties.get(JSONCodec.MIME_ATTACHMENTS));
@@ -137,7 +137,7 @@ public class MessageBodyBuilder {
 						obj	= cs;
 					}else{
 						Class<?> type = (Class<?>)parameter.getBridge().getTypeReference().type;
-						obj	 = type.newInstance();
+						obj	 = jsonPopulator.getNewInstance(type);
 						for(ParameterImpl parameterChild : childParameters){
 							type.getField(parameterChild.getPartName()).set(obj,
 									parameterObjects[parameterChild.getIndex()]);

@@ -7,13 +7,21 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.jaxws.json.feature.JSONObject;
 
@@ -26,7 +34,7 @@ import com.jaxws.json.feature.JSONObject;
  *  
  */
 public abstract class BeanAware {
-	
+	private static DatatypeFactory datatypeFactory; 
 	/**
 	 * Private bean property cache.
 	 * Standard bean inspector cache only for with out Hierarchy, When Hierarchy specify bean parser always parse bean. Its too slow.
@@ -96,6 +104,9 @@ public abstract class BeanAware {
 		return classFieldCache.get(clazz).get(fieldName);
 	}
 	
+	/**
+	 * declared fields.
+	 */
 	private static Map<String, Field> fillDeclaredFields(Class<?> clazz,Map<String, Field> fieldMap){
 		try {
 			for(java.lang.reflect.Field field : clazz.getDeclaredFields()){
@@ -109,5 +120,37 @@ public abstract class BeanAware {
 			//
 		}
 		return fieldMap;
+	}
+	
+	
+	/**
+	 * @param clazz
+	 * @return instanceof class or possible sub level object
+	 */
+	protected Object getNewInstance(Class<?> clazz){
+		try {
+			return clazz.newInstance();
+		} catch (InstantiationException e) {
+			if (List.class.isAssignableFrom(clazz)){
+                return new ArrayList<Object>();
+            }else if(Map.class.isAssignableFrom(clazz)){
+				return new HashMap<String,Object>();
+			} else if (Set.class.isAssignableFrom(clazz)) {
+                return new HashSet<Object>();
+            } else if(XMLGregorianCalendar.class.isAssignableFrom(clazz)){
+            	if(datatypeFactory == null){
+    				try {
+						datatypeFactory = DatatypeFactory.newInstance();
+					} catch (DatatypeConfigurationException e1) {
+						return null;
+					}
+    			}
+            	return datatypeFactory.newXMLGregorianCalendar();
+            }
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
