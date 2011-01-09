@@ -7,9 +7,6 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -47,14 +44,10 @@ public abstract class BeanAware {
 	 * @return
 	 */
 	public static boolean isJSONPrimitive(Class<?> clazz) {
-		return 		clazz.isPrimitive() 			
-				|| clazz.equals(String.class)		|| clazz.equals(Locale.class)
-				|| clazz.equals(Boolean.class)		|| clazz.isEnum()
-				|| clazz.equals(Byte.class) 		|| clazz.equals(Character.class)
-				|| clazz.equals(Double.class) 		|| clazz.equals(Float.class)
-				|| clazz.equals(Integer.class) 		|| clazz.equals(Long.class)
-				|| clazz.equals(Short.class) 		|| clazz.equals(BigDecimal.class) 
-				|| clazz.equals(BigInteger.class) 	|| isDateTime(clazz);
+		return 		clazz.isPrimitive() || Number.class.isAssignableFrom(clazz)			
+				|| clazz.equals(String.class)		|| clazz.equals(Boolean.class)		
+				|| clazz.isEnum()					|| isDateTime(clazz)
+				|| clazz.equals(Character.class)	|| clazz.equals(Locale.class);
 	}
 	
 	/**
@@ -63,10 +56,9 @@ public abstract class BeanAware {
 	 * @return
 	 */
 	protected static boolean isDateTime(Class<?> clazz){
-		return clazz.equals(Timestamp.class) 
-				|| clazz.equals(Calendar.class)
-				|| clazz.equals(Date.class)
-				|| clazz.equals(java.sql.Date.class);
+		return Date.class.isAssignableFrom(clazz)//Timestamp.class, java.sql.Date.class
+				|| Calendar.class.isAssignableFrom(clazz); // GregorianCalendar, Calendar;
+		// XMLGregorianCallender should be responded as bean with year, day , month property.
 	}
 	/**
  	 * Utility method to return bean property information.
@@ -97,18 +89,12 @@ public abstract class BeanAware {
 	 */
 	protected static java.lang.reflect.Field getDeclaredField(Class<?> clazz, String fieldName){
 		if(!classFieldCache.containsKey(clazz)){
-			classFieldCache.put(clazz, getAllFields(clazz));
+			classFieldCache.put(clazz, fillDeclaredFields(clazz,new HashMap<String, Field>()));
 		} 
 		return classFieldCache.get(clazz).get(fieldName);
 	}
 	
-	private static Map<String, Field> getAllFields(Class<?> clazz) {
-		Map<String, Field> fieldMap = new HashMap<String, Field>();
-		fillDeclaredFields(clazz,fieldMap);
-		return fieldMap;
-	}
-	
-	private static void fillDeclaredFields(Class<?> clazz,Map<String, Field> fieldMap){
+	private static Map<String, Field> fillDeclaredFields(Class<?> clazz,Map<String, Field> fieldMap){
 		try {
 			for(java.lang.reflect.Field field : clazz.getDeclaredFields()){
 				if(!fieldMap.containsKey(field.getName()))
@@ -120,5 +106,6 @@ public abstract class BeanAware {
 		} catch (Throwable e) {
 			//
 		}
+		return fieldMap;
 	}
 }
