@@ -62,7 +62,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		adapter.invokeAsync(connection);
 		int i = 0;
 		while(!connection.isClosed()){
-			// Wait untill response complete
+			// Wait until response complete
 			try {
 				Thread.sleep(200);// 0.1 milliseconds
 				

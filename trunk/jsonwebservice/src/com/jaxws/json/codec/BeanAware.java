@@ -19,6 +19,8 @@ import com.jaxws.json.feature.JSONObject;
 
 /**
  * @author Sundaramurthi 
+ * @since 0.5
+ * @version 1.0
  * 
  * Encode and Decoder extends Bean aware. To use common bean properties.
  *  
