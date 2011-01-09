@@ -1,10 +1,16 @@
 package com.test.jsonwebservice.rpc.impl;
 
+import java.util.GregorianCalendar;
+
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 import javax.jws.soap.SOAPBinding.Style;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.ws.Holder;
 
+import com.test.jsonwebservice.rpc.DateObject;
 import com.test.jsonwebservice.rpc.EnumConst;
 import com.test.jsonwebservice.rpc.Object;
 import com.test.jsonwebservice.rpc.ObjectReservedFields;
@@ -259,6 +265,32 @@ public class ParameterTestImpl implements ParameterTest {
 
 	public void test43StringNumInEmptyOut(String string, int integer) {
 		if(string == null || integer == 0)
+			throw new RuntimeException();
+	}
+
+	public void test44DateTimeInEmptyOut(XMLGregorianCalendar dateTime) {
+		if(dateTime == null || dateTime.getDay() == 0)
+			throw new RuntimeException();
+	}
+
+	public XMLGregorianCalendar test45EmptyInDateTimeOut() {
+		try {
+			return DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar(1, 4, 2011));
+		} catch (DatatypeConfigurationException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public void test46DateTimeInDateTimeOut(
+			Holder<XMLGregorianCalendar> dateTime) {
+		if(dateTime == null || dateTime.value == null)
+			throw new RuntimeException();
+		
+	}
+
+	public void test47DateObjectInDateObjectOut(Holder<DateObject> dateObject) {
+		if(dateObject == null || dateObject.value == null || dateObject.value.getDate() == null)
 			throw new RuntimeException();
 	}
 
