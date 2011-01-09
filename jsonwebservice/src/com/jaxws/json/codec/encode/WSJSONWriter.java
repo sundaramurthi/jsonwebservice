@@ -1,5 +1,6 @@
 package com.jaxws.json.codec.encode;
 
+import java.beans.IndexedPropertyDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -519,20 +520,18 @@ public class WSJSONWriter extends BeanAware {
     	
         this.add("[");
         if(this.metaDataMode && method != null && method.getGenericReturnType() != null){
-        	try {
-        		Class<?> parameterType  = (Class<?>)((ParameterizedType)method.getGenericReturnType()).
-						getActualTypeArguments()[0];
-        		if(parameterType.equals(Object.class) || WSJSONPopulator.isJSONPrimitive(parameterType)){
-        			if(method != null){
-        				this.process(getMetaDataInstance(parameterType, customInfo,
-        						method.getDeclaringClass().getDeclaredField(
-        								Introspector.decapitalize(method.getName().substring(3)))),null);
-        			}
-        			// JAXB Choice
-        		} else {
-        			this.process(parameterType.newInstance(),method);
-        		}
-			} catch (Throwable e) {}
+    		Class<?> parameterType  = (Class<?>)((ParameterizedType)method.getGenericReturnType()).
+					getActualTypeArguments()[0];
+    		if(parameterType.equals(Object.class) || WSJSONPopulator.isJSONPrimitive(parameterType)){
+    			if(method != null) {
+    				this.process(getMetaDataInstance(parameterType, customInfo,
+    						getDeclaredField(method.getDeclaringClass(),
+    								Introspector.decapitalize(method.getName().substring(3)))),null);
+    			}
+    			// JAXB Choice
+    		} else {
+    			this.process(getNewInstance(parameterType),method);
+    		}
         }
         boolean hasData = false;
         for (int i = 0; iterator.hasNext(); i++) {
@@ -608,17 +607,23 @@ public class WSJSONWriter extends BeanAware {
                  if (this.shouldHardExcludeProperty(name)) {
                      continue;
                  }
-                 
-            	 Method 	accessor 	= property.getReadMethod();
+
+                 Method 	accessor 	= property.getReadMethod();
             	/*
              	 *  Step 5.10.2.2: Handle special case, When property is Boolean object (not boolean primitive) and getter method starts with "is"
              	 *  This is not standard boolean declaration. But logical to do in hand written bean. Then support it.
              	 */
-                 if(accessor == null && propertyType.isAssignableFrom(Boolean.class)){
-                 	// for Boolean Objet is method issue
-                 	try{
-                 		accessor = clazz.getMethod("is"+name.substring(0, 1).toUpperCase()+name.substring(1),((Class[])null));
-                 	}catch(Throwable th){/*Not an issue if not read method*/}
+                 if(accessor == null){
+                	 if(property instanceof IndexedPropertyDescriptor){
+                		 IndexedPropertyDescriptor idexedProp = (IndexedPropertyDescriptor)property;
+                		 accessor		= idexedProp.getReadMethod();
+                		 propertyType 	= idexedProp.getIndexedPropertyType();
+                	 }else if(propertyType.isAssignableFrom(Boolean.class)){
+	                 	// for Boolean Objet is method issue
+	                 	try{
+	                 		accessor = clazz.getMethod("is"+name.substring(0, 1).toUpperCase()+name.substring(1),((Class[])null));
+	                 	}catch(Throwable th){/*Not an issue if not read method*/}
+                	 }
                  }
                  
                  /*
@@ -1076,11 +1081,8 @@ public class WSJSONWriter extends BeanAware {
   					return ob;
   				}
   			}
-			try{
-				return propertyType.newInstance();
-			}catch(Exception e){// Datahandler
-				return propertyType.getSimpleName();
-			}
+  			Object instance = getNewInstance(propertyType);
+  			return instance == null ? propertyType.getSimpleName() : instance;
   		}
  	}
  	

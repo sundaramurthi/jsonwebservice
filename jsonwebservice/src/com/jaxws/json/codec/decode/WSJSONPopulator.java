@@ -18,12 +18,10 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.activation.DataHandler;
@@ -169,7 +167,7 @@ public class WSJSONPopulator extends BeanAware {
             return convertToMap(clazz, type, value, customizeInfo, method);
         else if (value instanceof Map) {
         	// Case 6: Object inside object conversion
-            Object convertedValue = clazz.newInstance();
+            Object convertedValue = getNewInstance(clazz);
             this.populateObject(convertedValue, (Map<String,Object>) value, customizeInfo);
             return convertedValue;
         } else if(clazz.equals(JAXBElement.class)){
@@ -348,7 +346,7 @@ public class WSJSONPopulator extends BeanAware {
 									}
 									List<Object> populatedObjects = new ArrayList<Object>();
 									for(Map v :  objects){
-										Object ob = elm.type().newInstance();
+										Object ob = getNewInstance(elm.type());
 										populateObject(ob, v, writeMethodConfig);
 										populatedObjects.add(ob);
 									}
@@ -399,7 +397,7 @@ public class WSJSONPopulator extends BeanAware {
 									traceLog.warn("Non nillable object(\""+expectedJSONPropName +
 										"\") with nill value, populating default.");
 								try{
-									Object ob = prop.getPropertyType().newInstance();
+									Object ob = getNewInstance(prop.getPropertyType());
 									populateObject(ob, new HashMap<String, Object>(), writeMethodConfig);
 									writeMethod.invoke(object,ob);
 								}catch(Throwable th){
@@ -488,13 +486,7 @@ public class WSJSONPopulator extends BeanAware {
             }
             Map<String,Object> values = (Map<String,Object>) value;
 
-            Map<String,Object> newMap = null;
-            try {
-                newMap = (Map<String,Object>) clazz.newInstance();
-            } catch (InstantiationException ex) {
-                // fallback if clazz represents an interface or abstract class
-                newMap = new HashMap<String,Object>();
-            }
+            Map<String,Object> newMap = (Map<String,Object>) getNewInstance(clazz);;
 
             //create an object for each element
             Iterator<Map.Entry<String,Object>> iter = values.entrySet().iterator();
@@ -511,14 +503,12 @@ public class WSJSONPopulator extends BeanAware {
                     newMap.put(key, this.convertPrimitive(itemClass, v, customizeInfo,
                             accessor));
                 } else if (Map.class.isAssignableFrom(itemClass)) {
-                    Object newObject = convertToMap(itemClass, itemType, v, customizeInfo, accessor);
-                    newMap.put(key, newObject);
+                    newMap.put(key, convertToMap(itemClass, itemType, v, customizeInfo, accessor));
                 } else if (List.class.isAssignableFrom(itemClass)) {
-                    Object newObject = convertToCollection(itemClass, itemType, v, customizeInfo, accessor);
-                    newMap.put(key, newObject);
+                    newMap.put(key, convertToCollection(itemClass, itemType, v, customizeInfo, accessor));
                 } else if (v instanceof Map) {
                     //map of beans
-                    Object newObject = itemClass.newInstance();
+                    Object newObject = getNewInstance(itemClass);
                     this.populateObject(newObject, (Map<String,Object>) v, null);
                     newMap.put(key, newObject);
                 } else if(traceEnabled){
@@ -573,7 +563,7 @@ public class WSJSONPopulator extends BeanAware {
                     } else if (List.class.isAssignableFrom(arrayType)) {
                         newObject = convertToCollection(arrayType, type, listValue, customizeInfo, accessor);
                     } else {
-                        newObject = arrayType.newInstance();
+                        newObject = getNewInstance(arrayType);
                         this.populateObject(newObject, (Map<String,Object>) listValue, customizeInfo);
                     }
 
@@ -628,17 +618,7 @@ public class WSJSONPopulator extends BeanAware {
         if (Collection.class.isAssignableFrom(value.getClass())) {
             Collection<?> values = (Collection<?>) value;
 			@SuppressWarnings("rawtypes")
-			Collection newCollection = null;
-            try {
-                newCollection = (Collection<?>) clazz.newInstance();
-            } catch (InstantiationException ex) {
-                // fallback if clazz represents an interface or abstract class
-                if (Set.class.isAssignableFrom(clazz)) {
-                    newCollection = new HashSet<Object>();
-                } else {
-                    newCollection = new ArrayList<Object>(values.size());
-                }
-            }
+			Collection newCollection = (Collection<?>)getNewInstance(clazz);
             //create an object for each element
             if (itemClass.equals(Object.class)) {
                 //Object[]
@@ -664,7 +644,7 @@ public class WSJSONPopulator extends BeanAware {
             } else {
             	for (Object listValue : values) {
             		if(listValue instanceof Map){
-	            		Object newObject = itemClass.newInstance();
+	            		Object newObject = getNewInstance(itemClass);
 	                    this.populateObject(newObject, (Map<String,Object>) listValue, customizeInfo);
 	                    newCollection.add(newObject);
             		}
