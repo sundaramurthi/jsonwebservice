@@ -70,11 +70,13 @@ public class WSJSONPopulator extends BeanAware {
 	/**
 	 * List of property name can be serialized to MAP
 	 */
+	@SuppressWarnings("unused")
 	private Pattern listMapKey;
 	
 	/**
 	 * List of value property names used in MAP 
 	 */
+	@SuppressWarnings("unused")
 	private Pattern listMapValue;
 	
 	/**
@@ -624,16 +626,17 @@ public class WSJSONPopulator extends BeanAware {
         }
         
         if (Collection.class.isAssignableFrom(value.getClass())) {
-            Collection values = (Collection) value;
+            Collection<?> values = (Collection<?>) value;
+			@SuppressWarnings("rawtypes")
 			Collection newCollection = null;
             try {
-                newCollection = (Collection) clazz.newInstance();
+                newCollection = (Collection<?>) clazz.newInstance();
             } catch (InstantiationException ex) {
                 // fallback if clazz represents an interface or abstract class
                 if (Set.class.isAssignableFrom(clazz)) {
-                    newCollection = new HashSet();
+                    newCollection = new HashSet<Object>();
                 } else {
-                    newCollection = new ArrayList(values.size());
+                    newCollection = new ArrayList<Object>(values.size());
                 }
             }
             //create an object for each element
