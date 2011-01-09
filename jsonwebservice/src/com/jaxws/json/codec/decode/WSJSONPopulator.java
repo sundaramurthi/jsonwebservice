@@ -246,43 +246,6 @@ public class WSJSONPopulator extends BeanAware {
     @SuppressWarnings({ "unchecked", "rawtypes" })
 	private void populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo)
         throws Exception {
-		// unmap
-		/*if(listMapKey != null ){
-	        Method[] methods1 = object.getClass().getDeclaredMethods();
-	        for(Method meth1: methods1){
-	        	if(meth1.getReturnType() == List.class){
-	        		String charStart = ""+meth1.getName().charAt(3);
-					String key = charStart.toLowerCase()+meth1.getName().substring(4);
-		        	Type ob = ((java.lang.reflect.ParameterizedType)meth1.getGenericReturnType()).getActualTypeArguments()[0];
-		        	Method[]  methods =  ((Class)ob).getMethods();
-		        	 for(Method meth: methods){
-		        		String charStartOb = ""+meth.getName().charAt(3);
-						String keyObj = charStartOb.toLowerCase()+meth.getName().substring(4);
-			        	if(listMapKey.matcher(meth.getName().replaceFirst("get","")).matches()){
-			        		Map list = new HashMap();
-			        		if(meth.getName().startsWith("get")){
-			        			List lis = new ArrayList();
-		        				Map warpedMap = (Map)elements.get(key);
-		        				for(Object keyMap :warpedMap.keySet()){
-		        					if(listMapValue !=null){
-		        						Map<String, Object> prop = new HashMap<String, Object>();
-		        						prop.put(keyObj, keyMap);// FIXME proper property
-		        						lis.add(prop);
-			        				}else{
-			        					lis.add(warpedMap.get(keyMap));
-			        				}
-			        			}
-								list.put(key, lis);
-								elements = list;
-								break;
-							}
-			        	}
-		        	 }
-	        	}
-	        }
-        } FIXME*/
-		// demap
-		
     	Class<?>				clazz	= object.getClass();
 		PropertyDescriptor[] 	props 	= getBeanProperties(clazz);
 
@@ -647,20 +610,21 @@ public class WSJSONPopulator extends BeanAware {
     		JSONWebService customizeInfo, Method accessor) throws Exception {
         if (value == null)
             return null;
-        else if (Collection.class.isAssignableFrom(value.getClass())) {
-            Class<?> itemClass = Object.class;
-            Type itemType = null;
-            if (type != null && type instanceof ParameterizedType) {
-                ParameterizedType ptype = (ParameterizedType) type;
-                itemType = ptype.getActualTypeArguments()[0];
-                if (itemType.getClass().equals(Class.class)) {
-                    itemClass = (Class<?>) itemType;
-                } else {
-                    itemClass = (Class<?>) ((ParameterizedType) itemType).getRawType();
-                }
+        
+        Class<?> itemClass = Object.class;
+        Type itemType = null;
+        if (type != null && type instanceof ParameterizedType) {
+            ParameterizedType ptype = (ParameterizedType) type;
+            itemType = ptype.getActualTypeArguments()[0];
+            if (itemType.getClass().equals(Class.class)) {
+                itemClass = (Class<?>) itemType;
+            } else {
+                itemClass = (Class<?>) ((ParameterizedType) itemType).getRawType();
             }
+        }
+        
+        if (Collection.class.isAssignableFrom(value.getClass())) {
             Collection values = (Collection) value;
-
 			Collection newCollection = null;
             try {
                 newCollection = (Collection) clazz.newInstance();
@@ -669,7 +633,7 @@ public class WSJSONPopulator extends BeanAware {
                 if (Set.class.isAssignableFrom(clazz)) {
                     newCollection = new HashSet();
                 } else {
-                    newCollection = new ArrayList();
+                    newCollection = new ArrayList(values.size());
                 }
             }
             //create an object for each element
@@ -698,7 +662,7 @@ public class WSJSONPopulator extends BeanAware {
             	for (Object listValue : values) {
             		if(listValue instanceof Map){
 	            		Object newObject = itemClass.newInstance();
-	                    this.populateObject(newObject, (Map) listValue, customizeInfo);
+	                    this.populateObject(newObject, (Map<String,Object>) listValue, customizeInfo);
 	                    newCollection.add(newObject);
             		}
             	}
@@ -710,9 +674,13 @@ public class WSJSONPopulator extends BeanAware {
 	        			accessor.getName(),
 	        			accessor.getDeclaringClass().getSimpleName()));
         	}
-        	Map<String,Object> 	listVal 	= (Map<String,Object>)value;
-        	Object 				colection 	=  convertToCollection(clazz, type, listVal.values(), customizeInfo, accessor);
-        	return colection;
+        	/*if(listMapKey != null && !itemClass.equals(Object.class)){
+        		if(listMapValue != null){
+        			// TODO this is logical only value is primitive. Is it required to do this conversion?
+        		}
+        	}*/
+        	return convertToCollection(clazz, type, 
+        			((Map<String,Object>)value).values(), customizeInfo, accessor);
         } else{
         	if(traceEnabled){
         		traceLog.error(String.format("Incompatible types for property %s in class %s",

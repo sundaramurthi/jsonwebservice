@@ -46,10 +46,11 @@ import com.jaxws.json.feature.JSONWebService;
 import com.jaxws.json.serializer.JSONObjectCustomizer;
 
 /**
- * @author ssaminathan
- *
+ * @author Sundaramurthi
+ * 
+ * JSON response writter.
  */
-public class WSJSONWriter extends BeanAware{
+public class WSJSONWriter extends BeanAware {
     private static final Logger LOG = Logger.getLogger(WSJSONWriter.class.getName());
 
 	private static final String XML_DEFAULT = "##default";
