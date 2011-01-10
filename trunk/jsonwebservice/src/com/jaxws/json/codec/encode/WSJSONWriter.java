@@ -660,29 +660,35 @@ public class WSJSONWriter extends BeanAware {
                    	 *  Step 5.10.2.4.1: Read property value from object. If value null and exclude is true continue next property.
                    	 */
                      if(value == null){
-                    	 if(JSONCodec.excludeNullProperties && !this.metaDataMode){
-                    		 continue nextProperty;
-                    	 }else{
-                    		/*
-     	                	 *  Step 5.10.2.4.2: Read property value from object. If value null attempt to get it from default value.
-     	                	 */
-                     		 try{
-      	                    	Field declaredField = getDeclaredField(clazz,name);
-      	                    	XmlElement 	xmlElm 	=  declaredField.getAnnotation(XmlElement.class);
-      	                        if(xmlElm != null){
-      	                        	if(!xmlElm.defaultValue().equals(NULL) && WSJSONPopulator.isJSONPrimitive(propertyType)){
-      	                        		value = xmlElm.defaultValue();
-      	                        	} else if(!xmlElm.nillable()){
-      	                        		// TODO throw exception to user
-      	                        	}
-      	                        }
-      	                    }catch(Throwable th){}
-                    	 }
-                    	 if(this.metaDataMode){
-	      	                // In meta data mode always get data via meta provider. 
-	      	                value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
-	      	                		getDeclaredField(clazz,name));
-	                     }
+                    	 /*
+  	                	 *  Step 5.10.2.4.2: Read property value from object. If value null attempt to get it from default value.
+  	                	 */
+                  		 try{
+   	                    	Field declaredField = getDeclaredField(clazz,name);
+   	                    	XmlElement 	xmlElm 	=  declaredField.getAnnotation(XmlElement.class);
+   	                        if(xmlElm != null){
+   	                        	if(!xmlElm.defaultValue().equals(NULL) && isJSONPrimitive(propertyType)){
+   	                        		value = xmlElm.defaultValue();
+   	                        	} else if(!xmlElm.nillable() && createDefaultOnNonNullable){
+   	                        		if(!isJSONPrimitive(propertyType)){
+   	                        			value = getNewInstance(propertyType);
+   	                        		}else{
+   	                        			// Primitive don't have any default WHAT TODO . E.g. Integer object can't be instantiated.
+   	                        		}
+   	                        	}
+   	                        }
+   	                    }catch(Throwable th){}
+   	                    // Value still null
+   	                    if(value == null){
+	                    	if(JSONCodec.excludeNullProperties && !this.metaDataMode){
+	                    		continue nextProperty;
+	                    	}
+	                    	if(this.metaDataMode){
+	                    		// In meta data mode always get data via meta provider. 
+	                    		value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
+		      	                		getDeclaredField(clazz,name));
+		                    }
+   	                    }
                  	 }else if(this.metaDataMode && propertyType.isPrimitive()){
                  		 // Primitive meta data. In case like int value become 0. But it may be from default
                  		value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
@@ -1028,9 +1034,7 @@ public class WSJSONWriter extends BeanAware {
  		if(field != null && field.isAnnotationPresent(XmlElement.class)){
  			XmlElement element = field.getAnnotation(XmlElement.class);
 			if(!element.defaultValue().equals(NULL)){
-				if(field != null && Collection.class.isAssignableFrom(field.getType())){
-					return element.defaultValue().replace(",", "\",\"");
-				} else if(propertyType.isEnum()){
+				if(propertyType.isEnum()){
 					defaultVal	= element.defaultValue();
 					// In case of enum meta data is decided list
 				} else if(Boolean.TYPE.equals(propertyType) || Boolean.class.equals(propertyType)){

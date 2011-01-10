@@ -49,6 +49,11 @@ public abstract class BeanAware {
     	Collections.synchronizedMap(new WeakHashMap<Class<?>,Map<String,java.lang.reflect.Field>>());
 	
 	/**
+	 * Flag Property of populator which enable create default object on non nullable property. 
+	 */
+	protected boolean createDefaultOnNonNullable	= JSONCodec.createDefaultOnNonNullable;
+	
+	/**
      * Utility method 
 	 * @param clazz
 	 * @return
@@ -82,7 +87,7 @@ public abstract class BeanAware {
 		PropertyDescriptor[] props =  ((clazz.isAnnotationPresent(JSONObject.class) && 
     			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) 
     			? Introspector.getBeanInfo(clazz, clazz.getSuperclass()) 
-    					: Introspector.getBeanInfo(clazz,clazz.isEnum() ? Enum.class : Object.class)).getPropertyDescriptors();
+    					: Introspector.getBeanInfo(clazz,clazz.isEnum() ? Enum.class : clazz.equals(Object.class)? null : Object.class)).getPropertyDescriptors();
  		if(props.length == 0 && !clazz.isEnum()){
         	// There is no property descriptor, then use public fields, RPC document require this
         	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(), clazz);
@@ -152,5 +157,27 @@ public abstract class BeanAware {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	/**
+	 * @return current populator instance value of createDefaultOnNonNullable 
+	 * 
+	 * Bean aware property.
+	 * By setting value to  true, either populator or writer compose default value for read and 
+	 * write for non nullable object with null value passed from client or server. 
+	 * 
+	 * Default value of createDefaultOnNonNullable assigned from JSONCodec.createDefaultOnNonNullable
+	 * @see JSONCodec createDefaultOnNonNullable
+	 */
+	public boolean isCreateDefaultOnNonNullable() {
+		return createDefaultOnNonNullable;
+	}
+
+
+	/**
+	 * @param createDefaultOnNonNullable
+	 */
+	public void setCreateDefaultOnNonNullable(boolean createDefaultOnNonNullable) {
+		this.createDefaultOnNonNullable = createDefaultOnNonNullable;
 	}
 }

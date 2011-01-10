@@ -4,8 +4,10 @@ import java.io.OutputStream;
 
 
 /**
- * @author ssaminathan
- *
+ * @author Sundaramurthi Saminathan
+ * @version 2.0
+ * 
+ * User may customize the serialization and deserialization of JSON process by implementing  JSONObjectCustomizer inteface.
  */
 public interface JSONObjectCustomizer {
 	
