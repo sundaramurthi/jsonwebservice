@@ -59,7 +59,7 @@ import com.sun.xml.ws.util.ServiceFinder;
  * @mail sundaramurthis@gmail.com
  */
 public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
-	private static Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
+	private static final Logger LOG			= Logger.getLogger(JSONCodec.class.getName());
 	
 	/**
 	 * Static content type of json. used in request/response verification.
@@ -118,8 +118,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: false
 	 */
-	public static String				useTimezoneSeparator_KEY= "json.date.iso.useTimezoneSeparator";
-	public static boolean 				useTimezoneSeparator 	= false;
+	public static final String			useTimezoneSeparator_KEY= "json.date.iso.useTimezoneSeparator";
+	public static 		boolean 		useTimezoneSeparator 	= false;
 	
 	/**
 	 * Date format used in JSON input and output. All java.util.Date, Calender and Timestamp use specified format. 
@@ -131,7 +131,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: DateFormat.PLAIN
 	 */
-	public static String				dateFormat_KEY 			= com.jaxws.json.codec.DateFormat.class.getName();
+	public static final	String			dateFormat_KEY 			= com.jaxws.json.codec.DateFormat.class.getName();
 	public static DateFormat			dateFormat 				= DateFormat.PLAIN;
 	
 	/**
@@ -204,6 +204,9 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * </blockquote>
 	 * 
 	 * Default: true
+	 * 
+	 * @see createDefaultOnNonNullable. In case of null value with createDefaultOnNonNullable is true new object created. 
+	 * In case of primitive with no default value end with null, these null value response determined by excludeNullProperties
      */
 	public static final String			excludeNullProperties_KEY	= "json.excludeNullProperties";
     public static boolean				excludeNullProperties		= true;
@@ -214,6 +217,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
      * But in JSON sending null or non present. This case up on enable this flag, In case of object new instance created and assigned,
      * IN case of primitive with xsd default, default value populated. 
      * 
+     * Applicable only for beans. In case of primitive with default value is xsd always populated.
      */
     public static final String			createDefaultOnNonNullable_KEY	= "json.createDefaultOnNonNullable";
     public static boolean 				createDefaultOnNonNullable	= true;
@@ -243,7 +247,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * Default: empty. All are included 
      */
     public static final String			excludeProperties_KEY		= "json.exclude";
-    public static Collection<Pattern> 	excludeProperties 			= new ArrayList<Pattern>();
+    public static final Collection<Pattern> excludeProperties 		= new ArrayList<Pattern>();
     
     /**
      * List of included properties, User can add one with regex format. By specifying include property, properties which are not matching to include are ignored in json output.
@@ -254,8 +258,8 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: empty. 
      */
-    public static final String			includeProperties_KEY		= "json.include";
-    public static Collection<Pattern> 	includeProperties			= null;//new ArrayList<Pattern>();
+    public static final String				includeProperties_KEY		= "json.include";
+    public static 		Collection<Pattern>	includeProperties			= null;//new ArrayList<Pattern>();
     
     /**
      * In JAXB generated object list sequence generated with warped object. Seralizing it to json end with unnessary objects.
@@ -300,16 +304,16 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * 
 	 * Default: false. 
      */
-    public static 	String 				listWrapperSkip_KEY			= "json.list.wrapperSkip";
-    public static 	boolean 			listWrapperSkip 			= false;
+    public static 	final 	String		listWrapperSkip_KEY			= "json.list.wrapperSkip";
+    public static 			boolean 	listWrapperSkip 			= false;
     
     /**
      * Match pattern which convert lists to MAP. TODO
      */
-    public static 	String 				globalMapKeyPattern_KEY		= "json.list.map.key";
-    public static Pattern 				globalMapKeyPattern 		= null;
-    public static 	String 				globalMapValuePattern_KEY	= "json.list.map.value";
-    public static Pattern 				globalMapValuePattern 		= null;
+    public static 	final 	String		globalMapKeyPattern_KEY		= "json.list.map.key";
+    public static 			Pattern 	globalMapKeyPattern 		= null;
+    public static 	final 	String 		globalMapValuePattern_KEY	= "json.list.map.value";
+    public static 			Pattern 	globalMapValuePattern 		= null;
     /**
      * List of custom encoder used to handle non JSON response.
      * User can register customized encoder like HTML, plain text etc output.
@@ -396,7 +400,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	public JSONCodec(WSBinding binding) {
 		this.binding = binding;
 		this.soapVersion = binding.getSOAPVersion();
-		initCustom();
+		initCustom(); // Always Create codec local copy of custom serializer.
 	}
 	
 	/**
@@ -407,7 +411,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	public JSONCodec(JSONCodec that) {
         this(that.binding);
         this.endpoint 				= that.endpoint;
-        this.jsonObjectCustomizer 	= that.jsonObjectCustomizer;
         this.metadataPublisher		= that.metadataPublisher;
     }
 	

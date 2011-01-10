@@ -80,7 +80,7 @@ public class WSJSONPopulator extends BeanAware {
 	/**
 	 * JSON user specified object customizer.
 	 */
-	Map<Class<? extends Object>,JSONObjectCustomizer> objectCustomizers;
+	final Map<Class<? extends Object>,JSONObjectCustomizer> objectCustomizers;
 	
 	/**
 	 * Date format used to deserialize JSON
@@ -104,8 +104,6 @@ public class WSJSONPopulator extends BeanAware {
 	 */
 	private DebugTrace 			traceLog;
 
-	
-	
 	/**
 	 * @param listMapKey
 	 * @param listMapValue
@@ -167,9 +165,7 @@ public class WSJSONPopulator extends BeanAware {
             return convertToMap(clazz, type, value, customizeInfo, method);
         else if (value instanceof Map) {
         	// Case 6: Object inside object conversion
-            Object convertedValue = getNewInstance(clazz);
-            this.populateObject(convertedValue, (Map<String,Object>) value, customizeInfo);
-            return convertedValue;
+            return this.populateObject(getNewInstance(clazz), (Map<String,Object>) value, customizeInfo);
         } else if(clazz.equals(JAXBElement.class)){
 			// Case 7: is it JAXBElement bound with object?
         	return convertJAXBElement(clazz, method);
@@ -244,7 +240,7 @@ public class WSJSONPopulator extends BeanAware {
 	 * @throws InstantiationException
 	 */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-	private void populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo)
+	private Object populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo)
         throws Exception {
     	Class<?>				clazz	= object.getClass();
 		PropertyDescriptor[] 	props 	= getBeanProperties(clazz);
@@ -252,6 +248,7 @@ public class WSJSONPopulator extends BeanAware {
 		//iterate over class fields
 		for (PropertyDescriptor prop : props) {
 			Method 				writeMethod 		= prop.getWriteMethod();
+			Class<?> 			propertyType 		= prop.getPropertyType();
 		    JSONWebService 		writeMethodConfig 	= writeMethod != null ? writeMethod.getAnnotation(JSONWebService.class) : null;
 		    String 				expectedJSONPropName= (writeMethodConfig != null && !writeMethodConfig.name().isEmpty()) ? writeMethodConfig.name() : prop.getName();
 		    // JOSN input contains specified property.
@@ -279,11 +276,11 @@ public class WSJSONPopulator extends BeanAware {
                     	}
                 		if(traceEnabled){
                 			traceLog.warn(String.format("Exception while writing property \"%s\". Input %s. Expected type %s",
-                					expectedJSONPropName, value, prop.getPropertyType().getSimpleName()));
+                					expectedJSONPropName, value, propertyType.getSimpleName()));
 		            	}
                 	}
 	               // }
-		        } else if (prop.getReadMethod() != null && Collection.class.isAssignableFrom(prop.getPropertyType())) {
+		        } else if (prop.getReadMethod() != null && Collection.class.isAssignableFrom(propertyType)) {
 					try {
 						Method 				readMethod 			= prop.getReadMethod();
 						JSONWebService 		readMethodConfig 	= readMethod.getAnnotation(JSONWebService.class);
@@ -346,9 +343,7 @@ public class WSJSONPopulator extends BeanAware {
 									}
 									List<Object> populatedObjects = new ArrayList<Object>();
 									for(Map v :  objects){
-										Object ob = getNewInstance(elm.type());
-										populateObject(ob, v, writeMethodConfig);
-										populatedObjects.add(ob);
+										populatedObjects.add(populateObject(getNewInstance(elm.type()), v, writeMethodConfig));
 									}
 									Method readMethod = prop.getReadMethod();
 									if(writeMethod != null && readMethod != null && readMethod.invoke(object) == null){
@@ -382,31 +377,32 @@ public class WSJSONPopulator extends BeanAware {
 						// JSON property name is same as in XML annotation, but class property name is different. 
 						if(!element.name().equals(NULL) && elements.containsKey(element.name())){
 							writeMethod.invoke(object,
-									convert(prop.getPropertyType(), f.getType(), elements.get(element.name()), 
+									convert(propertyType, f.getType(), elements.get(element.name()), 
 											writeMethod.getAnnotation(JSONWebService.class), writeMethod));
-						}else if(!element.defaultValue().equals(NULL)){
+						} else if (!element.defaultValue().equals(NULL) && isJSONPrimitive(propertyType)){
 							if(traceEnabled)
-								traceLog.info(String.format("Input do not have %s. Populating default value: %s",
-										expectedJSONPropName, element.defaultValue()));
+								traceLog.info(String.format("Input do not have %s. Populating default value: %s. flag to populate: %b",
+										expectedJSONPropName, element.defaultValue(), createDefaultOnNonNullable));
 							writeMethod.invoke(object,
-									convert(prop.getPropertyType(), f.getType(), element.defaultValue(), 
-											writeMethod.getAnnotation(JSONWebService.class), writeMethod));
-						}else if(!element.nillable() && JSONCodec.createDefaultOnNonNullable){
-							if(!isJSONPrimitive(prop.getPropertyType())){
+									convert(propertyType, f.getType(), element.defaultValue(), 
+											writeMethodConfig, writeMethod));
+						} else if (!element.nillable() && createDefaultOnNonNullable) {
+							// there is no default value and non nullable.
+							if(!isJSONPrimitive(propertyType)){
 								if(traceEnabled)
 									traceLog.warn("Non nillable object(\""+expectedJSONPropName +
 										"\") with nill value, populating default.");
 								try{
-									Object ob = getNewInstance(prop.getPropertyType());
-									populateObject(ob, new HashMap<String, Object>(), writeMethodConfig);
-									writeMethod.invoke(object,ob);
+									writeMethod.invoke(object,
+											convert(propertyType,f.getType(), new HashMap<String, Object>(),
+													writeMethodConfig, writeMethod));
 								}catch(Throwable th){
 									if(traceEnabled)
 										traceLog.error("Non nillable object(\""+expectedJSONPropName +
 											"\") with nill value, failed to create instance.");
 								}
-							}else{
-								// TODO ??
+							} else {
+								// Primitive don't have any default WHAT TODO . E.g. Integer object can't be instantiated.
 								if(traceEnabled)
 									traceLog.error(String.format("Non nillable primitive \"%s\", also don't have default value." +
 										" Implementation may may fail to hanlde your request.  ", expectedJSONPropName));
@@ -416,6 +412,7 @@ public class WSJSONPopulator extends BeanAware {
 	    		}
             }
 		}
+		return  object;
     }
 	
     /**
@@ -508,9 +505,8 @@ public class WSJSONPopulator extends BeanAware {
                     newMap.put(key, convertToCollection(itemClass, itemType, v, customizeInfo, accessor));
                 } else if (v instanceof Map) {
                     //map of beans
-                    Object newObject = getNewInstance(itemClass);
-                    this.populateObject(newObject, (Map<String,Object>) v, null);
-                    newMap.put(key, newObject);
+                    newMap.put(key, 
+                    		this.populateObject(getNewInstance(itemClass), (Map<String,Object>) v, null));
                 } else if(traceEnabled){
                 	traceLog.error(String.format("Incompatible types for property %s in class %s",
                 			accessor.getName(),
@@ -563,8 +559,7 @@ public class WSJSONPopulator extends BeanAware {
                     } else if (List.class.isAssignableFrom(arrayType)) {
                         newObject = convertToCollection(arrayType, type, listValue, customizeInfo, accessor);
                     } else {
-                        newObject = getNewInstance(arrayType);
-                        this.populateObject(newObject, (Map<String,Object>) listValue, customizeInfo);
+                        newObject = populateObject(getNewInstance(arrayType), (Map<String,Object>) listValue, customizeInfo);
                     }
 
                     Array.set(newArray, j, newObject);
@@ -644,9 +639,9 @@ public class WSJSONPopulator extends BeanAware {
             } else {
             	for (Object listValue : values) {
             		if(listValue instanceof Map){
-	            		Object newObject = getNewInstance(itemClass);
-	                    this.populateObject(newObject, (Map<String,Object>) listValue, customizeInfo);
-	                    newCollection.add(newObject);
+	                    newCollection.add(
+	                    		populateObject(getNewInstance(itemClass), 
+	                    				(Map<String,Object>) listValue, customizeInfo));
             		}
             	}
             }
