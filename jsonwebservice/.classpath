@@ -6,5 +6,5 @@
 	<classpathentry kind="lib" path="lib/webservices-api.jar"/>
 	<classpathentry kind="lib" path="lib/webservices-rt.jar"/>
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
-	<classpathentry kind="output" path="build/bin"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>

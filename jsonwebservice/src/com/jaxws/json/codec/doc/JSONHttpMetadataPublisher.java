@@ -11,6 +11,7 @@ import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.encode.WSJSONWriter;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
+import com.sun.xml.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.ws.api.model.ParameterBinding;
 import com.sun.xml.ws.api.model.wsdl.WSDLPart;
 import com.sun.xml.ws.transport.http.HttpAdapter;
@@ -104,13 +105,20 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 		try{
 			for(Entry<String, WSDLPart> part : parts.entrySet()){
 				if(part.getValue().getBinding() == ParameterBinding.BODY){
-					Class<?> clazz = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
-					if(BeanAware.isJSONPrimitive(clazz)){
-						parameterMap.put(part.getKey(), clazz.getSimpleName());
-					} else if(clazz.isEnum()){
-						parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
-					}else{
-						parameterMap.put(part.getKey(), clazz.newInstance());
+					JaxBeanInfo globalType = context.getGlobalType(part.getValue().getDescriptor().name());
+					Class<?> clazz = null;
+					if(globalType != null){
+						clazz	= globalType.jaxbType;
+						if(BeanAware.isJSONPrimitive(clazz)){
+							parameterMap.put(part.getKey(), clazz.getSimpleName());
+						} else if(clazz.isEnum()){
+							parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
+						}else{
+							parameterMap.put(part.getKey(), clazz.newInstance());
+						}
+					} else {
+						// Extended simple type.
+						parameterMap.put(part.getKey(), part.getValue().getDescriptor().name().getLocalPart());
 					}
 				}else{
 					parameterMap.put(part.getKey(), part.getValue().getBinding().kind);

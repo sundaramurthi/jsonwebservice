@@ -572,9 +572,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 			packet.invocationProperties.put(MessageContext.MESSAGE_OUTBOUND_PROPERTY,true); 
 			return encoder.encode(out);
 		} finally {
-			if (out != null && out instanceof GZIPOutputStream) {
+			if (out != null) {
 				try {
-					out.close();
+					out.flush();
+					if(out instanceof GZIPOutputStream)
+						out.close();
 				} catch (Exception xe) {
 					// let the original exception get through
 				}

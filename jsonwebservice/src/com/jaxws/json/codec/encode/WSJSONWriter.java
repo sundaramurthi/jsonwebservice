@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.annotation.XmlAttribute;
@@ -134,6 +135,9 @@ public class WSJSONWriter extends BeanAware {
 	 */
 	private List<Map<String,Object>> attachments	 = new ArrayList<Map<String,Object>>();
 	
+	private static final Matcher matcher = Pattern.compile("[\"\b\t\f\n\r/\\\\\\x00\\x1F\\x7F\\x9F]").matcher("");
+	
+	private final 	Stack<Class<?>> 	stackNillableInstances;
     /**
      * Writer instance with parameter passed writer object.
      * @param writer
@@ -145,9 +149,10 @@ public class WSJSONWriter extends BeanAware {
     	if(rootObject == null){
     		throw new RuntimeException("rootObject can't be null");
     	}
-		this.output		= output;
-		this.rootObject = rootObject;
-		this.stack	= new Stack<Object>();
+		this.output					= output;
+		this.rootObject 			= rootObject;
+		this.stack					= new Stack<Object>();
+		this.stackNillableInstances	= new Stack<Class<?>>();
 		this.objectCustomizers = objectCustomizers != null ? 
 				objectCustomizers : 
 				new HashMap<Class<? extends Object>, JSONObjectCustomizer>();
@@ -278,10 +283,10 @@ public class WSJSONWriter extends BeanAware {
         		object instanceof Locale ||
         		object instanceof Class) {
         	// Step 5.1: If given object instance of String,Character,Locale or Class write class to string using convert to string
-            this.string(object);
+            this.string(object.toString());
         } else if (object instanceof Number) {// Big integer and Big double handled here
         	// Step 5.2: If given object instance of number add to json.
-            this.add(object);
+            this.add(object.toString());
         } else if (object instanceof Boolean) {
         	// Step 5.3: If given object instance of boolean add to json.
             this.bool(((Boolean) object).booleanValue());
@@ -310,38 +315,39 @@ public class WSJSONWriter extends BeanAware {
         this.stack.pop();
     }
     
-    
     /**
      * Step 5.1:  Convert to string with escape.
      * escape characters
      */
-    private void string(Object obj) {
+    private void string(String string) {
         this.add('"');
-
-        CharacterIterator it = new StringCharacterIterator(obj.toString());
-
-        for (char c = it.first(); c != CharacterIterator.DONE; c = it.next()) {
-            if (c == '"') {
-                this.add("\\\"");
-            } else if (c == '\\') {
-                this.add("\\\\");
-            } else if (c == '/') {
-                this.add("\\/");
-            } else if (c == '\b') {
-                this.add("\\b");
-            } else if (c == '\f') {
-                this.add("\\f");
-            } else if (c == '\n') {
-                this.add("\\n");
-            } else if (c == '\r') {
-                this.add("\\r");
-            } else if (c == '\t') {
-                this.add("\\t");
-            } else if (Character.isISOControl(c)) {
-                this.unicode(c);
-            } else {
-                this.add(c);
-            }
+        if(!matcher.reset(string).find()){
+        	add(string);
+        }else {
+	        CharacterIterator it = new StringCharacterIterator(string);
+	        for (char c = it.first(); c != CharacterIterator.DONE; c = it.next()) {
+	            if (c == '"') {
+	                this.add("\\\"");
+	            } else if (c == '\\') {
+	                this.add("\\\\");
+	            } else if (c == '/') {
+	                this.add("\\/");
+	            } else if (c == '\b') {
+	                this.add("\\b");
+	            } else if (c == '\f') {
+	                this.add("\\f");
+	            } else if (c == '\n') {
+	                this.add("\\n");
+	            } else if (c == '\r') {
+	                this.add("\\r");
+	            } else if (c == '\t') {
+	                this.add("\\t");
+	            } else if (Character.isISOControl(c) ) {
+	                this.unicode(c);
+	            } else {
+	                this.add(Character.toString(c));
+	            }
+	        }
         }
         
         this.add('"');
@@ -352,9 +358,9 @@ public class WSJSONWriter extends BeanAware {
      * Step 5.2:  Add directly to writer, 
      * Add object to buffer
      */
-    private void add(Object obj) {
+    private void add(String obj) {
         try {
-			this.output.write(String.valueOf(obj).getBytes());
+			this.output.write(obj.getBytes());
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage());
 		}
@@ -386,7 +392,7 @@ public class WSJSONWriter extends BeanAware {
     	 */
     	switch(currentFormat){
     	case PLAIN:
-    		this.add(date.getTime());
+    		this.add(String.valueOf(date.getTime()));
     		break;
     	case CUSTOM:
     		this.string(this.date2String(date,customInfo.format()));
@@ -671,7 +677,13 @@ public class WSJSONWriter extends BeanAware {
    	                        		value = xmlElm.defaultValue();
    	                        	} else if(!xmlElm.nillable() && createDefaultOnNonNullable){
    	                        		if(!isJSONPrimitive(propertyType)){
-   	                        			value = getNewInstance(propertyType);
+   	                        			if(!stackNillableInstances.contains(propertyType)){
+	   	                        			stackNillableInstances.push(propertyType);
+	   	                        			value = getNewInstance(propertyType);
+	   	                        			hasData = this.add(name, value, null, hasData) || hasData;
+	   	                        			stackNillableInstances.pop();
+   	                        			}
+   	                        			continue nextProperty;
    	                        		}else{
    	                        			// Primitive don't have any default WHAT TODO . E.g. Integer object can't be instantiated.
    	                        		}
