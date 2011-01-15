@@ -314,9 +314,22 @@ public class WSJSONPopulator extends BeanAware {
 									expectedJSONPropName, clazz.getSimpleName(),e.getMessage()));
 						}
 					}
+                } else if(Boolean.TYPE.equals(propertyType)){
+                	// PROBLEM with JAXB boolean attribute with default value generate invalid setter method 
+                	try{
+                		writeMethod = clazz.getMethod("set" + expectedJSONPropName.substring(0, 1).toUpperCase() + 
+                 				expectedJSONPropName.substring(1),Boolean.class);
+                		Object convertedValue = this.convert(Boolean.class, null, value, writeMethodConfig, writeMethod);
+                		writeMethod.invoke(object, convertedValue);
+                 	}catch(Throwable th){
+                 		if(traceEnabled){
+                    		traceLog.warn(String.format("Ignoring property %s in class %s. message %s",
+    								expectedJSONPropName, clazz.getSimpleName(),""));
+    					}
+                 	}
                 } else {
                 	if(traceEnabled){
-                		traceLog.warn(String.format("Ignoring property %s in class %. message %s",
+                		traceLog.warn(String.format("Ignoring property %s in class %s. message %s",
 								expectedJSONPropName, clazz.getSimpleName(),""));
 					}
                 }

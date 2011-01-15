@@ -1,5 +1,7 @@
 package com.jaxws.json.codec;
 
+import java.nio.charset.Charset;
+
 import com.sun.xml.ws.api.pipe.ContentType;
 
 /**
@@ -15,9 +17,10 @@ public final class JSONContentType implements ContentType{
 	 * Default accepet and response JSON content type.
 	 */
 	public static final String JSON_MIME_TYPE 		= "application/json";
+	public static final String JSON_CONTENT_TYPE 		= "application/json;charset="+Charset.defaultCharset();
 
     public String getContentType() {
-        return JSON_MIME_TYPE;
+        return JSON_CONTENT_TYPE;
     }
 
     public String getSOAPActionHeader() {
