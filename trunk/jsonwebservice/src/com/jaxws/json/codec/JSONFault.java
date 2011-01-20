@@ -4,6 +4,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 
+import com.sun.xml.ws.fault.SOAPFaultBuilder;
+
 /**
  * @author ssaminathan
  *
@@ -30,7 +32,7 @@ public class JSONFault extends RuntimeException{
 	/**
 	 * 
 	 */
-	private HashMap<String,String> detail;
+	private HashMap<String,Object> detail;
 	
 	
 	/**
@@ -39,7 +41,7 @@ public class JSONFault extends RuntimeException{
 	 * @param actor
 	 * @param detail
 	 */
-	public JSONFault(String code, String message, String actor, HashMap<String,String> detail) {
+	public JSONFault(String code, String message, String actor, HashMap<String,Object> detail) {
 		super();
 		this.code = code;
 		this.message = message;
@@ -53,10 +55,10 @@ public class JSONFault extends RuntimeException{
 	 * @param actor
 	 * @param detail
 	 */
-	public JSONFault(String code, String message, String actor,HashMap<String,String> detail, Throwable th) {
+	public JSONFault(String code, String message, String actor,HashMap<String,Object> detail, Throwable th) {
 		super(th);
 		if(detail == null){
-			detail = new HashMap<String, String>();
+			detail = new HashMap<String, Object>();
 		}
 		this.code = code;
 		this.message = message;
@@ -67,6 +69,12 @@ public class JSONFault extends RuntimeException{
 			StringWriter stringWriter = new StringWriter();
 			PrintWriter pw = new PrintWriter(stringWriter );
 			th.printStackTrace(pw);
+			if(th.getCause() != null){
+				th.getCause().printStackTrace(pw);
+				if(th.getCause() != null){
+					th.getCause().printStackTrace(pw);
+				}
+			}
 			pw.close();
 			detail.put("printStackTrace", stringWriter.toString());
 		}
@@ -112,13 +120,22 @@ public class JSONFault extends RuntimeException{
 	/**
 	 * @return
 	 */
-	public HashMap<String,String> getDetail() {
-		return detail;
+	public HashMap<String,Object> getDetail() {
+		if(SOAPFaultBuilder.captureStackTrace)
+			return detail;
+		else// If stack trace disabled don't send any detail
+			return new HashMap<String,Object>();
 	}
 	/**
 	 * @param detail
 	 */
-	public void setDetail(HashMap<String,String> detail) {
+	public void setDetail(HashMap<String,Object> detail) {
 		this.detail = detail;
 	}
+	
+	public StackTraceElement[] getStackTrace() {
+		// DONO't send codec start trace
+	    return null;
+	}
+
 }

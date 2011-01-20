@@ -294,4 +294,15 @@ public class ParameterTestImpl implements ParameterTest {
 			throw new RuntimeException();
 	}
 
+	public void test48String255InEmptyOut(String string255) {
+		if(string255 == null)
+			throw new RuntimeException();
+	}
+
+	public void test49Integer5InEmptyOut(int integer5) {
+		if(integer5 == 0)
+			throw new RuntimeException();
+		
+	}
+
 }

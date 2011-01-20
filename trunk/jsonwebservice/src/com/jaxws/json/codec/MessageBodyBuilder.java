@@ -97,8 +97,18 @@ public class MessageBodyBuilder {
 					,(DebugTrace)invocationProperties.get(JSONCodec.TRACE));
 			
 			Object[]			parameterObjects	= new Object[operation.getInParts().size()];
+			Class<?>[] 			parameterTypes 		= seiMethod.getParameterTypes();// This parameter types not trustable in case of HOLDER
 			for(Map.Entry<String, WSDLPart> part : operation.getInParts().entrySet()){
-				Class<?> 		parameterType 	= context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
+				Class<?> 		parameterType;
+				if(context.getGlobalType(part.getValue().getDescriptor().name()) != null)
+					parameterType = context.getGlobalType(part.getValue().getDescriptor().name()).jaxbType;
+				else
+					/*
+					 * This parameter types not trustable in case of HOLDER
+					 * We can't find it in global type once user extend simple type and use it as method parameter. 
+					 * E.g String255 extended from String
+					 */
+					parameterType = parameterTypes[part.getValue().getIndex()];
 				if(!operationParameters.containsKey(part.getKey())){
 	            	throw new RuntimeException(String.format("Request parameter %s can't be null. B.P 1.1 vilation", part.getKey()));
 	            }

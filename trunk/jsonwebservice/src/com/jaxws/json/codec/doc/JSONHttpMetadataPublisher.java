@@ -117,6 +117,9 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 							parameterMap.put(part.getKey(), clazz.newInstance());
 						}
 					} else {
+						/*
+						 * This case handled using SEI method parameter in body builder.
+						 */
 						// Extended simple type.
 						parameterMap.put(part.getKey(), part.getValue().getDescriptor().name().getLocalPart());
 					}
