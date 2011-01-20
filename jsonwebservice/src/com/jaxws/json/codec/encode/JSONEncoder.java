@@ -28,6 +28,7 @@ import javax.xml.ws.handler.MessageContext;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
@@ -208,16 +209,9 @@ public class JSONEncoder {
 				// Access SOAP fault.
 				try {
 					SOAPFault faultObj = message.readAsSOAPMessage().getSOAPBody().getFault();
-					HashMap<String,String> detail = new HashMap<String, String>(); 
+					HashMap<String,Object> detail = new HashMap<String, Object>(); 
 					try {
-						for (Iterator<Element> iterator = faultObj.getDetail().getChildElements(); iterator.hasNext();) {
-							Element type = iterator.next();
-							detail.put(type.getLocalName(), type.getTextContent());
-							for(int att = type.getAttributes().getLength() -1;att >-1;att--){
-								Node node = type.getAttributes().item(att);
-								detail.put(node.getNodeName(), node.getNodeValue());
-							}
-						}
+						fillChildElementInfo(faultObj.getDetail().getChildNodes(),4,detail);
 					} catch(Throwable th){/*Dont mind about custom message set fail*/}
 					responseJSONMap.put(FAULT,new JSONFault(faultObj.getFaultCodeAsQName().getLocalPart().toUpperCase(),
 							faultObj.getFaultString(),faultObj.getFaultActor(),detail));
@@ -307,6 +301,40 @@ public class JSONEncoder {
 		return JSONCodec.jsonContentType;
 	}
 	
+	/**
+	 * @param list
+	 * @param depth
+	 * @param detail
+	 */
+	private final void fillChildElementInfo(NodeList list, int depth,Map<String,Object> detail){
+		if(depth < 0)
+			return;
+		for (int i =0; i < list.getLength(); i++) {
+			Node type = list.item(i);
+			if(type instanceof Element){
+				String name = type.getLocalName();
+				if(detail.containsKey(name)){
+					name = name +i;
+				}
+				detail.put(name, type.getTextContent());
+				Map<String,String> attributes = new HashMap<String, String>();
+				for(int att = type.getAttributes().getLength() -1;att >-1;att--){
+					Node node = type.getAttributes().item(att);
+					attributes.put(node.getNodeName(), node.getNodeValue());
+				}
+				detail.put(name +"_attributes", attributes);
+				Map<String,Object> subInfo = new HashMap<String, Object>();
+				detail.put(name + "_detail", subInfo);
+				fillChildElementInfo(type.getChildNodes(), depth - 1,subInfo);
+			}
+		}
+	}
+	
+	/**
+	 * @param image
+	 * @return
+	 * @throws IOException
+	 */
 	private BufferedImage convertToBufferedImage(Image image) throws IOException {
         if (image instanceof BufferedImage) {
             return (BufferedImage)image;

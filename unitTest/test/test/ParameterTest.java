@@ -467,4 +467,22 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		String expected 	= "{\"dateObject\":{\"date\":{\"XMLSchemaType\":{\"localPart\":\"date\",\"namespaceURI\":\"http:\\/\\/www.w3.org\\/2001\\/XMLSchema\",\"prefix\":\"\"},\"day\":1,\"eonAndYear\":2011,\"hour\":-2147483648,\"millisecond\":-2147483648,\"minute\":-2147483648,\"month\":1,\"second\":-2147483648,\"timezone\":60,\"valid\":true,\"year\":2011}},\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
+	
+	public void test48String255InEmptyOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test48String255InEmptyOut\":{\"string255\":\"ok\"}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+
+	public void test49Integer5InEmptyOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test49Integer5InEmptyOut\":{\"integer5\":123}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
 }

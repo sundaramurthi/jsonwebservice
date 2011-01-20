@@ -9,6 +9,20 @@
 
 	<types>
 		<xsd:schema targetNamespace="http://jsonwebservice.test.com/rpc">
+			<xsd:simpleType name="String255">
+			  <xsd:restriction base="xsd:string">
+			  	<xsd:minLength value="0"/>
+		      <xsd:maxLength value="255"/>
+			  </xsd:restriction>
+			</xsd:simpleType>
+			
+			<xsd:simpleType name="Integer5">
+			  <xsd:restriction base="xsd:int">
+			  	<xsd:minLength value="0"/>
+		      <xsd:maxLength value="3"/>
+			  </xsd:restriction>
+			</xsd:simpleType>
+	
 			<xsd:simpleType name="enumConst">
 				<xsd:restriction base="xsd:string">
 					<xsd:enumeration value="CONST1"/>
@@ -167,8 +181,16 @@
 		<part name="stringOut" type="xsd:string"/>
 	</message>
 	
+	<message name="string255Message">
+		<part name="string255" type="tns:String255"/>
+	</message>
+	
 	<message name="integerMessage">
 		<part name="integer" type="xsd:int"/>
+	</message>
+	
+	<message name="integer5Message">
+		<part name="integer5" type="tns:Integer5"/>
 	</message>
 	
 	<message name="integerOutMessage">
@@ -548,6 +570,16 @@
 			<output name="test47DateObjectOut" 	message="tns:dateObjectMessage" />
 		</operation>
 		
+		<operation name="test48String255InEmptyOut">
+			<input name="test48String255In" message="tns:string255Message" />
+			<output name="test48EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test49Integer5InEmptyOut">
+			<input name="test49Integer5In" message="tns:integer5Message" />
+			<output name="test49EmptyOut" 	message="tns:emptyMessage" />
+		</operation>
+		
 	</portType>
 
 	<portType name="CustomizeTest">
@@ -785,6 +817,8 @@
 		<operation name="test45EmptyInDateTimeOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test45EmptyInDateTimeOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test46DateTimeInDateTimeOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test46DateTimeInDateTimeOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test47DateObjectInDateObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test47DateObjectInDateObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test48String255InEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test48String255InEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test49Integer5InEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test49Integer5InEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 	</binding>
 	
 	<binding name="CustomizeTestService" type="tns:CustomizeTest">

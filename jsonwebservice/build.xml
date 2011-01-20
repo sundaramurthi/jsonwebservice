@@ -9,7 +9,7 @@
      ====================================================================== -->
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
-	<property name="version" value="0.5"/>
+	<property name="version" value="0.5-ea"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
