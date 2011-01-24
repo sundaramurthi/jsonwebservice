@@ -9,6 +9,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,13 +18,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.WeakHashMap;
 
+import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.jaxws.json.feature.JSONObject;
+import com.sun.xml.ws.model.JavaMethodImpl;
+import com.sun.xml.ws.model.ParameterImpl;
+import com.sun.xml.ws.model.WrapperParameter;
 
 /**
  * @author Sundaramurthi 
@@ -47,6 +53,12 @@ public abstract class BeanAware {
 	 */
 	private static final Map<Class<?>,Map<String,java.lang.reflect.Field>> classFieldCache = 
     	Collections.synchronizedMap(new WeakHashMap<Class<?>,Map<String,java.lang.reflect.Field>>());
+	
+	/**
+	 * Field name cache
+	 */
+	private static final Map<JavaMethodImpl,Boolean> hasAttachment = 
+    	Collections.synchronizedMap(new WeakHashMap<JavaMethodImpl,Boolean>());
 	
 	/**
 	 * Flag Property of populator which enable create default object on non nullable property. 
@@ -179,5 +191,50 @@ public abstract class BeanAware {
 	 */
 	public void setCreateDefaultOnNonNullable(boolean createDefaultOnNonNullable) {
 		this.createDefaultOnNonNullable = createDefaultOnNonNullable;
+	}
+	
+	protected boolean responseHasAttachment(JavaMethodImpl javaMethodImpl) {
+		if(!hasAttachment.containsKey(javaMethodImpl)){
+			classStack.clear();
+			boolean flag = false;
+			for(ParameterImpl parameter : javaMethodImpl.getResponseParameters()){
+				if(parameter.isWrapperStyle()){
+					List<ParameterImpl> children = ((WrapperParameter)parameter).getWrapperChildren();
+					for(ParameterImpl param : children){
+						flag = flag || isObjectContainsMimeAttachment((Class<?>) param.getBridge().getTypeReference().type);
+					}
+				}else{
+					flag = flag || isObjectContainsMimeAttachment((Class<?>) parameter.getBridge().getTypeReference().type);
+				}
+			}
+			hasAttachment.put(javaMethodImpl, flag);
+		} 
+		return hasAttachment.get(javaMethodImpl);
+	}
+	Stack<Class<?>> classStack = new Stack<Class<?>>(); 
+	private boolean isObjectContainsMimeAttachment(Class<?> bean){
+		try {
+			if(classStack.contains(bean) || isJSONPrimitive(bean) || Collection.class.isAssignableFrom(bean)
+					|| Map.class.isAssignableFrom(bean) || Set.class.isAssignableFrom(bean))
+				return false;
+			classStack.push(bean);
+			for(PropertyDescriptor dis : getBeanProperties(bean)){
+				Field field = getDeclaredField(bean,dis.getName());
+				if(field == null){
+					continue;
+				}else if(field.isAnnotationPresent(XmlMimeType.class)){
+					return true;
+				}else if(isJSONPrimitive(dis.getPropertyType()) || Collection.class.isAssignableFrom(bean)
+						|| Map.class.isAssignableFrom(bean) || Set.class.isAssignableFrom(bean)){
+				}else if(isObjectContainsMimeAttachment(dis.getPropertyType())){
+					return true;
+				}
+			}
+			classStack.pop();
+		} catch (IntrospectionException e) {
+			// TODO LOG
+			e.printStackTrace();
+		}
+		return false;
 	}
 }
