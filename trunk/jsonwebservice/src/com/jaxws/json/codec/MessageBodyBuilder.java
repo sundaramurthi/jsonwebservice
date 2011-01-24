@@ -129,6 +129,9 @@ public class MessageBodyBuilder {
 			// TODO find better way with out using JavaMethodImpl
 			List<ParameterImpl> requestParameters = ((JavaMethodImpl)javaMethod).getRequestParameters();
 			invocationProperties.put(JSONEncoder.RESPONSEPARAMETERS, ((JavaMethodImpl)javaMethod).getResponseParameters());
+			if(jsonPopulator.responseHasAttachment(((JavaMethodImpl)javaMethod))){
+				invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE,JSONContentType.MULTIPART_MIXED);
+			}
 			if(requestParameters != null && requestParameters.size() == 1){
 				ParameterImpl parameter = requestParameters.get(0);
 				if(parameter.isWrapperStyle()){

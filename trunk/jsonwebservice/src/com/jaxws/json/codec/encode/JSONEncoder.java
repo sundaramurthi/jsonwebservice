@@ -24,6 +24,9 @@ import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.ws.handler.MessageContext;
 
 import org.w3c.dom.Element;
@@ -292,7 +295,14 @@ public class JSONEncoder {
 				}else if(DataHandler.class.isAssignableFrom(value.getClass())){
 					((DataHandler)value).writeTo(output);
 				}else if(Source.class.isAssignableFrom(value.getClass())){
-					//TODO ((Source)value).writeTo(output);
+					try {
+						Transformer transformer = TransformerFactory.newInstance().newTransformer();
+						transformer.transform( ((Source)value), new StreamResult(output) );
+					} catch (Throwable e) {
+						//TODO LOG
+						e.printStackTrace();
+					} 
+					
 				}
 			}
 		}
