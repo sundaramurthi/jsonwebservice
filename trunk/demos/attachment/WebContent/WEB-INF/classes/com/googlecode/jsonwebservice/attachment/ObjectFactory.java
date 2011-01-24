@@ -30,6 +30,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ChartConfig }
+     * 
+     */
+    public ChartConfig createChartConfig() {
+        return new ChartConfig();
+    }
+
+    /**
      * Create an instance of {@link Visibility }
      * 
      */
@@ -38,11 +46,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ChartOutput }
+     * Create an instance of {@link ChartInput }
      * 
      */
-    public ChartOutput createChartOutput() {
-        return new ChartOutput();
+    public ChartInput createChartInput() {
+        return new ChartInput();
+    }
+
+    /**
+     * Create an instance of {@link HtmlStreamOutput }
+     * 
+     */
+    public HtmlStreamOutput createHtmlStreamOutput() {
+        return new HtmlStreamOutput();
     }
 
     /**
@@ -54,19 +70,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ChartConfig }
+     * Create an instance of {@link TestInput }
      * 
      */
-    public ChartConfig createChartConfig() {
-        return new ChartConfig();
-    }
-
-    /**
-     * Create an instance of {@link DataSettings }
-     * 
-     */
-    public DataSettings createDataSettings() {
-        return new DataSettings();
+    public TestInput createTestInput() {
+        return new TestInput();
     }
 
     /**
@@ -78,11 +86,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ChartInput }
+     * Create an instance of {@link DataSettings }
      * 
      */
-    public ChartInput createChartInput() {
-        return new ChartInput();
+    public DataSettings createDataSettings() {
+        return new DataSettings();
+    }
+
+    /**
+     * Create an instance of {@link XMLStreamOutput }
+     * 
+     */
+    public XMLStreamOutput createXMLStreamOutput() {
+        return new XMLStreamOutput();
+    }
+
+    /**
+     * Create an instance of {@link ChartOutput }
+     * 
+     */
+    public ChartOutput createChartOutput() {
+        return new ChartOutput();
     }
 
 }

@@ -5,12 +5,17 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
@@ -40,14 +45,43 @@ import com.googlecode.jsonwebservice.attachment.ChartInput;
 import com.googlecode.jsonwebservice.attachment.ChartOutput;
 import com.googlecode.jsonwebservice.attachment.ChartPort;
 import com.googlecode.jsonwebservice.attachment.Colors;
+import com.googlecode.jsonwebservice.attachment.HtmlStreamOutput;
 import com.googlecode.jsonwebservice.attachment.Size;
+import com.googlecode.jsonwebservice.attachment.TestInput;
 import com.googlecode.jsonwebservice.attachment.Visibility;
+import com.googlecode.jsonwebservice.attachment.XMLStreamOutput;
 import com.googlecode.jsonwebservice.attachment.impl.SvgImageWriterSpi.SVGContentImage;
+import com.sun.xml.ws.developer.StreamingDataHandler;
 
 @SOAPBinding(style = SOAPBinding.Style.RPC)
-@WebService(name = "ChartPort", targetNamespace = "http://jsonwebservice.googlecode.com/attachment", endpointInterface = "com.googlecode.jsonwebservice.attachment.ChartPort")
+@WebService(name = "ChartPort", 
+		targetNamespace = "http://jsonwebservice.googlecode.com/attachment", 
+		endpointInterface = "com.googlecode.jsonwebservice.attachment.ChartPort")
 public class ChartPortImpl implements ChartPort {
 
+	@Override
+	public HtmlStreamOutput getHTMLStream(TestInput arg0) {
+		HtmlStreamOutput html = new HtmlStreamOutput();
+		html.setOutputFormates("text/html");
+		try {
+			// Also look at 
+			//StreamingDataHandler
+			html.setHtml(new DataHandler(new URLDataSource(new URL("http://code.google.com/p/jsonwebservice/wiki/GettingStarted"))));
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+		return html;
+	}
+
+	@Override
+	public XMLStreamOutput getXmlStream(TestInput arg0) {
+		XMLStreamOutput xml = new XMLStreamOutput();
+		xml.setOutputFormates("application/xml");
+		// File or any source
+		xml.setXml(new StreamSource(ChartPortImpl.class.getResourceAsStream("test.xml")));
+		return xml;
+	}
+	
 	@Override
 	public ChartOutput getChart(ChartInput getChartInput) {
 		try {

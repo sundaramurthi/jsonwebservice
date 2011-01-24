@@ -35,4 +35,28 @@ public interface ChartPort {
         @WebParam(name = "getChartInput", partName = "getChartInput")
         ChartInput getChartInput);
 
+    /**
+     * 
+     * @param testInput
+     * @return
+     *     returns com.googlecode.jsonwebservice.attachment.HtmlStreamOutput
+     */
+    @WebMethod
+    @WebResult(name = "getChartOutput", partName = "getChartOutput")
+    public HtmlStreamOutput getHTMLStream(
+        @WebParam(name = "testInput", partName = "testInput")
+        TestInput testInput);
+
+    /**
+     * 
+     * @param testInput
+     * @return
+     *     returns com.googlecode.jsonwebservice.attachment.XMLStreamOutput
+     */
+    @WebMethod
+    @WebResult(name = "getChartOutput", partName = "getChartOutput")
+    public XMLStreamOutput getXmlStream(
+        @WebParam(name = "testInput", partName = "testInput")
+        TestInput testInput);
+
 }

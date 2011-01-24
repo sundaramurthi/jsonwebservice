@@ -3,7 +3,7 @@
     <wb-module deploy-name="attachment">
         <wb-resource deploy-path="/" source-path="/WebContent"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <property name="context-root" value="attachment"/>
         <property name="java-output-path"/>
+        <property name="context-root" value="attachment"/>
     </wb-module>
 </project-modules>

@@ -101,7 +101,26 @@
 		    <xsd:sequence>
 		      <xsd:element name="outputFormates" type="xsd:string"/>
 		      <xsd:element name="svg" type="xsd:base64Binary" xmime:expectedContentTypes="image/svg+xml"/>
-		      <xsd:element name="image" type="xsd:base64Binary" xmime:expectedContentTypes="image/jpeg"/>
+			  <xsd:element name="image" type="xsd:base64Binary" xmime:expectedContentTypes="image/jpeg"/>
+		    </xsd:sequence>
+		  </xsd:complexType>
+		  
+		  <xsd:complexType name="TestInput">
+		  	<xsd:sequence>
+		      <xsd:element name="input" type="xsd:string"/>
+		    </xsd:sequence>  
+		  </xsd:complexType>
+		  
+		  <xsd:complexType name="HtmlStreamOutput">
+		    <xsd:sequence>
+		      <xsd:element name="outputFormates" type="xsd:string"/>
+		      <xsd:element name="html" type="xsd:base64Binary" xmime:expectedContentTypes="application/html"/>
+		    </xsd:sequence>
+		  </xsd:complexType>
+		  <xsd:complexType name="XMLStreamOutput">
+		    <xsd:sequence>
+		      <xsd:element name="outputFormates" type="xsd:string"/>
+		      <xsd:element name="xml" type="xsd:base64Binary" xmime:expectedContentTypes="application/xml"/>
 		    </xsd:sequence>
 		  </xsd:complexType>
     </xsd:schema>
@@ -115,6 +134,29 @@
   <wsdl:message name="GetChartResponse">
     <wsdl:part name="getChartOutput" type="tns:ChartOutput"/>
   </wsdl:message>
+  
+  <wsdl:message name="TestInputRequest">
+    <wsdl:part name="testInput" type="tns:TestInput"/>
+  </wsdl:message>
+  
+  <wsdl:message name="GetHtmlResponse">
+    <wsdl:part name="getChartOutput" type="tns:HtmlStreamOutput"/>
+  </wsdl:message>
+  
+  <wsdl:message name="GetXmlResponse">
+    <wsdl:part name="getChartOutput" type="tns:XMLStreamOutput"/>
+  </wsdl:message>
+  <!--
+  public static final String JPEG_IMAGE_MIME_TYPE = "image/jpeg"; java Image
+    //public static final String PNG_IMAGE_MIME_TYPE = "image/png";java Image
+    public static final String GIF_IMAGE_MIME_TYPE = "image/gif";java Image
+    public static final String TEXT_XML_MIME_TYPE = "text/xml"; Source
+    public static final String TEXT_HTML_MIME_TYPE = "text/html"; DataHandler
+    public static final String TEXT_PLAIN_MIME_TYPE = "text/plain"; String
+    public static final String APPLICATION_XML_MIME_TYPE = "application/xml"; Source
+    public static final String MULTIPART_MIME_TYPE = "multipart/*"; DataHandler
+   
+   -->
 
   <!-- wsdl:portType describes messages in an operation -->
   <wsdl:portType name="ChartPort">
@@ -124,18 +166,29 @@
       <wsdl:input message="tns:GetChartRequest"/>
       <wsdl:output message="tns:GetChartResponse"/>
     </wsdl:operation>
+    
+    <wsdl:operation name="getHTMLStream">
+      <wsdl:input message="tns:TestInputRequest"/>
+      <wsdl:output message="tns:GetHtmlResponse"/>
+    </wsdl:operation>
+    
+    <wsdl:operation name="getXmlStream">
+      <wsdl:input message="tns:TestInputRequest"/>
+      <wsdl:output message="tns:GetXmlResponse"/>
+    </wsdl:operation>
+    
   </wsdl:portType>
 
 	<wsdl:binding name="SOAPChartBinding" type="tns:ChartPort">
-		<soap:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<soap:binding transport="http://schemas.xmlsoap.org/wsdl/soap/" style="rpc"/>
 		<wsdl:operation name="getChart">
 			<soap:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getChart"
 				style="rpc" />
-			<wsdl:input><soap:body use="literal" namespace="http://code.google.com/json"/></wsdl:input>
+			<wsdl:input><soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/></wsdl:input>
 		  <wsdl:output>
 		  	<mime:multipartRelated>
 					<mime:part>
-						<soap:body use="literal" namespace="http://code.google.com/json"/>
+						<soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/>
 					</mime:part>
 					<mime:part>
 						<mime:content part="svgContent" type="image/svg+xml"/>
@@ -146,6 +199,37 @@
 				</mime:multipartRelated>
 		  </wsdl:output>
 		</wsdl:operation>
+		<wsdl:operation name="getHTMLStream">
+			<soap:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getHTMLStream"
+				style="rpc" />
+			<wsdl:input><soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/></wsdl:input>
+		  <wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="html" type="image/jpeg"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="getXmlStream">
+			<soap:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getXmlStream"
+				style="rpc" />
+			<wsdl:input><soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/></wsdl:input>
+		  <wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="xml" type="application/xml"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		
   </wsdl:binding>
   
 	<wsdl:binding name="ChartBinding" type="tns:ChartPort">
@@ -168,12 +252,46 @@
 				</mime:multipartRelated>
 		  </wsdl:output>
 		</wsdl:operation>
+		<wsdl:operation name="getHTMLStream">
+			<json:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getHTMLStream"
+				style="rpc" />
+			<wsdl:input><json:body use="literal" namespace="http://code.google.com/json"/></wsdl:input>
+			<wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<json:body use="literal" namespace="http://code.google.com/json"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="html" type="image/jpeg"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="getXmlStream">
+			<json:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getXmlStream"
+				style="rpc" />
+			<wsdl:input><json:body use="literal" namespace="http://code.google.com/json"/></wsdl:input>
+			<wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<json:body use="literal" namespace="http://code.google.com/json"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="xml" type="application/xml"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
   </wsdl:binding>
 
   <wsdl:service name="ChartService">
     <wsdl:port name="ChartPortType"
                binding="tns:ChartBinding">
-      <soap:address location="http://localhost:8080/attachment/ChartService.json"/>
+      <json:address location="http://localhost:8080/attachment/ChartService.json"/>
+    </wsdl:port>
+    <wsdl:port name="SOAPChartPortType"
+               binding="tns:ChartBinding">
+      <soap:address location="http://localhost:8080/attachment/ChartService.soap"/>
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>

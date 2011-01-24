@@ -84,6 +84,28 @@ public class ChartService
         return super.getPort(new QName("http://jsonwebservice.googlecode.com/attachment", "ChartPortType"), ChartPort.class, features);
     }
 
+    /**
+     * 
+     * @return
+     *     returns ChartPort
+     */
+    @WebEndpoint(name = "SOAPChartPortType")
+    public ChartPort getSOAPChartPortType() {
+        return super.getPort(new QName("http://jsonwebservice.googlecode.com/attachment", "SOAPChartPortType"), ChartPort.class);
+    }
+
+    /**
+     * 
+     * @param features
+     *     A list of {@link javax.xml.ws.WebServiceFeature} to configure on the proxy.  Supported features not in the <code>features</code> parameter will have their default values.
+     * @return
+     *     returns ChartPort
+     */
+    @WebEndpoint(name = "SOAPChartPortType")
+    public ChartPort getSOAPChartPortType(WebServiceFeature... features) {
+        return super.getPort(new QName("http://jsonwebservice.googlecode.com/attachment", "SOAPChartPortType"), ChartPort.class, features);
+    }
+
     private static URL __getWsdlLocation() {
         if (CHARTSERVICE_EXCEPTION!= null) {
             throw CHARTSERVICE_EXCEPTION;
