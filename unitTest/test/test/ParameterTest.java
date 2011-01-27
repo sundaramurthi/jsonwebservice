@@ -485,4 +485,23 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		String expected 	= "{\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
+	
+	public void test50AnyTypeInAnyTypeObjectOut() throws MalformedURLException, IOException {
+		String in 	= "{\"test50AnyTypeInAnyTypeObjectOut\":{\"anyType\":{\"class\":\"com.test.jsonwebservice.rpc.Object\",\"property1\":123}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"anyTypeObject\":{\"anyTypeNil\":{\"property1\":123}},\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+
+	public void test51AnyTypeObjectInAnyTypeOut() throws MalformedURLException, IOException{
+		String in 	= "{\"test51AnyTypeObjectInAnyTypeOut\":{\"anyTypeObject\":{\"anyTypeNonNil\":{\"property1\":123,\"class\":\"com.test.jsonwebservice.rpc.Object\"}}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"anyType\":{\"property1\":123},\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+	
 }

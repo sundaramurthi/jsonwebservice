@@ -52,6 +52,13 @@
 					<xsd:element name="date" type="xsd:date"/>
 				</xsd:sequence>		
 			</xsd:complexType>
+			
+			<xsd:complexType name="AnyTypeObject">
+				<xsd:sequence>
+					<xsd:element name="anyTypeNonNil" type="xsd:anyType"/>
+					<xsd:element name="anyTypeNil" type="xsd:anyType" nillable="true"/>
+				</xsd:sequence>		
+			</xsd:complexType>
 		 	 
 			<xsd:complexType name="MapObject">
 				<xsd:sequence>
@@ -168,6 +175,14 @@
 					<xsd:element name="bigObject" type="tns:BigObject" minOccurs="1" maxOccurs="unbounded"/>
 		 	  </xsd:sequence>
 		 	</xsd:complexType>  
+		 	
+		 	<xsd:complexType name="NillablesObj">
+		 		<xsd:sequence>
+					<xsd:element name="dble" type="xsd:double" nillable="true"/>
+					<xsd:element name="intg" type="xsd:int" nillable="true"/>
+					<xsd:element name="dble2" type="xsd:double" minOccurs="0"/>
+		 	  </xsd:sequence>
+		 	</xsd:complexType>
 		</xsd:schema>
 	</types>
 
@@ -241,6 +256,14 @@
 		<part name="dateObject" type="tns:DateObject"/>
 	</message>
 	
+	<message name="anyTypeMessage">
+		<part name="anyType" type="xsd:anyType"/>
+	</message>
+	
+	<message name="anyTypeObjectMessage">
+		<part name="anyTypeObject" type="tns:AnyTypeObject"/>
+	</message>
+	
 	
 	<!-- more than one parts -->
 	<message name="numNumMessage">
@@ -310,6 +333,10 @@
 	
 	<message name="xmlElementRefsObjMessage">
 		<part name="xmlElementRefsObj" type="tns:XmlElementRefsObj"/>
+	</message>
+	
+	<message name="xmlForceNillableMessage">
+		<part name="nillables" type="tns:NillablesObj"/>
 	</message>
 	
 	<!--  Attachemnt messages -->
@@ -580,6 +607,15 @@
 			<output name="test49EmptyOut" 	message="tns:emptyMessage" />
 		</operation>
 		
+		<operation name="test50AnyTypeInAnyTypeObjectOut">
+			<input name="test50AnyTypeIn" message="tns:anyTypeMessage" />
+			<output name="test50AnyTypeObjectOut" 	message="tns:anyTypeObjectMessage" />
+		</operation>
+		
+		<operation name="test51AnyTypeObjectInAnyTypeOut">
+			<input name="test51AnyTypeObjectIn" message="tns:anyTypeObjectMessage" />
+			<output name="test51AnyTypeOut" 	message="tns:anyTypeMessage" />
+		</operation>
 	</portType>
 
 	<portType name="CustomizeTest">
@@ -721,6 +757,11 @@
 			<output name="test15XmlElementRefsOut" 				message="tns:xmlElementRefsObjMessage" />
 		</operation>
 		
+		<operation name="test16XmlForceNillableInxmlForceNillableOut">
+			<input 	name="test16XmlForceNillableIn" 				message="tns:xmlForceNillableMessage" />
+			<output name="test16XmlForceNillableOut" 				message="tns:xmlForceNillableMessage" />
+		</operation>
+		
 	</portType>
 
 	<portType name="AttachmentTest">
@@ -819,6 +860,9 @@
 		<operation name="test47DateObjectInDateObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test47DateObjectInDateObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test48String255InEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test48String255InEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test49Integer5InEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test49Integer5InEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test50AnyTypeInAnyTypeObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test50AnyTypeInAnyTypeObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test51AnyTypeObjectInAnyTypeOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test51AnyTypeObjectInAnyTypeOut" style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		
 	</binding>
 	
 	<binding name="CustomizeTestService" type="tns:CustomizeTest">
@@ -855,6 +899,7 @@
 		<operation name="test13EmptyInXmlElementRefsOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test13EmptyInXmlElementRefsOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test14XmlElementRefsInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test14XmlElementRefsInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test15XmlElementRefsInXmlElementRefsOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test15XmlElementRefsInXmlElementRefsOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test16XmlForceNillableInxmlForceNillableOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test16XmlForceNillableInxmlForceNillableOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 	</binding>		
 	
 	<binding name="AttachmentTestService" type="tns:AttachmentTest">
