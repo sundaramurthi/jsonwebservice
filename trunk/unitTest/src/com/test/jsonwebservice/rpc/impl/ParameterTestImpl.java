@@ -10,6 +10,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.ws.Holder;
 
+import com.test.jsonwebservice.rpc.AnyTypeObject;
 import com.test.jsonwebservice.rpc.DateObject;
 import com.test.jsonwebservice.rpc.EnumConst;
 import com.test.jsonwebservice.rpc.Object;
@@ -303,6 +304,21 @@ public class ParameterTestImpl implements ParameterTest {
 		if(integer5 == 0)
 			throw new RuntimeException();
 		
+	}
+
+	public AnyTypeObject test50AnyTypeInAnyTypeObjectOut(
+			java.lang.Object anyType) {
+		AnyTypeObject obj = new AnyTypeObject();
+		obj.setAnyTypeNil(anyType);
+		return obj;
+	}
+
+	public java.lang.Object test51AnyTypeObjectInAnyTypeOut(
+			AnyTypeObject anyTypeObject) {
+		if( anyTypeObject.getAnyTypeNonNil() == null){
+			throw new RuntimeException();
+		}
+		return anyTypeObject.getAnyTypeNonNil();
 	}
 
 }

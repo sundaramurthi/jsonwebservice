@@ -9,6 +9,7 @@ import javax.xml.ws.Holder;
 import com.test.jsonwebservice.rpc.EnumConst;
 import com.test.jsonwebservice.rpc.JAXBAnnotationTest;
 import com.test.jsonwebservice.rpc.MapObject;
+import com.test.jsonwebservice.rpc.NillablesObj;
 import com.test.jsonwebservice.rpc.Object;
 import com.test.jsonwebservice.rpc.ObjectReservedFields;
 import com.test.jsonwebservice.rpc.XmlElementRefsObj;
@@ -165,5 +166,12 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 	public void test15XmlElementRefsInXmlElementRefsOut(
 			Holder<XmlElementRefsObj> xmlElementRefsObj) {
 		throw new UnsupportedOperationException();
+	}
+
+	public void test16XmlForceNillableInxmlForceNillableOut(
+			Holder<NillablesObj> nillables) {
+		if(nillables.value == null){
+			throw new UnsupportedOperationException();
+		}
 	}
 }

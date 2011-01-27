@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collections;
 
+import javax.xml.bind.annotation.XmlElement;
+
 public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		com.test.jsonwebservice.rpc.JAXBAnnotationTest*/ {
 
@@ -172,4 +174,13 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		assertEquals(out, expected);
 		// THIS is not supported type
 	}
+	public void test16XmlForceNillableInxmlForceNillableOut() throws MalformedURLException, IOException{
+		String in 	= "{\"test16XmlForceNillableInxmlForceNillableOut\":{\"nillables\":{\"dble\":null,\"intg\":null,\"dble2\":1.0}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"nillables\":{\"dble2\":1.0},\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+			
 }
