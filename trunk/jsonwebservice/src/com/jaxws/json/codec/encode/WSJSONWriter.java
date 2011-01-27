@@ -591,15 +591,21 @@ public class WSJSONWriter extends BeanAware {
     	assert object != null && clazz != null && !clazz.isPrimitive();
 
     	this.add("{");
-
+    	
+    	boolean hasData = false;
+    	
+    	// handle any object type.
+    	if(clazz.equals(Object.class)){
+    		clazz	= object.getClass();
+    		hasData = hasData | this.add("class", clazz.getName(), null, hasData);
+    	}
+    	
         try {
         	/*
         	 *  Step 5.10.1: If class level JSON annotation present and ask for ignore parent level, then ignore it.
         	 */
         	PropertyDescriptor[] props = getBeanProperties(clazz);
         	
-            boolean hasData = false;
-            
             /*
         	 *  Step 5.10.2: Process all properties in Bean
         	 */

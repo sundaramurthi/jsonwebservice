@@ -221,10 +221,10 @@ public class WSJSONPopulator extends BeanAware {
 	 * @throws JSONException
 	 * @throws InstantiationException
 	 */
-    public void populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo, List<MIMEPart> attachments)
+    public Object populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo, List<MIMEPart> attachments)
         throws Exception {
 		this.attachments	= attachments;
-		this.populateObject(object, elements, customizeInfo);
+		return this.populateObject(object, elements, customizeInfo);
 	}
 	
 	/**
@@ -242,7 +242,34 @@ public class WSJSONPopulator extends BeanAware {
     @SuppressWarnings({ "unchecked", "rawtypes" })
 	private Object populateObject(Object object, Map<String,Object> elements, JSONWebService customizeInfo)
         throws Exception {
+    	if(elements == null){
+    		return null;
+    	}
     	Class<?>				clazz	= object.getClass();
+    	// xsdAny type generate Object java TYPE. In JSON current way to identifiy class using class property. 
+    	if(clazz.equals(Object.class)){
+    		if(!elements.containsKey("class")){
+    			// If no class specifed but no class property return null.
+    			if(traceEnabled){
+        			traceLog.warn("Any Object elemnt. with out class property. Ignoring it");
+            	}
+    			return null;
+    		} else {
+    			// remove class property to avoid messing with Object class
+    			String clazzName = elements.remove("class").toString();
+    			try{
+    				clazz	= Class.forName(clazzName);
+    				if(!object.getClass().equals(clazz)){
+    					object	= getNewInstance(clazz);
+    				}
+    			}catch(Throwable th){
+    				if(traceEnabled){
+            			traceLog.warn("Any Object elemnt. unable to load class " + clazzName);
+                	}
+    				return null;
+    			}
+    		}
+    	}
 		PropertyDescriptor[] 	props 	= getBeanProperties(clazz);
 
 		//iterate over class fields
@@ -691,21 +718,21 @@ public class WSJSONPopulator extends BeanAware {
     @SuppressWarnings({"unchecked","rawtypes"})
 	private Object convertPrimitive(final Class clazz,final  Object value,final JSONWebService customizeInfo,final Method method) {
         if (value == null) {
-            if (Short.TYPE.equals(clazz) || Short.class.equals(clazz))
+            if (Short.TYPE.equals(clazz))
                 return (short) 0;
-            else if (Byte.TYPE.equals(clazz) || Byte.class.equals(clazz))
+            else if (Byte.TYPE.equals(clazz))
                 return (byte) 0;
-            else if (Integer.TYPE.equals(clazz) || Integer.class.equals(clazz))
+            else if (Integer.TYPE.equals(clazz))
                 return 0;
-            else if (Long.TYPE.equals(clazz) || Long.class.equals(clazz))
+            else if (Long.TYPE.equals(clazz))
                 return 0L;
-            else if (Float.TYPE.equals(clazz) || Float.class.equals(clazz))
+            else if (Float.TYPE.equals(clazz))
                 return 0f;
-            else if (Double.TYPE.equals(clazz) || Double.class.equals(clazz))
+            else if (Double.TYPE.equals(clazz))
                 return 0d;
-            else if (Boolean.TYPE.equals(clazz) || Boolean.class.equals(clazz))
+            else if (Boolean.TYPE.equals(clazz))
                 return Boolean.FALSE;
-            else
+            else// Null in case of objects
                 return null;
         } else if (value instanceof Number) {
             Number number = (Number) value;
