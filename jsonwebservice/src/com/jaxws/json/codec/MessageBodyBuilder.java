@@ -115,8 +115,7 @@ public class MessageBodyBuilder {
 				
 				Object val = null;
 	            if(!WSJSONPopulator.isJSONPrimitive(parameterType)){
-	            	val = jsonPopulator.getNewInstance(parameterType);
-		            jsonPopulator.populateObject(val,
+	            	val = jsonPopulator.populateObject(jsonPopulator.getNewInstance(parameterType),
 		            		(Map<String,Object>)operationParameters.get(part.getKey()),jsonwebService, 
 		            		(List<MIMEPart>) invocationProperties.get(JSONCodec.MIME_ATTACHMENTS));
 	            } else {
