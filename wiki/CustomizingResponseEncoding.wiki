@@ -1,0 +1,27 @@
+#Customizing response encoding
+
+= Introduction =
+
+JSON web service support changing/customizing your response content and encoding. 
+
+Use case: Post JSON request and result is in HTML, PDF, or other response, but not default JSON. Response content produced using result of your implementation operation.
+
+
+NOT USED FOR:
+
+1) If you have use case: customize only specific Object in json response, This is NOT correct way. Look at Custom serializer.
+2) If you have use case: diffident content/type produced by other service and like to send to json web service, client consider using attachment.
+
+
+How it different from JSON/SOAP attachment?
+
+1) Content Type:
+
+ATTACHMENT: Attachment always produce multipart/mime response with your main part as JSON and attachments are following part with relevant content type. 
+CUSTOM ENCODER: In custom encoder give control to developer to specify main content type. Encoder responsible for response header/body.
+
+2) Resource:
+ATTACHMENT: In attachment, it is done inside implementation method. Developer have control/access to all resource or operations.
+CUSTOM ENCODER: Custom encoder called only after operation completed. Encoder can access only result of operation.
+
+
