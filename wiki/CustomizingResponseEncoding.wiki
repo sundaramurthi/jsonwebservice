@@ -1,4 +1,4 @@
-#Customizing response encoding
+== Customizing response encoding ==
 
 = Introduction =
 
@@ -18,10 +18,10 @@ How it different from JSON/SOAP attachment?
 1) Content Type:
 
 ATTACHMENT: Attachment always produce multipart/mime response with your main part as JSON and attachments are following part with relevant content type. 
-CUSTOM ENCODER: In custom encoder give control to developer to specify main content type. Encoder responsible for response header/body.
+CUSTOM ENCODER: Custom encoder give control to developer to specify main content type. Encoder responsible for response header/body.
 
-2) Resource:
-ATTACHMENT: In attachment, it is done inside implementation method. Developer have control/access to all resource or operations.
+2) Resource Access:
+
+ATTACHMENT: In attachment, Attachment done inside implementation method. Developer have control/access to all resource or operations.
 CUSTOM ENCODER: Custom encoder called only after operation completed. Encoder can access only result of operation.
-
 
