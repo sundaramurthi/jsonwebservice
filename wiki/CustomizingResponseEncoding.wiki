@@ -36,7 +36,7 @@ Here is steps to create and register custom Encoder.
 				<json:body use="literal" />
 			</input>
 			<output>
-				<mime:content type="*text/html,application/pdf,text/**" part="response"/>
+				<mime:content type="text/html,application/pdf,text/*" part="response"/>
 			</output>
 		</operation>
 }}}
@@ -52,7 +52,7 @@ public class ResponseEncoder implements Encoder {
 	 * If your like to customize JSON content type look at JSONObjectCustomizer.
 	 */
 	public String mimeContent() {
-		return "*text/html,application/pdf,text/**";
+		return "text/html,application/pdf,text/*";
 	}
 	
 	/**
@@ -109,4 +109,7 @@ public static final ContentType htmlContentType = new ContentType(){
 
 4) add your implementation encoder to registry.
 
+
+Note mimeContent is the one match your implementation with operation response. In e.g case it is text/html,application/pdf,text/*. But it can be any string.
+ 
 Test!
