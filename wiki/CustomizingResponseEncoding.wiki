@@ -61,7 +61,12 @@ public class ResponseEncoder implements Encoder {
 	 * @param packet
 	 * @return
 	 */
-	public ContentType getStaticContentType(Packet packet);
+	public ContentType getStaticContentType(Packet packet){
+HttpServletResponse response = (HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE);
+		response.addHeader("Content-disposition", "attachment; filename=\""+exportFile+"\"");
+		response.setCharacterEncoding("utf-8");
+		return htmlContentType;
+}
 	
 	/**
 	 * Called when user request accept content type with is supported by MIME type returned in contentType call.
@@ -73,8 +78,35 @@ public class ResponseEncoder implements Encoder {
 	 * 
 	 * WARN: returned content type ignored in current version, due to content not buffered.
 	 */
-	public ContentType encode(Packet packet, OutputStream output) throws IOException;
+	public ContentType encode(Packet packet, OutputStream output) throws IOException{
+output.write("<html><body><p>Hello</p></body></html>".getBytes());
+return htmlContentType;
+}
+
+
+public static final ContentType htmlContentType = new ContentType(){
+
+		@Override
+		public String getAcceptHeader() {
+			return null;
+		}
+
+		@Override
+		public String getContentType() {
+			return "text/html";
+		}
+
+		@Override
+		public String getSOAPActionHeader() {
+			return null;
+		}
+	};
 }
 
 }}}
 
+3) Create service registry file under META-INF/services/com.jaxws.json.packet.handler.Encoder
+
+4) add your implementation encoder to registry.
+
+Test!
