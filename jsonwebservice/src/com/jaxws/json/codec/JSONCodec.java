@@ -318,7 +318,7 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
      * List of custom encoder used to handle non JSON response.
      * User can register customized encoder like HTML, plain text etc output.
      */
-    public static	Collection<Class<? extends Encoder>> customEncoder		= new ArrayList<Class<? extends Encoder>>();
+    public static final 	String 		ENCODER 					= "ENCODER";
     
     /**
      * List of custom JSON object customizer. Which can be used to customize JSON output of specific object. 
@@ -386,10 +386,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     			useTimezoneSeparator	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
     		}
     	}
-		
-		for (Encoder handler : ServiceFinder.find(Encoder.class)) {
-			customEncoder.add(handler.getClass());
-		}
 		LOG.info("Initalizing JSON codec static part. Done");
     }
     
@@ -562,7 +558,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * @model
 	 */
 	public ContentType encode(Packet packet, OutputStream out) throws IOException {
-		JSONEncoder encoder = new JSONEncoder(packet,this);
 		if(gzip && packet.supports(MessageContext.SERVLET_REQUEST) && isGzipInRequest((HttpServletRequest)packet.get(MessageContext.SERVLET_REQUEST))){
 			((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).addHeader("Content-Encoding", "gzip");
 			out = new GZIPOutputStream(out);
@@ -570,7 +565,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 		try {
 			// MessageContext.MESSAGE_OUTBOUND_PROPERTY set by JAX_WS only if handler configured. But encode always a out bound.
 			packet.invocationProperties.put(MessageContext.MESSAGE_OUTBOUND_PROPERTY,true); 
-			return encoder.encode(out);
+			if(packet.invocationProperties.containsKey(ENCODER)){
+				return ((Encoder)packet.invocationProperties.get(ENCODER)).encode(packet, out);
+			} else {
+				return new JSONEncoder(packet,this).encode(out);
+			}
 		} finally {
 			if (out != null) {
 				try {
@@ -582,24 +581,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				}
 			}
 		}
-					
-						/*String inEx[][] = getInExProperties(methodImpl);
-						if(inEx[0].length > 0){
-							if(includeProperties == null)
-								includeProperties = new ArrayList<Pattern>();
-							for(String include:inEx[0])
-								includeProperties.add(Pattern.compile(include));
-							
-						}
-						if(inEx[1].length > 0){
-							if(excludeProperties == null)
-								excludeProperties = new ArrayList<Pattern>();
-							for(String exclude:inEx[1])
-								excludeProperties.add(Pattern.compile(exclude));
-						}
-						
-						listMapKey = getListMapKey(methodImpl);
-						listMapValue = getListMapValue(methodImpl);*/
 	}
 	
 	/**
@@ -647,7 +628,9 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				packet.invocationProperties != null){
 			if(packet.invocationProperties.containsKey(FORCED_RESPONSE_CONTENT_TYPE)){
 				return (ContentType)packet.invocationProperties.get(FORCED_RESPONSE_CONTENT_TYPE);
-			}else if(packet.invocationProperties.containsKey("accept")
+			} else if(packet.invocationProperties.containsKey(ENCODER)){
+				return ((Encoder)packet.invocationProperties.get(ENCODER)).getStaticContentType(packet);
+			} else if(packet.invocationProperties.containsKey("accept")
 				&& (!packet.invocationProperties.get("accept").equals(JSONContentType.JSON_MIME_TYPE))){
 				// Accept content type is not JSON.
 				// Test is this accept content type handled by custom response package handlers.
