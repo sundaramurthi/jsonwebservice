@@ -21,6 +21,7 @@ import org.w3c.dom.NodeList;
 import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.codec.encode.JSONEncoder;
 import com.jaxws.json.feature.JSONWebService;
+import com.jaxws.json.packet.handler.Encoder;
 import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.bind.api.CompositeStructure;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -35,6 +36,8 @@ import com.sun.xml.ws.message.jaxb.JAXBMessage;
 import com.sun.xml.ws.model.JavaMethodImpl;
 import com.sun.xml.ws.model.ParameterImpl;
 import com.sun.xml.ws.model.WrapperParameter;
+import com.sun.xml.ws.model.wsdl.WSDLBoundOperationImpl;
+import com.sun.xml.ws.util.ServiceFinder;
 
 public class MessageBodyBuilder {
 	final protected JSONCodec 	codec;
@@ -127,9 +130,18 @@ public class MessageBodyBuilder {
 			
 			// TODO find better way with out using JavaMethodImpl
 			List<ParameterImpl> requestParameters = ((JavaMethodImpl)javaMethod).getRequestParameters();
-			invocationProperties.put(JSONEncoder.RESPONSEPARAMETERS, ((JavaMethodImpl)javaMethod).getResponseParameters());
-			if(jsonPopulator.responseHasAttachment(((JavaMethodImpl)javaMethod))){
-				invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE,JSONContentType.MULTIPART_MIXED);
+			List<ParameterImpl> responseParameters = ((JavaMethodImpl)javaMethod).getResponseParameters();
+			invocationProperties.put(JSONEncoder.RESPONSEPARAMETERS, responseParameters);
+			
+			if(operation instanceof WSDLBoundOperationImpl && ((WSDLBoundOperationImpl)operation).getOutputMimeTypes().size() > 0){
+				// Use only one in case of multipart use attachment 
+				String mimeType = String.valueOf(((WSDLBoundOperationImpl)operation).getOutputMimeTypes().values().toArray()[0]);
+				for (Encoder handler : ServiceFinder.find(Encoder.class)) {
+					if(mimeType.equals(handler.mimeContent())){
+						invocationProperties.put(JSONCodec.ENCODER, handler);
+						break;
+					}
+				}
 			}
 			if(requestParameters != null && requestParameters.size() == 1){
 				ParameterImpl parameter = requestParameters.get(0);

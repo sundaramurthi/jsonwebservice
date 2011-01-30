@@ -39,15 +39,9 @@ import com.jaxws.json.codec.JSONContentType;
 import com.jaxws.json.codec.JSONFault;
 import com.jaxws.json.codec.MessageBodyBuilder;
 import com.jaxws.json.codec.TrackedMessage;
-import com.jaxws.json.packet.handler.Encoder;
-import com.sun.xml.ws.api.WSBinding;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.message.Packet;
-import com.sun.xml.ws.api.pipe.Codec;
 import com.sun.xml.ws.api.pipe.ContentType;
-import com.sun.xml.ws.api.server.BoundEndpoint;
-import com.sun.xml.ws.api.server.Module;
-import com.sun.xml.ws.api.server.WSEndpoint;
 
 /**
  * @author ssaminathan
@@ -56,8 +50,6 @@ import com.sun.xml.ws.api.server.WSEndpoint;
 public class JSONEncoder {
 	private static final Logger LOG			= Logger.getLogger(JSONEncoder.class.getName());
 	
-	private static final String ACCEPT 		= "accept";
-	private static final String SOAPACTION 	= "SOAPAction";
 	private static final String FAULT 		= "fault";
 
 	public static final String RESPONSEPARAMETERS = "RESPONSEPARAMETERS";
@@ -113,61 +105,11 @@ public class JSONEncoder {
 		 * If yes pass it to JAX-WS endpoint.
 		 */
 		Map<String,Object> invocationProperties = this.packet.invocationProperties;
-		if(invocationProperties != null && invocationProperties.containsKey(ACCEPT)
-				&& (!invocationProperties.get(ACCEPT).equals(JSONContentType.JSON_MIME_TYPE))){
-			//1.1  Accept content type not json then attempt to find in custom codec
-			for(Class <? extends Encoder> encoder : JSONCodec.customEncoder){
-				Encoder encoderInstance = null;
-				try {
-					encoderInstance = encoder.newInstance();
-				} catch (Exception e) {// Log instance creation failure. 
-					if(this.traceEnabled)this.traceLog.error("Custom encoder instantation failed. " +
-							"Ignoring custom encoder "+encoder.getName());
-					LOG.log(Level.WARNING, "Failed to create custom encoder "+e.getMessage());
-					LOG.log(Level.INFO,"Instance creation fail",e);
-					continue;
-				} 
-				ContentType contentTypeHandled 	= encoderInstance.contentType();
-				/*
-				 * Custom encoder identified based on 
-				 *  FISRT : 1.1.1 custom Accept header present in HTTP request.
-				 *  SECOND: 1.1.2 SOAP action header starts with Encoder specified SOAP action header.
-				 *  THIRD : 1.1.3 http accept header not JSON and supported by Content type string specified Encoder. 
-				 */
-				if(invocationProperties.containsKey(contentTypeHandled.getAcceptHeader())){// case 1 check custom http header present.
-					return encoderInstance.encode(this.packet, output);
-				}else if(invocationProperties.containsKey(SOAPACTION) && 
-						invocationProperties.get(SOAPACTION).toString().startsWith(contentTypeHandled.getSOAPActionHeader())){
-					return encoderInstance.encode(this.packet, output);
-				}else if(invocationProperties.get(ACCEPT).equals(contentTypeHandled.getContentType())){
-					return encoderInstance.encode(this.packet, output);
-				}
-			}
-			//end
-			//1.2 Acccept content type herader present and not JSON and its not handled by custom Encoder.
-			// Try it in other JAX-WS codec. Eg: accept text/xml can be handled by SOAPCodec 
-			// Read all service end point modules declared in container.
-			WSEndpoint<?> 	endPoint 	= this.codec.getEndpoint();
-			Module 			modules 	= endPoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
-			WSBinding 		jsonBinding = this.codec.getBinding();
-			// TODO cache
-			for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
-				// Check is this End ponit using same service interface 
-				if(endPointObj.getEndpoint().getImplementationClass().equals(endPoint.getImplementationClass())
-						&& endPointObj.getEndpoint().getBinding().getBindingId() != jsonBinding.getBindingId()){
-					Codec 		codec 		= endPointObj.getEndpoint().createCodec();
-					ContentType contentType = codec.getStaticContentType(packet);
-					if(contentType != null && 
-							contentType.getContentType().startsWith(packet.invocationProperties.get(ACCEPT).toString())){
-						return endPointObj.getEndpoint().createCodec().encode(packet, output);
-					}
-				}
-			}
+		
 		/*
 		 * Step 2: Accept content type not json as well custom encoder or other WS end points not handled this request.
 		 * Since request reached to JSON codec endpoint send response as JSON.
 		 **/
-		}
 		/*
 		 * Read and remove the forced content type don't end in response body part. 
 		 */
@@ -220,6 +162,7 @@ public class JSONEncoder {
 							faultObj.getFaultString(),faultObj.getFaultActor(),detail));
 					
 				} catch (SOAPException e) {
+					LOG.log(Level.WARNING, "Failed to read soap fault message", e);
 					responseJSONMap.put(FAULT, new JSONFault("Server.json",
 							"Failed to read soap fault message","Codec",null));
 				}

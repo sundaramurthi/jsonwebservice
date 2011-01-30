@@ -10,10 +10,12 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import com.jaxws.json.codec.JSONBindingID;
+import com.jaxws.json.codec.JSONConstants;
 import com.sun.xml.ws.api.EndpointAddress;
 import com.sun.xml.ws.api.model.ParameterBinding;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundPortType;
+import com.sun.xml.ws.api.model.wsdl.WSDLExtension;
 import com.sun.xml.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.ws.api.wsdl.parser.WSDLParserExtension;
 import com.sun.xml.ws.model.wsdl.WSDLBoundOperationImpl;
@@ -86,45 +88,67 @@ public class WSDLJSONParserExtension extends WSDLParserExtension {
 	@Override
 	public boolean bindingOperationInputElements(WSDLBoundOperation operation,
 			XMLStreamReader reader) {
-		QName name = reader.getName();
-        if (SOAPConstants.QNAME_BODY.equals(name)) {
-        	WSDLBoundOperationImpl bindingOp = (WSDLBoundOperationImpl)operation;
-            bindingOp.setInputExplicitBodyParts(parseSOAPBodyBinding(reader, bindingOp, BindingMode.INPUT));
-            goToEnd(reader);
-        }
-		return super.bindingOperationInputElements(operation, reader);
+		return handleOperationInOutElements(operation, reader, BindingMode.INPUT) ? true : 
+			super.bindingOperationInputElements(operation, reader);
 	}
 
 	@Override
 	public boolean bindingOperationOutputElements(WSDLBoundOperation operation,
 			XMLStreamReader reader) {
+		return handleOperationInOutElements(operation, reader, BindingMode.OUTPUT) ? true : 
+			super.bindingOperationOutputElements(operation, reader);
+	}
+	
+	private boolean handleOperationInOutElements(WSDLBoundOperation operation,
+			XMLStreamReader reader,BindingMode mode){
 		QName name = reader.getName();
-		 if (SOAPConstants.QNAME_BODY.equals(name)) {
-			 WSDLBoundOperationImpl bindingOp = (WSDLBoundOperationImpl)operation;
-             bindingOp.setOutputExplicitBodyParts(parseSOAPBodyBinding(reader, bindingOp, BindingMode.OUTPUT));
-             goToEnd(reader);
-         }
-		return super.bindingOperationOutputElements(operation, reader);
+		WSDLBoundOperationImpl bindingOp = (WSDLBoundOperationImpl)operation;
+		if (JSONConstants.QNAME_BODY.equals(name)) {
+            bindingOp.setInputExplicitBodyParts(parseBodyBinding(reader, bindingOp, mode));
+            goToEnd(reader);
+            return true;
+        }else   if (SOAPConstants.QNAME_BODY.equals(name)) {
+            bindingOp.setInputExplicitBodyParts(parseBodyBinding(reader, bindingOp, mode));
+            goToEnd(reader);
+        } else if(JSONConstants.QNAME_CONTENT.equals(name)){
+        	String type = reader.getAttributeValue(null, "type");
+        	String part = reader.getAttributeValue(null, "part");
+        	if(type != null && bindingOp != null){
+        		if(BindingMode.INPUT == mode){
+        			// part name , type
+        			bindingOp.getInputMimeTypes().put(part != null ? part : "main" , type);
+        		}else{
+        			bindingOp.getOutputMimeTypes().put(part != null ? part : "main" , type);
+        		}
+        	}
+        	
+			//bindingOp.addExtension(ex );
+        	//operation.getOperation().addExtension(arg0)
+        	//operation.getOutput().addExtension(WSDLExtension )
+        }else if(JSONConstants.QNAME_MULTIPART_RELATED.equals(name)){
+        	//return true;
+        }
+		return false;
 	}
 	
 	 private enum BindingMode {
 	        INPUT, OUTPUT, FAULT}
 
-	    private static boolean parseSOAPBodyBinding(XMLStreamReader reader, WSDLBoundOperationImpl op, BindingMode mode) {
+	    private static boolean parseBodyBinding(XMLStreamReader reader, WSDLBoundOperationImpl op, BindingMode mode) {
 	        String namespace = reader.getAttributeValue(null, "namespace");
 	        if (mode == BindingMode.INPUT) {
 	            op.setRequestNamespace(namespace);
-	            return parseSOAPBodyBinding(reader, op.getInputParts());
+	            return parseBodyBinding(reader, op.getInputParts());
 	        }
 	        //resp
 	        op.setResponseNamespace(namespace);
-	        return parseSOAPBodyBinding(reader, op.getOutputParts());
+	        return parseBodyBinding(reader, op.getOutputParts());
 	    }
 
 	    /**
 	     * Returns true if body has explicit parts declaration
 	     */
-	    private static boolean parseSOAPBodyBinding(XMLStreamReader reader, Map<String, ParameterBinding> parts) {
+	    private static boolean parseBodyBinding(XMLStreamReader reader, Map<String, ParameterBinding> parts) {
 	        String partsString = reader.getAttributeValue(null, "parts");
 	        if (partsString != null) {
 	            List<String> partsList = XmlUtil.parseTokenList(partsString);
