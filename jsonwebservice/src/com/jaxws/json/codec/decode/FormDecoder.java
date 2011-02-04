@@ -146,7 +146,9 @@ public class FormDecoder {
 			 * multi part mime.
 			 * 
 			 */
-			this.packet.invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE,JSONContentType.MULTIPART_MIXED);
+			if(this.packet.invocationProperties.get(JSONCodec.ENCODER) == null){
+				this.packet.invocationProperties.put(JSONCodec.FORCED_RESPONSE_CONTENT_TYPE,JSONContentType.MULTIPART_MIXED);
+			}
 			return wsMessage;
 		} else {
 			throw new RuntimeException("Multipart form data should be POST. No input stream found.");
