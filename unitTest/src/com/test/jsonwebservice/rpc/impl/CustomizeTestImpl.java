@@ -13,7 +13,7 @@ import com.test.jsonwebservice.rpc.GlobalKeyValueMapObjectList;
 import com.test.jsonwebservice.rpc.MapObject;
 import com.test.jsonwebservice.rpc.MapObjectList;
 
-@WebService(name = "CustomizeTest", targetNamespace = "http://jsonwebservice.test.com/parameter",
+@WebService(name = "CustomizeTest", targetNamespace = "http://jsonwebservice.test.com/rpc",
 		endpointInterface="com.test.jsonwebservice.rpc.CustomizeTest")
 @SOAPBinding(style = SOAPBinding.Style.RPC)
 public class CustomizeTestImpl implements CustomizeTest {

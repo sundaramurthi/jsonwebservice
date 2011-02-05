@@ -18,7 +18,7 @@ import com.test.jsonwebservice.rpc.ObjectReservedFields;
 import com.test.jsonwebservice.rpc.ParameterTest;
 
 @SOAPBinding(style=Style.RPC)
-@WebService(name = "ParameterTest", targetNamespace = "http://jsonwebservice.test.com/parameter",
+@WebService(name = "ParameterTest", targetNamespace = "http://jsonwebservice.test.com/rpc",
 		endpointInterface="com.test.jsonwebservice.rpc.ParameterTest")
 public class ParameterTestImpl implements ParameterTest {
 
