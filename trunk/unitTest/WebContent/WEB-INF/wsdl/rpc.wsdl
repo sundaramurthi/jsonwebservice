@@ -763,6 +763,13 @@
 		</operation>
 		
 	</portType>
+	
+	<portType name="EncoderTest">
+		<operation name="test1JSONInHtmlOut">
+			<input 	name="test1JSONIn" 				message="tns:objectMessage" />
+			<output name="test1HtmlOut" 				message="tns:objectOutMessage" />
+		</operation>
+	</portType>	
 
 	<portType name="AttachmentTest">
 		<operation name="test1EmptyInImageOut">
@@ -902,6 +909,17 @@
 		<operation name="test16XmlForceNillableInxmlForceNillableOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test16XmlForceNillableInxmlForceNillableOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 	</binding>		
 	
+	<binding name="EncoderTestService" type="tns:EncoderTest">
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<operation name="test1JSONInHtmlOut">
+			<json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/encode/test1JSONInHtmlOut"	style="rpc" />
+			<input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input>
+			<output><mime:content part="objectOut" type="text/html"/></output>
+		</operation>
+	</binding>	
+		
+	
+	
 	<binding name="AttachmentTestService" type="tns:AttachmentTest">
 		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
 		<operation name="test1EmptyInImageOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/attachment/test1EmptyInImageOut"	style="rpc" /><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><mime:multipartRelated><mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated></output></operation>
@@ -937,6 +955,9 @@
 		</port>
 		<port name="JAXBAnnotationPort" binding="tns:JAXBAnnotationTestService">
 			<json:address location="http://localhost:8080/unitTest/json/jaxbannotation" />
+		</port>
+		<port name="EncoderPort" binding="tns:EncoderTestService">
+			<json:address location="http://localhost:8080/unitTest/json/encoder" />
 		</port>
 		<port name="AttachmentPort" binding="tns:AttachmentTestService">
 			<json:address location="http://localhost:8080/unitTest/json/attachment" />

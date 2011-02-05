@@ -17,6 +17,12 @@
   		url-pattern="/json/jaxbannotation" 
   		binding="http://jsonplugin.googlecode.com/json/"/>
   <endpoint 
+  		name="EncoderTest" 
+  		implementation="com.test.jsonwebservice.rpc.impl.EncoderTestImpl" 
+  		url-pattern="/json/encoder"
+  		binding="http://jsonplugin.googlecode.com/json/"/>
+  		<!--  port="{http://jsonwebservice.test.com/rpc}EncoderTest" THIS is required when you use ALSO SOAP endpoint.-->		
+  <endpoint 
   		name="AttachmentTest" 
   		implementation="com.test.jsonwebservice.rpc.impl.AttachmentTestImpl" 
   		url-pattern="/json/attachment" 
