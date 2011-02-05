@@ -69,7 +69,9 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	/**
 	 * Flag to enable/disable json request call status. 
 	 */
-	public static final String 		STATUS_STRING_RESERVED 	= "statusFlag";
+	public static 		String 		STATUS_PROPERTY_NAME 		= "statusFlag";
+	public static final String		STATUS_PROPERTY_NAME_KEY	= "json.response.statusFlag";
+	
 
 	/**
 	 * TRACE back JSON object name
@@ -384,6 +386,11 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
     			dateFormat	= Enum.valueOf(com.jaxws.json.codec.DateFormat.class, properties.getProperty(key.toString()).trim());
     		}else if(key.toString().equals(useTimezoneSeparator_KEY)){
     			useTimezoneSeparator	= Boolean.valueOf(properties.getProperty(key.toString()).trim());
+    		}else if(key.toString().equals(STATUS_PROPERTY_NAME_KEY)){
+    			STATUS_PROPERTY_NAME	= properties.getProperty(STATUS_PROPERTY_NAME_KEY, null);
+    			if(STATUS_PROPERTY_NAME != null && STATUS_PROPERTY_NAME.trim().isEmpty()){
+    				STATUS_PROPERTY_NAME	= null;
+    			}
     		}
     	}
 		LOG.info("Initalizing JSON codec static part. Done");

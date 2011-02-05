@@ -134,7 +134,10 @@ public class ServiceConfigurationServer implements HttpMetadataProvider {
 				propertys.append(String.format(propertyTemplate,
 						JSONCodec.globalMapValuePattern_KEY, String
 								.valueOf(JSONCodec.globalMapValuePattern)));
-
+				propertys.append(String.format(propertyTemplate,
+						JSONCodec.STATUS_PROPERTY_NAME_KEY, String
+								.valueOf(JSONCodec.STATUS_PROPERTY_NAME)));
+				
 				configInfo.append(String.format(templates
 						.getProperty("template.config.main","<html><body>My Bad... Undefined template</body></html>"), codec
 						.getEndpoint().getPortName().getLocalPart(), "65%",

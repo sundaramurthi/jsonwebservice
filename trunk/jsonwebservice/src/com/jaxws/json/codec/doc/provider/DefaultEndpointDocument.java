@@ -142,6 +142,10 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 				
 				String responeJSON = JSONHttpMetadataPublisher.getJSONAsString(operation.getOutParts(), context, this.codec).replaceAll("$", "");
 				
+				if(JSONCodec.STATUS_PROPERTY_NAME != null){
+					responeJSON = responeJSON.substring(0, responeJSON.length() -1) + String.format("%s%s=BOOLEAN}",
+							responeJSON.length() > 2 ? "," : "" , JSONCodec.STATUS_PROPERTY_NAME);
+				}
 				methodTemplate = methodTemplate.replaceAll("#OUTPUT_JSON#",operation.getOperation().isOneWay() ? "ONE-WAY" :
 						JSONCodec.responsePayloadEnabled ? 
 							String.format("{\"%s\":%s}", operation.getOperation().getOutput().getName() ,responeJSON)
