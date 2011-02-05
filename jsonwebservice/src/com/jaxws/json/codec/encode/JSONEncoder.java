@@ -138,7 +138,8 @@ public class JSONEncoder {
 		/*
 		 * Set fault status
 		 */
-		responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED, !(message == null || message.isFault()));
+		if(JSONCodec.STATUS_PROPERTY_NAME != null)
+			responseJSONMap.put(JSONCodec.STATUS_PROPERTY_NAME, !(message == null || message.isFault()));
 		
 		/*
 		 * Step 4: Check is there message If there is message process it.
@@ -179,14 +180,16 @@ public class JSONEncoder {
 						responseJSONMap.putAll((Map<String, ? extends Object>) invocationProperties.remove(JSONCodec.JSON_MAP_KEY));
 					}
 				} catch (Throwable exp) {
-					responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
+					if(JSONCodec.STATUS_PROPERTY_NAME != null)
+						responseJSONMap.put(JSONCodec.STATUS_PROPERTY_NAME, false);
 					responseJSONMap.put(FAULT, new JSONFault("Client.json",
 							"Error while parsing response: " + payload ,"Codec", null, exp));
 				}
 			}
 			
 		} else {
-			responseJSONMap.put(JSONCodec.STATUS_STRING_RESERVED,false);
+			if(JSONCodec.STATUS_PROPERTY_NAME != null)
+				responseJSONMap.put(JSONCodec.STATUS_PROPERTY_NAME, false);
 			/*
 			 * Step 4.2: message in packet is null
 			 */

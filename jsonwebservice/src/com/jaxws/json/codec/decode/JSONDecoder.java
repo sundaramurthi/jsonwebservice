@@ -161,16 +161,16 @@ public class JSONDecoder {
 	    	/*
 	    	 * Step 5.1 check is it comming from json service, with status flag.
 	    	 */
-	    	if(requestJSONMap.containsKey(JSONCodec.STATUS_STRING_RESERVED)){
+	    	if(JSONCodec.STATUS_PROPERTY_NAME != null && requestJSONMap.containsKey(JSONCodec.STATUS_PROPERTY_NAME)){
 	    		if(traceLog != null)
-	    			traceLog.info("Input identified as direct output of jsonservice since it has " + JSONCodec.STATUS_STRING_RESERVED);
+	    			traceLog.info("Input identified as direct output of jsonservice since it has " + JSONCodec.STATUS_PROPERTY_NAME);
 	    		
 	    		// Output of JSON service and its status is false, then create fault message.
-				if(!new Boolean(requestJSONMap.get(JSONCodec.STATUS_STRING_RESERVED).toString())){
+				if(!new Boolean(requestJSONMap.get(JSONCodec.STATUS_PROPERTY_NAME).toString())){
 					return new com.sun.xml.ws.message.FaultMessage(Messages.createEmpty(this.codec.getSoapVersion()),null);
 				}
 				// Remove codec set value WARN user should not used codec specific key
-				requestJSONMap.remove(JSONCodec.STATUS_STRING_RESERVED);
+				requestJSONMap.remove(JSONCodec.STATUS_PROPERTY_NAME);
 			}
 			
 	    	if(traceLog != null)
