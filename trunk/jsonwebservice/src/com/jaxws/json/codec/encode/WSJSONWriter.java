@@ -31,8 +31,11 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlElements;
 import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.bind.annotation.XmlTransient;
@@ -308,8 +311,11 @@ public class WSJSONWriter extends BeanAware {
         }  else if (object instanceof Enum) {
         	// Step 5.9: handle has Enumeration
             this.enumeration((Enum<?>) object, clazz);
+        } else if (object instanceof JAXBElement<?>){
+        	// Step 5.10: handle has JAXB element
+            this.process(((JAXBElement<?>)object).getValue(), null);
         } else {
-        	// Step 5.10: handle has Object
+        	// Step 5.11: handle has Object
             this.bean(object, clazz);
         }
         this.stack.pop();
@@ -764,11 +770,13 @@ public class WSJSONWriter extends BeanAware {
  	                    			Map<String,List<Object>> group = new HashMap<String,List<Object>>();
  	                    			for(Object ob : valueList){
  	                    				for(XmlElement elm : xmlElms.value()){
+ 	                    					// TODO JAXBElement
 	 	                    				if(((Class<?>)elm.type()).isAssignableFrom(ob.getClass())){
 	 	                    					name = elm.name();
 	 	                    					if(!group.containsKey(name))
 	 	                    						group.put(name, new ArrayList<Object>());
 	 	                    					group.get(name).add(ob);
+	 	                    					break;// XmlElement list break
 	 	                    				}
 	 	                    			}
  	                    			}
@@ -785,6 +793,63 @@ public class WSJSONWriter extends BeanAware {
  	                    				name	= "CHOICE";
  	                    				Map<String,Object> choices 		= new HashMap<String, Object>(); 
  	                    				for(XmlElement elm : xmlElms.value()){
+ 	                    					try{
+ 	                    						choices.put(elm.name(), getMetaDataInstance(elm.type(),null,null));
+ 	                    					}catch(Throwable th){
+ 	                    						// 
+ 	                    						choices.put(elm.name(),"object");
+ 	                    					}
+ 	                    				}
+ 	                    				value = choices;
+ 	                    			}
+ 	                    		}
+ 	                    	}else if(declaredField.isAnnotationPresent(XmlElementRefs.class)
+ 	                    			&& Collection.class.isAssignableFrom(declaredField.getType())
+ 	                    			&& value instanceof Collection){
+ 	                    		// XML choice list
+  	                    	   /*
+  	                            *  Step 5.10.2.4.4.1: Is it XML choice list?. If assign find right element name.
+  	                            */ 
+ 	                    		XmlElementRefs xmlElms =  declaredField.getAnnotation(XmlElementRefs.class);
+ 	                    		Collection<?> valueList = (Collection<?>)value;
+ 	                    		if(!valueList.isEmpty()){
+ 	                    			// use first object to identify type
+ 	                    			Map<String,List<Object>> group = new HashMap<String,List<Object>>();
+ 	                    			for(Object ob : valueList){
+ 	                    				for(XmlElementRef elm : xmlElms.value()) {
+ 	                    					if(ob instanceof JAXBElement<?>) {
+ 	                    						JAXBElement<?> element = (JAXBElement<?>)ob;
+ 	                    						if(element.getName().getLocalPart().equals(elm.name())){// namespace too
+ 	                    							name = elm.name();
+		 	                    					if(!group.containsKey(name))
+		 	                    						group.put(name, new ArrayList<Object>());
+		 	                    					group.get(name).add(element.getValue());
+		 	                    					break;// Break element list
+ 	                    						}
+ 	                    					} else {
+		 	                    				if(((Class<?>)elm.type()).isAssignableFrom(ob.getClass())){
+		 	                    					name = elm.name();
+		 	                    					if(!group.containsKey(name))
+		 	                    						group.put(name, new ArrayList<Object>());
+		 	                    					group.get(name).add(ob);
+		 	                    					break;// Break element list
+		 	                    				}
+ 	                    					}
+	 	                    			}
+ 	                    			}
+ 	                    			for(Map.Entry<String, List<Object>> entry : group.entrySet()){
+ 	                    				hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
+ 	                                    // TODO this.setExprStack(expr);
+ 	                    			}
+ 	                    			continue nextProperty;
+ 	                    		} else {
+ 	                    			// If choice element id empty, don't print it at all
+ 	                    			if(!this.metaDataMode){
+ 	                    				continue nextProperty;
+ 	                    			} else {
+ 	                    				name	= "CHOICE";
+ 	                    				Map<String,Object> choices 		= new HashMap<String, Object>(); 
+ 	                    				for(XmlElementRef elm : xmlElms.value()){
  	                    					try{
  	                    						choices.put(elm.name(), getMetaDataInstance(elm.type(),null,null));
  	                    					}catch(Throwable th){
