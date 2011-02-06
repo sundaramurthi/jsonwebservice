@@ -4,6 +4,8 @@ import java.util.List;
 
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
 import javax.xml.ws.Holder;
 
 import com.test.jsonwebservice.rpc.EnumConst;
@@ -154,18 +156,24 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 	}
 
 	public XmlElementRefsObj test13EmptyInXmlElementRefsOut() {
-		// Its hard to support this type.  TODO investigate better, Even in java generated classes its confusing
-		throw new UnsupportedOperationException();
+		XmlElementRefsObj obj = new XmlElementRefsObj();
+		JAXBElement<String> elem = new JAXBElement<String>(new QName("name"), String.class, "testStr");
+		obj.getNameAndTypeAndLable().add(elem );
+		elem = new JAXBElement<String>(new QName("lable"), String.class, "lable");
+		obj.getNameAndTypeAndLable().add(elem );
+		return obj;
 	}
 
 	public void test14XmlElementRefsInEmptyOut(
 			XmlElementRefsObj xmlElementRefsObj) {
-		throw new UnsupportedOperationException();
+		if(xmlElementRefsObj == null || xmlElementRefsObj.getNameAndTypeAndLable().isEmpty())
+			throw new UnsupportedOperationException();
 	}
 
 	public void test15XmlElementRefsInXmlElementRefsOut(
 			Holder<XmlElementRefsObj> xmlElementRefsObj) {
-		throw new UnsupportedOperationException();
+		if(xmlElementRefsObj == null || xmlElementRefsObj.value == null)
+			throw new UnsupportedOperationException();
 	}
 
 	public void test16XmlForceNillableInxmlForceNillableOut(

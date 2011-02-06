@@ -3,7 +3,6 @@ package com.test.jsonwebservice.rpc.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 

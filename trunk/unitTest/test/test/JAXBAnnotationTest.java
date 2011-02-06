@@ -150,13 +150,12 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementRefsObj\":{\"name\":[\"testStr\"],\"lable\":[\"lable\"]}}";
 		assertEquals(out, expected);
-		// THIS is not supported type
 	}
 
 	public void test14XmlElementRefsInEmptyOut() throws MalformedURLException, IOException {
-		String in 	= "{\"test14XmlElementRefsInEmptyOut\":{\"xmlElementRefsObj\":{}}}";
+		String in 	= "{\"test14XmlElementRefsInEmptyOut\":{\"xmlElementRefsObj\":{\"name\":[\"testStr\"],\"lable\":[\"lable\"]}}}";
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
