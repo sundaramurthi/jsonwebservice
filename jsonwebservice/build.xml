@@ -9,7 +9,7 @@
      ====================================================================== -->
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
-	<property name="version" value="0.5-ea"/>
+	<property name="version" value="0.5"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
@@ -71,6 +71,19 @@
 				<attribute name="Implementation-Version" value="${version}"/>
 			</manifest>
 		</jar>
-	</target>
+		<javadoc destdir="${basedir}/../wiki/api"
+			           author="true"
+			           version="true"
+			           use="true"
+			           windowtitle="${ant.project.name}-${version} API" classpathref="classpath" >
 
+	    <fileset dir="${basedir}/src" defaultexcludes="yes">
+	      <include name="com/jaxws/json/**/*.java"/>
+	    </fileset>
+
+	    <doctitle><![CDATA[<h1>${ant.project.name}-${version} API</h1>]]></doctitle>
+	    <bottom><![CDATA[<i>Copyright &#169; 2010 JSONWebservice. All Rights Reserved.</i>]]></bottom>
+	    <tag name="todo" scope="all" description="To do:"/>
+	  </javadoc>
+	</target>
 </project>
