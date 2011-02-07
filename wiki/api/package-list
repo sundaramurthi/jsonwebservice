@@ -1,0 +1,10 @@
+com.jaxws.json.codec
+com.jaxws.json.codec.decode
+com.jaxws.json.codec.doc
+com.jaxws.json.codec.doc.provider
+com.jaxws.json.codec.encode
+com.jaxws.json.codec.wsdl
+com.jaxws.json.feature
+com.jaxws.json.packet.handler
+com.jaxws.json.parser
+com.jaxws.json.serializer
