@@ -2,9 +2,6 @@ package test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Collections;
-
-import javax.xml.bind.annotation.XmlElement;
 
 public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		com.test.jsonwebservice.rpc.JAXBAnnotationTest*/ {
@@ -19,13 +16,19 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
+		/*0.5 String expected 	= "{\"statusFlag\":true,\"xmlElementsObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
 				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"SS\"}]," +
 				"\"object\":[{\"property1\":1},{\"property1\":2}]}}";
+		*/
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsObj\":{\"objectOrObjectReservedOrMapObject\":[" +
+				"{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2," +
+				"\"int\":1,\"String\":\"SS\"}},{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2," +
+				"\"valueProperty2\":\"DD\"}},{\"object\":{\"property1\":3}}]}}";
 		assertEquals(out, expected);
 	}
 
 	public void test2XmlElementsInEmptyOut() throws MalformedURLException, IOException {
+		// 0.5 in should work
 		String in 	= "{\"test2XmlElementsInEmptyOut\":{\"xmlElementsObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
 				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"SS\"}]," +
 				"\"object\":[{\"property1\":1},{\"property1\":2}]}}}";
@@ -34,20 +37,51 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("OUT: " + out);
 		String expected 	= "{\"statusFlag\":true}";
 		assertEquals(out, expected);
+		
+		 in 	= "{\"test2XmlElementsInEmptyOut\":{\"xmlElementsObj\":{\"objectOrObjectReservedOrMapObject\":[" +
+		"{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2," +
+		"\"int\":1,\"String\":\"SS\"}},{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2," +
+		"\"valueProperty2\":\"DD\"}},{\"object\":{\"property1\":3}}]}}}";
+		 
+		out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		assertEquals(out, expected);
 	}
 
 	public void test3XmlElementsInXmlElementsOut() throws MalformedURLException, IOException {
 		String in 	= "{\"test3XmlElementsInXmlElementsOut\":{\"xmlElementsObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
-		"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}]," +
+					"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}]," +
 		"\"object\":[{\"property1\":1},{\"property1\":2},{\"property1\":3}]}}}";
+		
+		
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
+		
 		String expected 	= "{\"statusFlag\":true," +
+				"\"xmlElementsObj\":{\"objectOrObjectReservedOrMapObject\":[{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}}," +
+				"{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}}," +
+				"{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"object\":{\"property1\":3}}]}}";
+		/*0.5 String expected 	= "{\"statusFlag\":true," +
 				"\"xmlElementsObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
 		"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}]," +
 		"\"object\":[{\"property1\":1},{\"property1\":2},{\"property1\":3}]" +
-		"}}";
+		"}}";*/
+		
+		assertEquals(out, expected);
+		
+		in 	= "{\"test3XmlElementsInXmlElementsOut\":{\"xmlElementsObj\":{\"objectOrObjectReservedOrMapObject\":[{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}}," +
+				"{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.3,\"int\":1}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}}," +
+				"{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"object\":{\"property1\":3}}]}}}";
+		
+		System.out.println("IN: " + in);
+		out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		
+		expected 	= "{\"statusFlag\":true," +
+		"\"xmlElementsObj\":{\"objectOrObjectReservedOrMapObject\":[{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}}," +
+		"{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.3,\"int\":1}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22}}," +
+		"{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"object\":{\"property1\":3}}]}}";
 		assertEquals(out, expected);
 	}
 
@@ -56,7 +90,9 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"SS\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}}";
+		//0.5 String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"SS\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}}";
+		
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{\"objectOrObjectReservedOrMapObject\":[{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"SS\"}},{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}}]}}}";
 		assertEquals(out, expected);
 	}
 
@@ -74,11 +110,16 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{" +
+		/*String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{" +
 				"\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}]," +
 				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"DD\"},{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22,\"String\":\"FF\"}]," +
 				"\"object\":[{\"property1\":1},{\"property1\":2},{\"property1\":3}]" +
 				"}}}";
+				*/
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsWrapperObj\":{\"choiceList\":{\"objectOrObjectReservedOrMapObject\":[" +
+				"{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"KK\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"DD\"}}," +
+				"{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_2\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":2.2,\"int\":22,\"String\":\"FF\"}}," +
+				"{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"object\":{\"property1\":3}}]}}}";
 		assertEquals(out, expected);
 	}
 
@@ -87,7 +128,8 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}";
+		//String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{\"objectAndObjectReservedAndMapObject\":[{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}},{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}}]}}";
 		assertEquals(out, expected);
 	}
 
@@ -105,11 +147,16 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{" +
+		/*String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{" +
 				"\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}]," +
 				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}]," +
 				"\"object\":[{\"property1\":1},{\"property1\":2}]" +
-				"}}";
+				"}}";*/
+		
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqObj\":{\"objectAndObjectReservedAndMapObject\":[{" +
+				"\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"rr\"}}," +
+				"{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}}," +
+				"{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"tt77\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}}]}}";
 		assertEquals(out, expected);
 	}
 	
@@ -118,7 +165,8 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}}";
+		//String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}],\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}],\"object\":[{\"property1\":1},{\"property1\":2}]}}}";
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{\"objectAndObjectReservedAndMapObject\":[{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}},{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}}]}}}";
 		assertEquals(out, expected);
 	}
 
@@ -137,11 +185,14 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{" +
+		
+		/*String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{" +
 				"\"mapObject\":[{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}]," +
 				"\"objectReserved\":[{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}]," +
 				"\"object\":[{\"property1\":1},{\"property1\":2}]" +
-				"}}}";
+				"}}}";*/
+		
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsSeqWrapperObj\":{\"sequenceList\":{\"objectAndObjectReservedAndMapObject\":[{\"objectReserved\":{\"boolean\":true,\"enum\":\"CONST_1\",\"float\":1.2,\"int\":1,\"String\":\"DD\"}},{\"object\":{\"property1\":1}},{\"object\":{\"property1\":2}},{\"mapObject\":{\"keyProperty1\":1,\"keyProperty2\":\"FF\",\"property1\":true,\"valueProperty1\":2,\"valueProperty2\":\"FF\"}}]}}}";
 		assertEquals(out, expected);
 	}
 
@@ -179,6 +230,34 @@ public class JAXBAnnotationTest extends JSONCodecTest /*implements
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
 		String expected 	= "{\"nillables\":{\"dble2\":1.0},\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+	
+	public void test17EmptyInXmlElementsSingleObjOut() throws MalformedURLException, IOException{
+		String in 	= "{\"test17EmptyInXmlElementsSingleObjOut\":{}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsObj\":{\"object\":{\"property1\":1}}}";
+		assertEquals(out, expected);
+	}
+
+  
+	public void test18XmlElementsSingleObjInEmptyOut() throws MalformedURLException, IOException{
+		String in 	= "{\"test18XmlElementsSingleObjInEmptyOut\":{\"xmlElementsObj\":{\"object\":{\"property1\":1}}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true}";
+		assertEquals(out, expected);
+	}
+
+	public void test19XmlElementsSingleObjInXmlElementsSingleObjOut() throws MalformedURLException, IOException{
+		String in 	= "{\"test19XmlElementsSingleObjInXmlElementsSingleObjOut\":{\"xmlElementsObj\":{\"object\":{\"property1\":55}}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true,\"xmlElementsObj\":{\"object\":{\"property1\":55}}}";
 		assertEquals(out, expected);
 	}
 			

@@ -38,6 +38,9 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 		MapObject	mapOb = new MapObject();
 		mapOb.setKeyProperty1(1);mapOb.setKeyProperty2("KK");mapOb.setProperty1(true);mapOb.setValueProperty1(2);mapOb.setValueProperty2("DD");
 		objectList.add(mapOb);
+		// Object order test
+		ob = new Object();ob.setProperty1(3);
+		objectList.add(ob);
 		return elements;
 	}
 
@@ -180,6 +183,31 @@ public class JAXBAnnotationTestImpl implements JAXBAnnotationTest {
 			Holder<NillablesObj> nillables) {
 		if(nillables.value == null){
 			throw new UnsupportedOperationException();
+		}
+	}
+
+	public XmlElementsObj test17EmptyInXmlElementsSingleObjOut() {
+		XmlElementsObj elements = new XmlElementsObj();
+		List<java.lang.Object> objectList = elements.getObjectOrObjectReservedOrMapObject();
+		Object ob = new Object();ob.setProperty1(1);
+		objectList.add(ob);
+		return elements;
+	}
+
+	public void test18XmlElementsSingleObjInEmptyOut(
+			XmlElementsObj xmlElementsObj) {
+		if(xmlElementsObj == null || xmlElementsObj.getObjectOrObjectReservedOrMapObject() == null
+				|| xmlElementsObj.getObjectOrObjectReservedOrMapObject().isEmpty()){
+			throw new RuntimeException();
+		}
+		
+	}
+
+	public void test19XmlElementsSingleObjInXmlElementsSingleObjOut(
+			Holder<XmlElementsObj> xmlElementsObj) {
+		if(xmlElementsObj == null || xmlElementsObj.value.getObjectOrObjectReservedOrMapObject() == null
+				|| xmlElementsObj.value.getObjectOrObjectReservedOrMapObject().isEmpty()){
+			throw new RuntimeException();
 		}
 	}
 }

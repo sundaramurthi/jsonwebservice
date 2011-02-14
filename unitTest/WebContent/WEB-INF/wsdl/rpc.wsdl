@@ -762,6 +762,20 @@
 			<output name="test16XmlForceNillableOut" 				message="tns:xmlForceNillableMessage" />
 		</operation>
 		
+		<operation name="test17EmptyInXmlElementsSingleObjOut">
+			<input 	name="test17EmptyIn" 				message="tns:emptyMessage" />
+			<output name="test17XmlElementsSingleObjOut" 	message="tns:xmlElementsObjMessage" />
+		</operation>
+		
+		<operation name="test18XmlElementsSingleObjInEmptyOut">
+			<input 	name="test18XmlElementsSingleObjIn" 				message="tns:xmlElementsObjMessage" />
+			<output name="test18EmptyOut" 							message="tns:emptyMessage" />
+		</operation>
+		
+		<operation name="test19XmlElementsSingleObjInXmlElementsSingleObjOut">
+			<input 	name="test19XmlElementsSingleObjIn" 				message="tns:xmlElementsObjMessage" />
+			<output name="test19XmlElementsSingleObjOut" 				message="tns:xmlElementsObjMessage" />
+		</operation>
 	</portType>
 	
 	<portType name="EncoderTest">
@@ -907,6 +921,9 @@
 		<operation name="test14XmlElementRefsInEmptyOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test14XmlElementRefsInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test15XmlElementRefsInXmlElementRefsOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test15XmlElementRefsInXmlElementRefsOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test16XmlForceNillableInxmlForceNillableOut">		<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test16XmlForceNillableInxmlForceNillableOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test17EmptyInXmlElementsSingleObjOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test17EmptyInXmlElementsSingleObjOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test18XmlElementsSingleObjInEmptyOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test18XmlElementsSingleObjInEmptyOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+		<operation name="test19XmlElementsSingleObjInXmlElementsSingleObjOut">				<json:operation soapAction="http://jsonwebservice.test.com/rpc/map/test19XmlElementsSingleObjInXmlElementsSingleObjOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 	</binding>		
 	
 	<binding name="EncoderTestService" type="tns:EncoderTest">
