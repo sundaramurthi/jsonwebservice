@@ -767,22 +767,27 @@ public class WSJSONWriter extends BeanAware {
  	                    		Collection<?> valueList = (Collection<?>)value;
  	                    		if(!valueList.isEmpty()){
  	                    			// use first object to identify type
- 	                    			Map<String,List<Object>> group = new HashMap<String,List<Object>>();
+ 	                    			ArrayList<Map<String,Object>> group = new ArrayList<Map<String,Object>>();
  	                    			for(Object ob : valueList){
  	                    				for(XmlElement elm : xmlElms.value()){
  	                    					// TODO JAXBElement
 	 	                    				if(((Class<?>)elm.type()).isAssignableFrom(ob.getClass())){
-	 	                    					name = elm.name();
-	 	                    					if(!group.containsKey(name))
-	 	                    						group.put(name, new ArrayList<Object>());
-	 	                    					group.get(name).add(ob);
+	 	                    					Map<String,Object> objectMap = new HashMap<String, Object>();
+	 	                    					objectMap.put(elm.name(), ob);
+	 	                    					group.add(objectMap);
 	 	                    					break;// XmlElement list break
 	 	                    				}
 	 	                    			}
  	                    			}
- 	                    			for(Map.Entry<String, List<Object>> entry : group.entrySet()){
- 	                    				hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
- 	                                    // TODO this.setExprStack(expr);
+ 	                    			if(group.size() == 1){
+ 	                    				Map<String,Object> objectMap = group.get(0);
+ 	                    				Iterator<Map.Entry<String,Object>> iter = objectMap.entrySet().iterator();
+ 	                    				while(iter.hasNext()){
+ 	                    					Map.Entry<String,Object> entry = iter.next();
+ 	                    					hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
+ 	                    				}
+ 	                    			}else{
+ 	                    				hasData = this.add(name, group, null, hasData) || hasData;
  	                    			}
  	                    			continue nextProperty;
  	                    		} else {
