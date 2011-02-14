@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.activation.DataHandler;
@@ -313,7 +314,7 @@ public class WSJSONPopulator extends BeanAware {
 						JSONWebService 		readMethodConfig 	= readMethod.getAnnotation(JSONWebService.class);
 						if(readMethodConfig == null || readMethodConfig.deserialize()){
 							//  add configuration
-							Collection<?> objectList = (Collection<?>) readMethod.invoke(object);
+							Collection<Object> objectList = (Collection<Object>) readMethod.invoke(object);
 							if(objectList != null){
 								if(traceEnabled){
 									traceLog.info(String.format("Only list read method found for property %s adding new values to existing collection. " +
@@ -321,10 +322,25 @@ public class WSJSONPopulator extends BeanAware {
 				            	}
 								java.lang.reflect.Field f = getDeclaredField(clazz,prop.getName());
 								if(f != null && f.isAnnotationPresent(XmlElements.class)){
-									// Field is choice. name1OrName2OrName3. But user passing as "name1OrName2OrName3" single field name. Its invalid.
-									// end with hashMap can't converted to xml exception.
-									// Ignore this property.
-									if(traceEnabled){
+									XmlElements xmlElements = f.getAnnotation(XmlElements.class);
+									// Field is choice. name1OrName2OrName3. But user passing as 
+									// "name1OrName2OrName3" single field name.
+									if(value instanceof Collection) {
+										Collection<Object> values = (Collection<Object>)value;
+										for(Object ob : values){
+											if(ob instanceof Map){
+												Map<String,Object> choiceOb = (Map<String,Object>)ob; 
+												for(XmlElement xmlElement : xmlElements.value()){
+													for(Entry<String, Object> entry : choiceOb.entrySet()){
+														if(entry.getKey().equals(xmlElement.name())){
+															objectList.add(this.convert(xmlElement.type(),
+																	xmlElement.type(), entry.getValue(), null, null));
+														}
+													}
+												}
+											}
+										}
+									} else if(traceEnabled) {
 					            		traceLog.warn(String.format("Property %s is invalid. %s is a choice list. For more above choice read endpoint document.",
 												expectedJSONPropName,expectedJSONPropName));
 					            	}
