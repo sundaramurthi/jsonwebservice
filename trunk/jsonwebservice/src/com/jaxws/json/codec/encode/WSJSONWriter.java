@@ -779,16 +779,7 @@ public class WSJSONWriter extends BeanAware {
 	 	                    				}
 	 	                    			}
  	                    			}
- 	                    			if(group.size() == 1){
- 	                    				Map<String,Object> objectMap = group.get(0);
- 	                    				Iterator<Map.Entry<String,Object>> iter = objectMap.entrySet().iterator();
- 	                    				while(iter.hasNext()){
- 	                    					Map.Entry<String,Object> entry = iter.next();
- 	                    					hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
- 	                    				}
- 	                    			}else{
- 	                    				hasData = this.add(name, group, null, hasData) || hasData;
- 	                    			}
+ 	                    			hasData = this.add(name, group, null, hasData) || hasData;
  	                    			continue nextProperty;
  	                    		} else {
  	                    			// If choice element id empty, don't print it at all
