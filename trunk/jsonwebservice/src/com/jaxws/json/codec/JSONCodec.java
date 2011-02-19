@@ -565,9 +565,13 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 	 * @model
 	 */
 	public ContentType encode(Packet packet, OutputStream out) throws IOException {
-		if(gzip && packet.supports(MessageContext.SERVLET_REQUEST) && isGzipInRequest((HttpServletRequest)packet.get(MessageContext.SERVLET_REQUEST))){
-			((HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE)).addHeader("Content-Encoding", "gzip");
-			out = new GZIPOutputStream(out);
+		if(gzip && packet.supports(MessageContext.SERVLET_REQUEST) && 
+				isGzipInRequest((HttpServletRequest)packet.get(MessageContext.SERVLET_REQUEST))){
+			HttpServletResponse response = (HttpServletResponse)packet.get(MessageContext.SERVLET_RESPONSE);
+			if(!response.isCommitted()){
+				response.addHeader("Content-Encoding", "gzip");
+				out = new GZIPOutputStream(out);
+			}
 		}
 		try {
 			// MessageContext.MESSAGE_OUTBOUND_PROPERTY set by JAX_WS only if handler configured. But encode always a out bound.
