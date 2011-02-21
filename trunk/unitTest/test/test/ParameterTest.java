@@ -156,7 +156,7 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"enumConst\":\"CONST_2\",\"statusFlag\":true}";
+		String expected 	= "{\"enumConst\":\"CONST2\",\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
 
@@ -166,6 +166,12 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
 		String expected 	= "{\"statusFlag\":true}";
+		
+		in 	= "{\"test14EnumInEmptyOut\":{\"enumConst\":\"CONST2\"}}";
+		System.out.println("IN: " + in);
+		out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		expected 	= "{\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
 
@@ -174,7 +180,13 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"enumConstOut\":\"CONST_3\",\"statusFlag\":true}";
+		String expected 	= "{\"enumConstOut\":\"CONST3\",\"statusFlag\":true}";
+		
+		in 	= "{\"test15EnumInEnumOut\":{\"enumConst\":\"CONST2\"}}";
+		System.out.println("IN: " + in);
+		out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		expected 	= "{\"enumConstOut\":\"CONST2\",\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
 	
@@ -246,12 +258,12 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"enumConst\":\"CONST_2\",\"statusFlag\":true}";
+		String expected 	= "{\"enumConst\":\"CONST2\",\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
 
 	public void test24EnumInObjectOut() throws MalformedURLException, IOException {
-		String in 	= "{\"test24EnumInObjectOut\":{\"enumConst\":\"CONST_1\"}}";
+		String in 	= "{\"test24EnumInObjectOut\":{\"enumConst\":\"CONST1\"}}";
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
@@ -283,7 +295,13 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		System.out.println("IN: " + in);
 		String out 		= postOnEndPoint(in);
 		System.out.println("OUT: " + out);
-		String expected 	= "{\"enumConst\":\"CONST_1\",\"statusFlag\":true}";
+		String expected 	= "{\"enumConst\":\"CONST1\",\"statusFlag\":true}";
+		
+		in 	= "{\"test27EnumInEnumOut\":{\"enumConst\":\"CONST1\"}}";
+		System.out.println("IN: " + in);
+		out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		expected 	= "{\"enumConst\":\"CONST1\",\"statusFlag\":true}";
 		assertEquals(out, expected);
 	}
 
