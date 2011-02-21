@@ -37,6 +37,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlElements;
+import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
@@ -582,7 +583,12 @@ public class WSJSONWriter extends BeanAware {
 			if(props.length > 0){
 				this.bean(enumeration, clazz);
 			} else {
-				this.string(enumeration.name());
+				String value = enumeration.name();
+				try{
+					// If xml value annotation use it.
+					value	= clazz.getDeclaredField(value).getAnnotation(XmlEnumValue.class).value();
+				}catch(Throwable th){};
+				this.string(value);
 			}
 		} catch (IntrospectionException e) {
 			this.string(enumeration.name());
@@ -703,16 +709,13 @@ public class WSJSONWriter extends BeanAware {
    	                        }
    	                    }catch(Throwable th){}
    	                    // Value still null
-   	                    if(value == null){
-	                    	if(JSONCodec.excludeNullProperties && !this.metaDataMode){
-	                    		continue nextProperty;
-	                    	}
-	                    	if(this.metaDataMode){
-	                    		// In meta data mode always get data via meta provider. 
-	                    		value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
-		      	                		getDeclaredField(clazz,name));
-		                    }
-   	                    }
+   	                    if(value == null && JSONCodec.excludeNullProperties && !this.metaDataMode){
+   	                    	continue nextProperty;
+   	                    } else if(this.metaDataMode) {
+	                 		// In meta data mode always get data via meta provider. 
+	                 		value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
+	      	                		getDeclaredField(clazz,name));
+	                    }
                  	 }else if(this.metaDataMode && propertyType.isPrimitive()){
                  		 // Primitive meta data. In case like int value become 0. But it may be from default
                  		value = getMetaDataInstance(propertyType, accessor.getAnnotation(JSONWebService.class),
@@ -1148,9 +1151,13 @@ public class WSJSONWriter extends BeanAware {
   					b.append(defaultVal);
   				}
   				for(Object cont: propertyType.getEnumConstants()){
-  					String name = ((Enum<?>)cont).name();
-  					if(name.equals(defaultVal))continue;
-  					b.append((b.length() != 0 ? "|" :"") + name);
+  					String value = ((Enum<?>)cont).name();
+  					try{
+  						// If xml value annotation use it.
+  						value	= propertyType.getDeclaredField(value).getAnnotation(XmlEnumValue.class).value();
+  					}catch(Throwable th){};
+  					if(value.equals(defaultVal))continue;
+  					b.append((b.length() != 0 ? "|" :"") + value);
   				}
   				return b.toString();
   			}else if(Float.TYPE.equals(propertyType) || Double.TYPE.equals(propertyType)){
