@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElements;
+import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.transform.stream.StreamSource;
 
@@ -792,7 +793,22 @@ public class WSJSONPopulator extends BeanAware {
         	return handleAsDate(clazz,value,customizeInfo,method);
         } else if (clazz.isEnum()) {
             String sValue = (value instanceof Map) ? ((String)((Map)value).get("_name")) : (String) value;
-            return Enum.valueOf(clazz, sValue);
+            try{
+            	return Enum.valueOf(clazz, sValue);
+            }catch(Throwable th){
+            	// try in value fields
+            	for(Object conzt: clazz.getEnumConstants()){
+  					try{
+  						// If xml value annotation use it.
+  						if(clazz.getDeclaredField(((Enum<?>)conzt).name()).
+  								getAnnotation(XmlEnumValue.class).value().equals(sValue)){
+  							return conzt;
+  						}
+  					}catch(Throwable t){};
+  				}
+            	// user error?
+            	return null;
+            }
         } else if (value instanceof String) {
             String sValue = (String) value;
             if(sValue.trim().isEmpty() && Number.class.isAssignableFrom(clazz)){
