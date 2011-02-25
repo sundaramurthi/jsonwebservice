@@ -140,9 +140,9 @@ public class FormDecoder {
 			this.packet.invocationProperties.remove(JSONCodec.MIME_ATTACHMENTS);
 			/*
 			 * TODO
-			 * Its weared all form post leads to multipart response. Invetigate and find better response type for form post.
+			 * Its weared all form post leads to multipart response. Investigate and find better response type for form post.
 			 * In case of application/json form post leads popup in browser.
-			 * So multipart or text/plain prefred by user. But when XMLHttp support attachment, its good to send application/json or 
+			 * So multipart or text/plain preferred by user. But when XMLHttp support attachment, its good to send application/json or 
 			 * multi part mime.
 			 * 
 			 */
