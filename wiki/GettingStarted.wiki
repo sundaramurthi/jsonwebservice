@@ -1,3 +1,7 @@
+{{{Any issue,question or suggestion please post in http://groups.google.com/group/jsonwebservice.
+
+Note: we are looking for code reviewer, any voluntaries most welcome.
+}}}
 Getting started with JSON Web Service
 
 1) Overview
