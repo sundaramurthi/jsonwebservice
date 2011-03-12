@@ -2,6 +2,7 @@ package com.jaxws.json.codec.doc;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -47,9 +48,11 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	public boolean handleMetadataRequest(HttpAdapter adapter,
 			WSHTTPConnection connection) throws IOException {
 		String 	queryString 	= connection.getQueryString();
-		
+		ServiceFinder<HttpMetadataProvider> providers = ServiceFinder.find(HttpMetadataProvider.class);
+		HttpMetadataProvider[] providersArray = providers.toArray();
+		Arrays.sort(providersArray);
 		// If query handled by document provider, handle it.
-		for (HttpMetadataProvider metadataProvider : ServiceFinder.find(HttpMetadataProvider.class)) {
+		for (HttpMetadataProvider metadataProvider : providersArray) {
 			if(metadataProvider.canHandle(queryString)){
 				metadataProvider.setJSONCodec(this.codec);
 				metadataProvider.setHttpAdapter(adapter);

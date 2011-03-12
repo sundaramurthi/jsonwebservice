@@ -186,6 +186,17 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 					this.codec.getEndpoint().getPortName()).getBytes());
 		}
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	public int compareTo(HttpMetadataProvider o) {
+		if(o.equals(this)){
+			return 0;
+		}else{
+			return Integer.MAX_VALUE;
+		}
+	}
 	
 	
 }
