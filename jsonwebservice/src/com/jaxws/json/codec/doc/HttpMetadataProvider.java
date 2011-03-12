@@ -9,12 +9,14 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
 /**
  * @author Sundaramurthi Saminathan
  * @since JSONWebservice codec version 0.4
- * @version 1.0
+ * @version 2.0
  * 
+ * Change 2.0:
+ *   Added Comparable<HttpMetadataProvider> to give user to overwrite default documents.
  * Interface for document publisher. 
  * @see DefaultEndpointDocument, ServiceConfigurationServer, JsClientServer, MetaDataModelServer
  */
-public interface HttpMetadataProvider {
+public interface HttpMetadataProvider extends Comparable<HttpMetadataProvider> {
 	/**
 	 * If implementing document provider can handle requested query may return true.
 	 *  
@@ -22,7 +24,6 @@ public interface HttpMetadataProvider {
 	 * @return
 	 */
 	boolean canHandle(String queryString);
-	
 	
 	/**
 	 * Document provider handling queries. Used to format help document urls.

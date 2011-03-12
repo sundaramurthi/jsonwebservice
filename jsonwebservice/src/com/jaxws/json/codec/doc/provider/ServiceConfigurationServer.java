@@ -159,4 +159,15 @@ public class ServiceConfigurationServer implements HttpMetadataProvider {
 		ouStream.getOutput().write(configInfo.toString().getBytes());
 		ouStream.getOutput().flush();
 	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	public int compareTo(HttpMetadataProvider o) {
+		if(o.equals(this)){
+			return 0;
+		}else{
+			return Integer.MAX_VALUE;
+		}
+	}
 }

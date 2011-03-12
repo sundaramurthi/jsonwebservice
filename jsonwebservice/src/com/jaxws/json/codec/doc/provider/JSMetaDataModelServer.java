@@ -138,6 +138,16 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 		}
 	}
 	
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	public int compareTo(HttpMetadataProvider o) {
+		if(o.equals(this)){
+			return 0;
+		}else{
+			return Integer.MAX_VALUE;
+		}
+	}
 	
 
 }
