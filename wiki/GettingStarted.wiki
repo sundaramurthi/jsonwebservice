@@ -1,4 +1,4 @@
-Any issue,question or suggestion please post in [http://groups.google.com/group/jsonwebservice JSON Group].
+Any issue,question or suggestion post in [http://groups.google.com/group/jsonwebservice JSON Group].
 
 
 ==Getting started with JSON Web Service==
