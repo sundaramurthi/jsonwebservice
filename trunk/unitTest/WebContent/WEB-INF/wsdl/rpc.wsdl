@@ -830,6 +830,13 @@
 		</operation>
 	</portType>	
 	
+	<portType name="SessionTest">
+		<operation name="test1StringInStringOut">
+			<input 	name="test1StringIn" 				message="tns:stringMessage" />
+			<output name="test1StringOut" 		message="tns:stringOutMessage" />
+		</operation>
+	</portType>	
+	
 	<binding name="ParameterTestService" type="tns:ParameterTest">
 		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
 		<operation name="test1EmptyInOut">			<json:operation soapAction="http://jsonwebservice.test.com/rpc/test1EmptyInOut" 		style="rpc"/><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
@@ -961,7 +968,12 @@
 		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
 		<operation name="test1SizeInLargeListOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/performance/test1SizeInLargeListOut"	style="rpc" /><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
 		<operation name="test2LargeListInSizeOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/performance/test2LargeListInSizeOut"	style="rpc" /><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
-	</binding>	
+	</binding>
+	
+	<binding name="SessionTestService" type="tns:SessionTest">
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<operation name="test1StringInStringOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/session/test1StringInStringOut"	style="rpc" /><input><json:body use="literal" namespace="http://code.google.com/json"/></input><output><json:body use="literal" namespace="http://code.google.com/json"/></output></operation>
+	</binding>		
 		
 	<service name="RPCTestService">
 		<port name="ParameterPort" binding="tns:ParameterTestService">
@@ -981,6 +993,9 @@
 		</port>
 		<port name="PerformancePort" binding="tns:PerformanceTestService">
 			<json:address location="http://localhost:8080/unitTest/json/performance" />
+		</port>
+		<port name="SessionPort" binding="tns:SessionTestService">
+			<json:address location="http://localhost:8080/unitTest/json/session" />
 		</port>
 	</service>
 
