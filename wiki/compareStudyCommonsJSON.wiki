@@ -1,3 +1,4 @@
 || *Feature* || *commons json* || *google jsonwebservice* ||
 ||Binding  || DOCUMENT     || DOCUMENT or RPC||
 ||JAR dependecy|| metro, commons, velocity|| metro||
+||Client JS|| yes||no||
