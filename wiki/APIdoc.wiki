@@ -1,3 +1,0 @@
-= API doc=
-
-http://jsonwebservice.googlecode.com/svn/wiki/api/index.html
