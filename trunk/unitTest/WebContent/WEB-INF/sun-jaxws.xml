@@ -6,6 +6,12 @@
   		implementation="com.test.jsonwebservice.rpc.impl.ParameterTestImpl" 
   		url-pattern="/json/parameter" 
   		binding="http://jsonplugin.googlecode.com/json/"/>
+  		
+  <endpoint 
+  		name="ParameterTest" 
+  		implementation="com.test.jsonwebservice.rpc.impl.ParameterTestImpl" 
+  		url-pattern="/json/sun/parameter" 
+  		binding="https://jax-ws-commons.dev.java.net/json/"/>		
   <endpoint 
   		name="CustomizeTest" 
   		implementation="com.test.jsonwebservice.rpc.impl.CustomizeTestImpl" 
