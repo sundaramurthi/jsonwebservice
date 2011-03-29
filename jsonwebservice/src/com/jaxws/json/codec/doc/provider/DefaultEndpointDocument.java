@@ -33,7 +33,7 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	/**
 	 * Map holder which keeps end point documents.
 	 */
-	public static Map<String,String>	endPointDocuments	= new HashMap<String,String>();
+	public static Map<String,String>	endPointDocuments	= Collections.synchronizedMap(new HashMap<String,String>());
 	
 	/**
 	 * Request received codec instance holder
