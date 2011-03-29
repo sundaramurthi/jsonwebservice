@@ -139,7 +139,7 @@ public class WSJSONWriter extends BeanAware {
 	 */
 	private List<Map<String,Object>> attachments	 = new ArrayList<Map<String,Object>>();
 	
-	private static final Matcher matcher = Pattern.compile("[\"\b\t\f\n\r/\\\\\\x00\\x1F\\x7F\\x9F]").matcher("");
+	private Matcher matcher = Pattern.compile("[\"\b\t\f\n\r/\\\\\\x00\\x1F\\x7F\\x9F]").matcher("");
 	
 	private final 	Stack<Class<?>> 	stackNillableInstances;
     /**

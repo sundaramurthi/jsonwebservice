@@ -41,7 +41,7 @@ public class JSONReader {
     private static final Object ARRAY_END = new Object();
     private static final Object COLON = new Object();
     private static final Object COMMA = new Object();
-    private static Map<Character, Character> escapes = new HashMap<Character, Character>();
+    private static final Map<Character, Character> escapes = new HashMap<Character, Character>();
 
     static {
         escapes.put(new Character('"'), new Character('"'));

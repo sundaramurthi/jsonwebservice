@@ -1,6 +1,7 @@
 package com.jaxws.json.codec.doc.provider;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -32,22 +33,22 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	/**
 	 * Map holder which keeps end point documents.
 	 */
-	private final static Map<String,String>	endPointDocuments	= new HashMap<String,String>();
+	public static Map<String,String>	endPointDocuments	= new HashMap<String,String>();
 	
 	/**
 	 * Request received codec instance holder
 	 */
-	private JSONCodec codec;
+	protected JSONCodec codec;
 
 	/**
 	 * Holder for request received HttpAdapter.
 	 */
-	private HttpAdapter httpAdapter;
+	protected HttpAdapter httpAdapter;
 	
 	/**
 	 * Flag to use show request payload enabled or not
 	 */
-	private boolean 	requestPayloadEnabled = true;
+	protected boolean 	requestPayloadEnabled = true;
 	
 	/**
 	 * "", "operations" query handled.
