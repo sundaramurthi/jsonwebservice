@@ -1,6 +1,7 @@
 package com.jaxws.json.codec.doc.provider;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 	/**
 	 * Map holder which keeps end point documents.
 	 */
-	private final static Map<QName,String>	endPointDocuments	= new HashMap<QName,String>();
+	private final static Map<QName,String>	endPointDocuments	= Collections.synchronizedMap(new HashMap<QName,String>());
 	
 	/**
 	 * Request received codec instance holder

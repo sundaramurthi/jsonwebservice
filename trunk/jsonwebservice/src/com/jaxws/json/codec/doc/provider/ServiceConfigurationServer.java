@@ -96,55 +96,58 @@ public class ServiceConfigurationServer implements HttpMetadataProvider {
 	 * Init configuration holder
 	 */
 	public void process() {
-		if (configInfo.length() == 0) {
-			Properties templates = new Properties();
-			try {
-				templates.load(JSONHttpMetadataPublisher.class
-						.getResourceAsStream("codec.properties"));
-				String propertyTemplate = templates
-						.getProperty("template.config.property","<html><body>My Bad...Undefined template</body></html>");
-				StringBuffer propertys = new StringBuffer();
+	  synchronized (configInfo)
+    {
+	    if (configInfo.length() == 0) {
+	      Properties templates = new Properties();
+	      try {
+	        templates.load(JSONHttpMetadataPublisher.class
+	            .getResourceAsStream("codec.properties"));
+	        String propertyTemplate = templates
+	        .getProperty("template.config.property","<html><body>My Bad...Undefined template</body></html>");
+	        StringBuffer propertys = new StringBuffer();
 
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.dateFormat_KEY, String
-								.valueOf(JSONCodec.dateFormat)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.responsePayloadEnabled_KEY, String
-								.valueOf(JSONCodec.responsePayloadEnabled)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.excludeNullProperties_KEY, String
-								.valueOf(JSONCodec.excludeNullProperties)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.createDefaultOnNonNullable_KEY, String
-								.valueOf(JSONCodec.createDefaultOnNonNullable)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.gzip_KEY, String.valueOf(JSONCodec.gzip)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.listWrapperSkip_KEY, String
-								.valueOf(JSONCodec.listWrapperSkip)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.excludeProperties_KEY,
-						getPatternStrings(JSONCodec.excludeProperties)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.includeProperties_KEY,
-						getPatternStrings(JSONCodec.includeProperties)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.globalMapKeyPattern_KEY, String
-								.valueOf(JSONCodec.globalMapKeyPattern)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.globalMapValuePattern_KEY, String
-								.valueOf(JSONCodec.globalMapValuePattern)));
-				propertys.append(String.format(propertyTemplate,
-						JSONCodec.STATUS_PROPERTY_NAME_KEY, String
-								.valueOf(JSONCodec.STATUS_PROPERTY_NAME)));
-				
-				configInfo.append(String.format(templates
-						.getProperty("template.config.main","<html><body>My Bad... Undefined template</body></html>"), codec
-						.getEndpoint().getPortName().getLocalPart(), "65%",
-						propertys.toString()));
-			} catch (IOException e) {
-			}
-		}
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.dateFormat_KEY, String
+	            .valueOf(JSONCodec.dateFormat)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.responsePayloadEnabled_KEY, String
+	            .valueOf(JSONCodec.responsePayloadEnabled)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.excludeNullProperties_KEY, String
+	            .valueOf(JSONCodec.excludeNullProperties)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.createDefaultOnNonNullable_KEY, String
+	            .valueOf(JSONCodec.createDefaultOnNonNullable)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.gzip_KEY, String.valueOf(JSONCodec.gzip)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.listWrapperSkip_KEY, String
+	            .valueOf(JSONCodec.listWrapperSkip)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.excludeProperties_KEY,
+	            getPatternStrings(JSONCodec.excludeProperties)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.includeProperties_KEY,
+	            getPatternStrings(JSONCodec.includeProperties)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.globalMapKeyPattern_KEY, String
+	            .valueOf(JSONCodec.globalMapKeyPattern)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.globalMapValuePattern_KEY, String
+	            .valueOf(JSONCodec.globalMapValuePattern)));
+	        propertys.append(String.format(propertyTemplate,
+	            JSONCodec.STATUS_PROPERTY_NAME_KEY, String
+	            .valueOf(JSONCodec.STATUS_PROPERTY_NAME)));
+
+	        configInfo.append(String.format(templates
+	            .getProperty("template.config.main","<html><body>My Bad... Undefined template</body></html>"), codec
+	            .getEndpoint().getPortName().getLocalPart(), "65%",
+	            propertys.toString()));
+	      } catch (IOException e) {
+	      }
+	    }
+    }
 	}
 	
 	/*
