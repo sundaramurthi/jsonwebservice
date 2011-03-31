@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="src_custom_docs"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ant"/>
+	<classpathentry kind="lib" path="lib/webservices-api.jar"/>
+	<classpathentry kind="lib" path="lib/webservices-rt.jar" sourcepath="/metro_2.1/jaxws-ri-20100616/src"/>
+	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/metro_2.1"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
