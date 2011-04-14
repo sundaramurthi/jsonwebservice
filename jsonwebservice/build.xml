@@ -10,7 +10,7 @@
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
 	<property name="jarname_custom" value="jsonwebservice-custom-docs"/>
-	<property name="version" value="0.6ea"/>
+	<property name="version" value="0.7"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="src_custom_docs" value="${basedir}/src_custom_docs"/>
 	<property name="lib" value="${basedir}/lib"/>
