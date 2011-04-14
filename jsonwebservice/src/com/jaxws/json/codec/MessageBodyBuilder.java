@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.jws.soap.SOAPBinding.Style;
+import javax.xml.namespace.QName;
 import javax.xml.ws.handler.MessageContext;
 
 import org.jvnet.mimepull.MIMEPart;
@@ -18,6 +19,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.jaxws.json.JSONMessage;
 import com.jaxws.json.codec.decode.WSJSONPopulator;
 import com.jaxws.json.codec.encode.JSONEncoder;
 import com.jaxws.json.feature.JSONWebService;
@@ -26,7 +28,6 @@ import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.bind.api.CompositeStructure;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.ws.api.message.Message;
-import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.api.message.Packet;
 import com.sun.xml.ws.api.model.JavaMethod;
 import com.sun.xml.ws.api.model.SEIModel;
@@ -45,6 +46,8 @@ public class MessageBodyBuilder {
 
 	static Field jaxbObjectAccessor = null;
 	
+	static Method javaMethodAccessor = null;
+	
 	/**
 	 * Since jaxb object is private access it via reflection way. If property name renamed or on error 
 	 * go with old serialization way.
@@ -60,6 +63,12 @@ public class MessageBodyBuilder {
 		} catch (Throwable e) {
 			LOG.log(Level.SEVERE,"JAXBMessage reading private field jaxbObject failed.",e);
 		} 
+		
+		try{
+			javaMethodAccessor = SEIModel.class.getMethod("getJavaMethodForWsdlOperation",QName.class);
+		}catch(Throwable th){
+			LOG.log(Level.INFO,"Old version of metro used. java method accessed using \"getJavaMethod\" operation from sei model");
+		}
 	}
 	
 	public MessageBodyBuilder(JSONCodec codec) {
@@ -83,6 +92,11 @@ public class MessageBodyBuilder {
 				throw new RuntimeException("Operation %s input parameter(s) not found or invalid.");
 			}
 			JavaMethod 			javaMethod 	= seiModel.getJavaMethod(operation.getName());
+			if(javaMethod == null && javaMethodAccessor != null){
+				javaMethod = (JavaMethod) javaMethodAccessor.invoke(seiModel, operation.getName());
+			}else{
+				// TODO iterate all method and find
+			}
 			Method 				seiMethod 	= javaMethod.getSEIMethod();
 			JSONWebService	jsonwebService	= javaMethod.getMethod().getAnnotation(JSONWebService.class);
 			// Put codec specific properties in invoke
@@ -113,7 +127,8 @@ public class MessageBodyBuilder {
 					 */
 					parameterType = parameterTypes[part.getValue().getIndex()];
 				if(!operationParameters.containsKey(part.getKey())){
-	            	throw new RuntimeException(String.format("Request parameter %s can't be null. B.P 1.1 vilation", part.getKey()));
+					return new JSONMessage(null, operation, operationParameters, jsonPopulator);
+	            	//throw new RuntimeException(String.format("Request parameter %s can't be null. B.P 1.1 vilation", part.getKey()));
 	            }
 				
 				Object val = null;
@@ -170,14 +185,11 @@ public class MessageBodyBuilder {
 					return JAXBMessage.create(parameter.getBridge(), obj, this.codec.soapVersion);
 				}else{
 					// BARE
-					assert(parameterObjects.length == 1);
-					return JAXBMessage.create(parameter.getBridge(), parameterObjects[0], this.codec.soapVersion);
+					return new JSONMessage(null, operation, operationParameters,jsonPopulator);
 				}
-				// TODO how to do with doc/litral 
 			}else{
-				// IS it possible?
+				return new JSONMessage(null, operation, operationParameters,jsonPopulator);
 			}
-			return Messages.createEmpty(this.codec.soapVersion);
 		}else{
 			Message message = packet.getMessage();
 			if(message == null){
@@ -187,12 +199,17 @@ public class MessageBodyBuilder {
 			Map<String,Object> 	responseParametersMap = new HashMap<String, Object>();
 			if(CAN_HANDLE_RESPONE && message instanceof JAXBMessage){
 				if(style == Style.RPC ){
-					com.sun.xml.bind.api.CompositeStructure responseWraper = (com.sun.xml.bind.api.CompositeStructure)jaxbObjectAccessor.get(message);
-					if(responseWraper != null){
-						for(int index = 0; index < responseWraper.bridges.length; index++){
-							responseParametersMap.put(responseWraper.bridges[index].getTypeReference().tagName.getLocalPart(),
-								responseWraper.values[index]);
+					Object jaxbObject = jaxbObjectAccessor.get(message);
+					if(jaxbObject instanceof com.sun.xml.bind.api.CompositeStructure){
+						com.sun.xml.bind.api.CompositeStructure responseWraper = (com.sun.xml.bind.api.CompositeStructure)jaxbObject;
+						if(responseWraper != null){
+							for(int index = 0; index < responseWraper.bridges.length; index++){
+								responseParametersMap.put(responseWraper.bridges[index].getTypeReference().tagName.getLocalPart(),
+									responseWraper.values[index]);
+							}
 						}
+					}else{
+						responseParametersMap.put(message.getPayloadLocalPart(), jaxbObject);
 					}
 				}else{
 					// Docunemnt
