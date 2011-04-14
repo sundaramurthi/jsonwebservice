@@ -42,6 +42,11 @@ import javax.xml.bind.annotation.XmlMimeType;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import com.jaxws.json.codec.BeanAware;
 import com.jaxws.json.codec.DateFormat;
 import com.jaxws.json.codec.JSONCodec;
@@ -316,14 +321,17 @@ public class WSJSONWriter extends BeanAware {
         } else if (object instanceof JAXBElement<?>){
         	// Step 5.10: handle has JAXB element
             this.process(((JAXBElement<?>)object).getValue(), null);
+        } else if (object instanceof Node){
+        	// Step 5.11: handle has JAXB element
+            this.xmlNode((Node)object, null, false);
         } else {
-        	// Step 5.11: handle has Object
+        	// Step 5.12: handle has Object
             this.bean(object, clazz);
         }
         this.stack.pop();
     }
     
-    /**
+	/**
      * Step 5.1:  Convert to string with escape.
      * escape characters
      */
@@ -936,6 +944,35 @@ public class WSJSONWriter extends BeanAware {
         return false;
     }
   
+    
+    /**
+     * Step 5.10.11: process as xml elment
+     * Add name/value pair to buffer
+     */
+    private boolean xmlNode(Node node, JSONWebService config,boolean hasData) {
+		if(node instanceof Element){
+			Element elem = (Element)node;
+			if (hasData) {
+				this.add(',');
+	        }
+			this.add('{');
+            this.add('"');
+            this.add(elem.getTagName());
+            this.add("\":[");
+            NodeList childs = elem.getChildNodes();
+            int childLength = childs.getLength();
+            for(int c =0; c < childLength; c++){
+            	hasData = xmlNode(childs.item(c),null, hasData && c != 0);
+            }
+            
+            this.add("]}");
+            return true;
+		}else if(node instanceof Attr){
+			Attr atr = (Attr)node;
+			return this.add(atr.getName(),atr.getValue(),null,false);
+		}
+		return false;
+	}
 
     /**
      * Private method to chack exclude or include.

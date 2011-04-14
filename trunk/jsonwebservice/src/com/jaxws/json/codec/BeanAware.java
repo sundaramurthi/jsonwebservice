@@ -132,7 +132,7 @@ public abstract class BeanAware {
 	 * @param clazz
 	 * @return instanceof class or possible sub level object
 	 */
-	protected Object getNewInstance(Class<?> clazz){
+	public Object getNewInstance(Class<?> clazz){
 		try {
 			return clazz.newInstance();
 		} catch (InstantiationException e) {
