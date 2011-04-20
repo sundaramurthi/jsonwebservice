@@ -1,7 +1,11 @@
 package com.jaxws.json.codec.decode;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -160,12 +164,16 @@ public class FormDecoder {
 	 */
 	private Message getFormData() {
 		ServletRequest request = (ServletRequest) this.packet.get(MessageContext.SERVLET_REQUEST);
-		
+
 		@SuppressWarnings("unchecked")
 		Map<String,Object> parameter = request.getParameterMap();
 		Map<String,Object> jsonMap	= new HashMap<String, Object>();
-		for(Entry<String, Object> paramEntry : parameter.entrySet()){
-			fillParameterMap(paramEntry.getKey(),request.getParameter(paramEntry.getKey()), jsonMap);
+		if(parameter.isEmpty() && request.getContentLength() > 0){
+			processPostBody(jsonMap,request);
+		}else{
+			for(Entry<String, Object> paramEntry : parameter.entrySet()){
+				fillParameterMap(paramEntry.getKey(), request.getParameter(paramEntry.getKey()), jsonMap);
+			}
 		}
 		try {
 			if(jsonMap.size() == 1){
@@ -174,8 +182,15 @@ public class FormDecoder {
 				Entry<String, Object> operation = jsonMap.entrySet().iterator().next();
 				this.packet.invocationProperties.put(JSONCodec.JSON_MAP_KEY, operation.getValue());
 				return new MessageBodyBuilder(this.codec).handleMessage(this.packet,operation.getKey());
+			}else if(jsonMap.containsKey("JSON_OPERATION") && jsonMap.get("JSON_OPERATION") instanceof String){
+				String opertionName		= (String)jsonMap.get("JSON_OPERATION");
+				this.packet.invocationProperties.put(JSONCodec.JSON_MAP_KEY, jsonMap);
+				return new MessageBodyBuilder(this.codec).handleMessage(this.packet, opertionName);
 			}else{
-				throw new RuntimeException("More than one operation found");
+				throw new RuntimeException("Unknown or More than one operation found. " +
+						"Your using form data. " +
+						"Use your parameter as json like \"{operation:{\"myaparam\":.. OR specify " +
+						"\"JSON_OPERATION\" parameter with your operation name.");
 			}
 		} catch (Exception e) {
 			throw new JSONFault("Client","Failed to create message body."+e.getMessage(),"MessageBody Builder",null,e);
@@ -194,6 +209,51 @@ public class FormDecoder {
 			fillParameterMap(parameter.substring(parameter.indexOf('.') + 1), value, jsonMap);
 		}else{
 			mapValue.put(parameter, value);
+		}
+	}
+	
+	private void processPostBody(Map<String,Object> jsonMap,ServletRequest request){
+		StringBuffer	buffer	= new StringBuffer(); 
+		try{
+			BufferedReader 	reader  = new BufferedReader(new InputStreamReader(request.getInputStream()));
+			String 			line 	= reader.readLine();
+			while(line != null){
+				buffer.append(line);
+				line = reader.readLine();
+			}
+			reader.close();
+		}catch(Throwable th){
+			th.printStackTrace();
+		}
+		String content = buffer.toString().trim();
+		if(content.startsWith("{")){
+			// JSON
+			JSONReader 	reader = new JSONReader();
+			Object 		object = reader.read(content);
+			if(object instanceof Map){
+				jsonMap.putAll((Map<String, ? extends Object>) object);
+			}
+		} else if(content.startsWith("JOSN=")){
+			JSONReader 	reader = new JSONReader();
+			Object 		object = reader.read(content.substring(4));
+			if(object instanceof Map){
+				jsonMap.putAll((Map<String, ? extends Object>) object);
+			}
+		} else {
+			// As parmeter
+			String 		charSet = Charset.defaultCharset().name();
+			String[] nameValuePairs = content.split("&");
+			for (String nameValuePair : nameValuePairs) {
+				String[] namVal = nameValuePair.split("=");
+				try{
+				fillParameterMap(URLDecoder.decode(namVal[0],charSet),
+						namVal.length > 1 ? URLDecoder.decode(namVal[1],charSet) : null, jsonMap);
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+
 		}
 	}
 }
