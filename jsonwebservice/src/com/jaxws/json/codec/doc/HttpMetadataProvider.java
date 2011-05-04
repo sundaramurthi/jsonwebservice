@@ -26,7 +26,8 @@ public interface HttpMetadataProvider extends Comparable<HttpMetadataProvider> {
 	boolean canHandle(String queryString);
 	
 	/**
-	 * Document provider handling queries. Used to format help document urls.
+	 * Document provider handling queries. Used to format help document URL's.
+	 * For document only. canHandle method decide, requested query can be handled or not.
 	 * @return
 	 */
 	String[] getHandlingQueries();
