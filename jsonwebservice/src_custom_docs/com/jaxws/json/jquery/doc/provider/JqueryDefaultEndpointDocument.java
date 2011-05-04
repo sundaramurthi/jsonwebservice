@@ -1,12 +1,16 @@
 package com.jaxws.json.jquery.doc.provider;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.provider.DefaultEndpointDocument;
 import com.sun.xml.ws.api.server.WSEndpoint;
+import com.sun.xml.ws.transport.http.WSHTTPConnection;
 import com.sun.xml.ws.util.ServiceFinder;
 
 /**
@@ -18,6 +22,30 @@ import com.sun.xml.ws.util.ServiceFinder;
  */
 public class JqueryDefaultEndpointDocument extends DefaultEndpointDocument {
 	
+	private static final String CLIENT_RESOURCE = "CLIENT_RESOURCE";
+
+	private String queryString;
+	public boolean canHandle(String queryString) {
+		this.queryString = queryString;
+		return super.canHandle(queryString) || (queryString != null && queryString.startsWith(CLIENT_RESOURCE)); 
+	}
+	
+	/** 
+	 * Plain html document.
+	 */
+	public String getContentType() {
+		if(queryString != null){
+			if(queryString.endsWith(".js")){
+				return "text/javascript; charset=\"utf-8\"";
+			}else if(queryString.endsWith(".css")){
+				return "text/css; charset=\"utf-8\"";
+			}else if(queryString.endsWith(".png")){
+				return "image/png";
+			}
+		}
+		return super.getContentType();
+	}
+	
 	/**
 	 * Process document for response. 
 	 */
@@ -28,10 +56,10 @@ public class JqueryDefaultEndpointDocument extends DefaultEndpointDocument {
 			
 			StringBuffer 	buffer 	= new StringBuffer();
 			try{
-				BufferedReader reader	= new BufferedReader(new InputStreamReader(JqueryDefaultEndpointDocument.class.getResourceAsStream("default.html")));
+				BufferedReader reader	= new BufferedReader(new InputStreamReader(JqueryDefaultEndpointDocument.class.getResourceAsStream("default.html"))); //$NON-NLS-1$
 				String 			line 	= reader.readLine();
 				while(line != null){
-					buffer.append(line+"\n");
+					buffer.append(line+"\n"); //$NON-NLS-1$
 					line = reader.readLine();
 				}
 				reader.close();
@@ -39,31 +67,59 @@ public class JqueryDefaultEndpointDocument extends DefaultEndpointDocument {
 				th.printStackTrace();
 			}
 			String templateMain = buffer.toString();
-			templateMain		= templateMain.replaceAll("#SERIVICE_NAME#", endPoint.getServiceName().getLocalPart());
+			templateMain		= templateMain.replaceAll("#SERIVICE_NAME#", endPoint.getServiceName().getLocalPart()); //$NON-NLS-1$
 
 			// NOTE:  endPoint.getSEIModel().getPort().getAddress() is not dynamic. Its address configured in WSDL
-			String 				address 			= "#BASEADDRESS#" + httpAdapter.getValidPath();
+			String 				address 			= "#BASEADDRESS#" + httpAdapter.getValidPath(); //$NON-NLS-1$
 	        if(address != null){
-	        	 if(address.endsWith(".soap")){
+	        	 if(address.endsWith(".soap")){ //$NON-NLS-1$
 	 	        	// Hack to SOAP implementation class configured to JSON end point.
-	        		 address = address.replace(".soap", ".json");
+	        		 address = address.replace(".soap", ".json"); //$NON-NLS-1$ //$NON-NLS-2$
 	 	        }
-	        	templateMain = templateMain.replaceAll("#END_POINT_URL#", address);
+	        	templateMain = templateMain.replaceAll("#END_POINT_URL#", address); //$NON-NLS-1$
 	        }
 	        StringBuffer queries = new StringBuffer();
 	        for (HttpMetadataProvider metadataProvider : ServiceFinder.find(HttpMetadataProvider.class)) {
 				String querys [] = metadataProvider.getHandlingQueries();
 				for(String query : querys){
-					queries.append(String.format("<li><a target=\"_new\" href=\"%s?%s\">%s?%s</a><br/></li>",address,query,address,query));
+					queries.append(String.format("<li><a target=\"_new\" href=\"%s?%s\">%s?%s</a><br/></li>",address,query,address,query)); //$NON-NLS-1$
 				}
 	        }
-	        templateMain		= templateMain.replaceAll("#DOCUMENT_ENDS#",queries.toString());
+	        templateMain		= templateMain.replaceAll("#DOCUMENT_ENDS#",queries.toString()); //$NON-NLS-1$
 
 	        StringBuffer 	methods = new StringBuffer();
 			endPointDocuments.put(this.codec.getEndpoint().getPortName().getLocalPart() + requestPayloadEnabled
 					+ JSONCodec.responsePayloadEnabled,
-					templateMain.replace("#METHODS#", methods.toString()));
+					templateMain.replace("#METHODS#", methods.toString())); //$NON-NLS-1$
 		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.jaxws.json.codec.doc.HttpMetadataProvider#doResponse(java.io.OutputStream)
+	 */
+	public void doResponse(WSHTTPConnection ouStream) throws IOException {
+		String queryString = ouStream.getQueryString();
+		if(queryString != null && queryString.startsWith(CLIENT_RESOURCE)){
+			if(queryString.length() > CLIENT_RESOURCE.length()){
+				InputStream in = getClass().getResourceAsStream(queryString.substring(CLIENT_RESOURCE.length() + 1));
+				if(in != null){
+					writeToOutput(in,
+						ouStream.getOutput());
+				}else{
+					// Resource not found.
+				}
+			}
+		}else{
+			super.doResponse(ouStream);
+		}
+	}
+	
+	private void writeToOutput(InputStream in, OutputStream out) throws IOException {
+		byte b[] = new byte[in.available()];
+		in.read(b);
+		out.write(b);
+		out.flush();
+		in.close();
 	}
 	
 	/* (non-Javadoc)

@@ -1,0 +1,21 @@
+.wstree .level1{
+	color: #666666;
+	padding-left: 20px;
+	background: url("?CLIENT_RESOURCE=images/wsdl_service_node.gif") no-repeat transparent;
+}
+.wstree .level2{
+	color: #777777;
+	padding-left: 20px;
+	background: url("?CLIENT_RESOURCE=images/wsdl_binding_node.gif") no-repeat transparent;
+}
+.wstree .level3{
+	color: #888888;
+	padding-left: 20px;
+	background: url("?CLIENT_RESOURCE=images/wsdl_operation_node.gif") no-repeat transparent;
+}
+.wstree .level4{
+	color: #999999;
+}
+.wstree .level5{
+	color: #AAAAAA;
+}
