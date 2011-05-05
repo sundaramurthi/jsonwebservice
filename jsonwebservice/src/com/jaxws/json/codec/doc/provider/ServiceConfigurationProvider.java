@@ -19,7 +19,7 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  * Meta data document provider which serves currently
  *         configured properties.
  */
-public class ServiceConfigurationServer implements HttpMetadataProvider {
+public class ServiceConfigurationProvider implements HttpMetadataProvider {
 	
 	private static final String[] queries = new String[]{"config"};
 	
