@@ -3,33 +3,25 @@ package com.jaxws.json.codec.doc.provider;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.xml.namespace.QName;
 
-import com.jaxws.json.codec.JSONBindingID;
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
-import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.jaxws.json.codec.encode.WSJSONWriter;
-import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.model.SEIModel;
-import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
-import com.sun.xml.ws.api.server.BoundEndpoint;
-import com.sun.xml.ws.api.server.Module;
-import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
  * @author Sundaramurthi Saminathan
  * @since JSONWebservice codec version 0.4
- * @version 1.0
+ * @version 2.0
  * 
  * Default JSON service end point document provider.
  */
-public class JSMetaDataModelServer implements HttpMetadataProvider {
+public class JSMetaDataModelProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
 	private static final String[] queries = new String[]{"client"};
 	
@@ -82,34 +74,7 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 	}
 
 	public void process() {
-		Map<String,Object> 	metadataModel 	= new LinkedHashMap<String, Object>();
-		WSEndpoint<?> 		endPoint 		= this.codec.getEndpoint();
-		Map<String,Object>  service 		= new HashMap<String, Object>();
-		metadataModel.put(endPoint.getServiceName().getLocalPart(), service );
-		JAXBContextImpl 	context 	= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
 		
-		Module 				modules 		= endPoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
-		for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
-			if(endPointObj.getEndpoint().getBinding().getBindingID() == JSONBindingID.JSON_BINDING){
-				Map<String,Object>   portJSONMap 	= new HashMap<String, Object>();
-				service.put(endPointObj.getEndpoint().getPortName().getLocalPart(), portJSONMap);
-				
-				SEIModel 	seiModel 		= endPointObj.getEndpoint().getSEIModel();
-				for (WSDLBoundOperation operation : seiModel.getPort().getBinding().getBindingOperations()) {
-					
-					Map<String,Object>    operationMap = new HashMap<String, Object>();
-					portJSONMap.put(operation.getName().getLocalPart(), operationMap );
-					
-					operationMap.put(operation.getOperation().getName().getLocalPart(), 
-							JSONHttpMetadataPublisher.getJSONAsMap(operation.getInParts(), context));
-					
-					operationMap.put(operation.getOperation().getOutput().getName(),JSONHttpMetadataPublisher.getJSONAsMap(operation.getOutParts(),
-							context));
-				}
-				
-				portJSONMap.put("address", endPoint.getPort().getAddress().toString());
-			}
-		}
 		/*clientCode.append(convertStreamToString(getClass().getResourceAsStream("client.js")));
 		
 		String methodUrl 	= "";
@@ -122,7 +87,8 @@ public class JSMetaDataModelServer implements HttpMetadataProvider {
 		}*/
 		
 		endPointDocuments.put(this.codec.getEndpoint().getServiceName(),
-				WSJSONWriter.writeMetadata(metadataModel, this.codec.getCustomSerializer()));
+				WSJSONWriter.writeMetadata(getMetadataModelMap(this.codec.getEndpoint(),true),
+						this.codec.getCustomSerializer()));
 	}
 	
 	/**

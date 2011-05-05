@@ -2,24 +2,18 @@ package com.jaxws.json.jquery.doc.provider;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.xml.namespace.QName;
+import javax.xml.ws.BindingProvider;
 
-import com.jaxws.json.codec.JSONBindingID;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.decode.JSONReader;
+import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
-import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.jaxws.json.codec.encode.WSJSONWriter;
-import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
-import com.sun.xml.ws.api.model.SEIModel;
-import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
-import com.sun.xml.ws.api.server.BoundEndpoint;
-import com.sun.xml.ws.api.server.Module;
-import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
@@ -30,14 +24,14 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  * 
  * JQuery JSON service end point document provider.
  */
-public class JQueryMetaDataModelServer implements HttpMetadataProvider {
+public class JQueryMetaDataModelServer extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
 	private static final String[] queries = new String[]{"jsonmodel"};
 	
 	/**
 	 * Map holder which keeps end point documents.
 	 */
-	private final static Map<QName,String>	endPointDocuments	= Collections.synchronizedMap(new HashMap<QName,String>());
+	private final static Map<QName,String>	endPointDocuments	= Collections.synchronizedMap(new LinkedHashMap<QName,String>());
 	
 	/**
 	 * Request received codec instance holder
@@ -80,45 +74,32 @@ public class JQueryMetaDataModelServer implements HttpMetadataProvider {
 	}
 
 	public void process() {
-		Map<String,Object> 	metadataModel 	= new LinkedHashMap<String, Object>();
-		WSEndpoint<?> 		endPoint 		= this.codec.getEndpoint();
-		JAXBContextImpl 	context 	= (JAXBContextImpl)endPoint.getSEIModel().getJAXBContext();
-		Map<String,Object>  service 		= new HashMap<String, Object>();
-		metadataModel.put(endPoint.getServiceName().getLocalPart(), service );
-		
-		Module 				modules 		= endPoint.getContainer().getSPI(com.sun.xml.ws.api.server.Module.class);
-		for(BoundEndpoint endPointObj : modules.getBoundEndpoints()){
-			if(endPointObj.getEndpoint().getBinding().getBindingID() == JSONBindingID.JSON_BINDING){
-				Map<String,Object>   portJSONMap 	= new HashMap<String, Object>();
-				service.put(endPointObj.getEndpoint().getPortName().getLocalPart(), portJSONMap);
-				
-				SEIModel 	seiModel 		= endPointObj.getEndpoint().getSEIModel();
-				for (WSDLBoundOperation operation : seiModel.getPort().getBinding().getBindingOperations()) {
-					Map<String,Object>    operationMap = new HashMap<String, Object>();
-					portJSONMap.put(operation.getName().getLocalPart(), operationMap );
-					
-					operationMap.put(operation.getOperation().getName().getLocalPart(), JSONHttpMetadataPublisher.getJSONAsMap(operation.getInParts(),
-							context));
-					
-					operationMap.put(operation.getOperation().getOutput().getName(),JSONHttpMetadataPublisher.getJSONAsMap(operation.getOutParts(), context));
-				}
-			}
-		}
 		JSONReader 			reader 	= new JSONReader();
-		Map<String,Object> 	doc 	= (Map<String,Object>)reader.read(WSJSONWriter.writeMetadata(metadataModel, this.codec.getCustomSerializer()));
+		@SuppressWarnings("unchecked")
+		Map<String,Object> 	doc 	= (Map<String,Object>)reader.read(
+				WSJSONWriter.writeMetadata(getMetadataModelMap(this.codec.getEndpoint(),true), 
+						this.codec.getCustomSerializer()));
 		StringBuffer 		buffer 	= new StringBuffer();
 		getJQTree(doc, buffer,0);
 		endPointDocuments.put(this.codec.getEndpoint().getServiceName(),buffer.toString());
 	}
 	
-	private void getJQTree(Map<String,Object> doc,StringBuffer buffer,int level){
+	@SuppressWarnings("unchecked")
+	private void getJQTree(Map<String,Object> docNonsorted,StringBuffer buffer,int level){
+		Map<String,Object> doc = new TreeMap<String, Object>(docNonsorted);
+		
 		buffer.append('[');
-		boolean isFirst = true;
 		++level;
+		int index = 0;
+		String address = (String) doc.remove(BindingProvider.ENDPOINT_ADDRESS_PROPERTY);
 		for(String key : doc.keySet()){
-			if(!isFirst)
+			if(index > 0)
 				buffer.append(",");
-			buffer.append("{\"text\": \""+key+"\",\"classes\":\"level"+ level+"\"");
+			String text = key;
+			if(level == 3){
+				text = "<a href=\\\""+(address != null ? address : "")+"?form"+key+"\\\" target=\\\"content\\\">" + key + "</a>";
+			}
+			buffer.append("{\"text\": \""+text+"\",\"classes\":\"level"+ level+" index" + index + "\"");
 			buffer.append(",\"expanded\": "+(level < 2)+"");
 			Object value = doc.get(key);
 			if(value != null && value instanceof Map){
@@ -126,7 +107,7 @@ public class JQueryMetaDataModelServer implements HttpMetadataProvider {
 				getJQTree((Map<String, Object>) value,buffer,level);
 			}
 			buffer.append("}");
-			isFirst = false;
+			index++;
 		}
 		buffer.append(']');
 	}
@@ -139,7 +120,7 @@ public class JQueryMetaDataModelServer implements HttpMetadataProvider {
 		process();
 		String portDocuments =  endPointDocuments.get(this.codec.getEndpoint().getServiceName());
 		if(portDocuments != null){
-			ouStream.getOutput().write(portDocuments.getBytes());
+			doResponse(ouStream, portDocuments);
 		}else{
 			ouStream.getOutput().write(String.format("Unable to find default document for %s",
 					this.codec.getEndpoint().getPortName()).getBytes());
@@ -156,4 +137,5 @@ public class JQueryMetaDataModelServer implements HttpMetadataProvider {
 			return Integer.MAX_VALUE;
 		}
 	}
+	
 }

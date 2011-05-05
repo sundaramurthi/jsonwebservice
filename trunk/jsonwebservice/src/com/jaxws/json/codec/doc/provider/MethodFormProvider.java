@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -26,7 +27,7 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  * @version 1.0
  * 
  */
-public class MethodFormServer implements HttpMetadataProvider {
+public class MethodFormProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
 	private static final String[] queries = new String[]{"form"};
 	
@@ -95,7 +96,7 @@ public class MethodFormServer implements HttpMetadataProvider {
 		WSDLPort port = endPoint.getPort();
 		if (!operationDocuments.containsKey(port.getBinding().getName())) {
 			BufferedReader ins = new BufferedReader(new InputStreamReader(
-			MethodFormServer.class.getResourceAsStream("methodForm.htm")));
+			MethodFormProvider.class.getResourceAsStream("methodForm.htm")));
 			StringBuffer content = new StringBuffer();
 			try{
 				String line = ins.readLine();
@@ -131,9 +132,9 @@ public class MethodFormServer implements HttpMetadataProvider {
 		process();
 		String oper = ouStream.getQueryString().substring(4);
 		if(!oper.isEmpty())
-			ouStream.getOutput().write(
+			doResponse(ouStream,
 					operationDocuments.get(this.codec.getEndpoint().getPort().getBinding().getName())
-					.get(oper).replaceAll("#BASEADDRESS#", ouStream.getBaseAddress()).getBytes());
+					.get(oper));
 		else
 			ouStream.getOutput().write("add operation name in query string after 'form'. formxxxx E.g ?formgetChart".getBytes());
 		ouStream.getOutput().flush();
