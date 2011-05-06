@@ -8,7 +8,6 @@ import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.ws.BindingType;
 import javax.xml.ws.Holder;
 
 import com.test.jsonwebservice.rpc.AnyTypeObject;
@@ -20,7 +19,8 @@ import com.test.jsonwebservice.rpc.ParameterTest;
 
 @SOAPBinding(style=Style.RPC)
 @WebService(name = "ParameterTest", targetNamespace = "http://jsonwebservice.test.com/rpc",
-		endpointInterface="com.test.jsonwebservice.rpc.ParameterTest")
+		endpointInterface="com.test.jsonwebservice.rpc.ParameterTest",
+		serviceName ="RPCTestService", portName = "ParameterPort")
 public class ParameterTestImpl implements ParameterTest {
 
 	public void test1EmptyInOut() {
