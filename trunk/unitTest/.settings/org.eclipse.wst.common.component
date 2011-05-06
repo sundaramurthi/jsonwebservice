@@ -4,6 +4,12 @@
         <wb-resource deploy-path="/" source-path="/WebContent"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/test"/>
+        <dependent-module archiveName="jsonwebservice-custom-docs-0.7.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/jsonwebservice/jsonwebservice-custom-docs-0.7.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+        <dependent-module archiveName="jsonwebservice-ri-0.7.jar" deploy-path="/WEB-INF/lib" handle="module:/classpath/lib/jsonwebservice/jsonwebservice-ri-0.7.jar">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="unitTest"/>
         <property name="java-output-path" value="/unitTest/build/classes"/>
     </wb-module>
