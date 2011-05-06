@@ -106,9 +106,10 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	public static HashMap<String,Object> getJSONAsMap(Map<String,WSDLPart> parts, JAXBContextImpl context){
 		HashMap<String,Object> parameterMap = new HashMap<String, Object>();
 		try{
+			BeanAware  beanAware = new BeanAware(){};
 			for(Entry<String, WSDLPart> part : parts.entrySet()){
 				if(part.getValue().getBinding() == ParameterBinding.BODY){
-					JaxBeanInfo globalType = context.getGlobalType(part.getValue().getDescriptor().name());
+					JaxBeanInfo<?> globalType = context.getGlobalType(part.getValue().getDescriptor().name());
 					Class<?> clazz = null;
 					if(globalType != null){
 						clazz	= globalType.jaxbType;
@@ -117,7 +118,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 						} else if(clazz.isEnum()){
 							parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
 						}else{
-							parameterMap.put(part.getKey(), clazz.newInstance());
+							parameterMap.put(part.getKey(), beanAware.getNewInstance(clazz));
 						}
 					} else {
 						/*
