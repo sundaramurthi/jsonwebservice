@@ -3,9 +3,12 @@ package com.jaxws.json.codec.doc;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeSet;
 
 import com.jaxws.json.codec.BeanAware;
 import com.jaxws.json.codec.JSONCodec;
@@ -100,14 +103,20 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	
 	/**
 	 * Private utility to conver parameter list to JSON DOC
-	 * @param parameters
+	 * @param ordered map of parameters
 	 * @return
 	 */
 	public static HashMap<String,Object> getJSONAsMap(Map<String,WSDLPart> parts, JAXBContextImpl context){
-		HashMap<String,Object> parameterMap = new HashMap<String, Object>();
+		HashMap<String,Object> parameterMap = new LinkedHashMap<String, Object>();
 		try{
 			BeanAware  beanAware = new BeanAware(){};
-			for(Entry<String, WSDLPart> part : parts.entrySet()){
+			TreeSet<Entry<String, WSDLPart>> indexOrderedSet = new TreeSet<Map.Entry<String,WSDLPart>>(new Comparator<Entry<String, WSDLPart>>(){
+				public int compare(Entry<String, WSDLPart> o1, Entry<String, WSDLPart> o2) {
+					return new Integer(o1.getValue().getIndex()).compareTo(o2.getValue().getIndex()) ;
+				}
+			});
+			indexOrderedSet.addAll(parts.entrySet());
+			for(Entry<String, WSDLPart> part : indexOrderedSet){
 				if(part.getValue().getBinding() == ParameterBinding.BODY){
 					JaxBeanInfo<?> globalType = context.getGlobalType(part.getValue().getDescriptor().name());
 					Class<?> clazz = null;

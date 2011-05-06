@@ -87,6 +87,7 @@ public class MessageBodyBuilder {
 		Style style = seiModel.getPort().getBinding().getStyle();
 		if(!OUT_BOUND){
 			// Request message
+			// TODO when operation <input><json:body contains different namespace than port level name space bellow call fails to identify operation. 
 			WSDLBoundOperation operation 	= seiModel.getPort().getBinding().getOperation(seiModel.getTargetNamespace(),payloadName);
 			if(operation == null || !packet.invocationProperties.containsKey(JSONCodec.JSON_MAP_KEY)){
 				throw new RuntimeException("Operation %s input parameter(s) not found or invalid.");

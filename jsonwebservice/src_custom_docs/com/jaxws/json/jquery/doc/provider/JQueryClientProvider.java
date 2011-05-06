@@ -97,11 +97,15 @@ public class JQueryClientProvider extends AbstractHttpMetadataProvider implement
 			clientJS.append(portName + "." + operation +" = function(");
 			Map<String, Object> operationMap = (Map<String, Object>) selectedPort.get(operation);
 			Map<String, Object> parameter = (Map<String, Object>) operationMap.get(operation);
+			String parameterJson		= "";
 			int index = 0;
 			for(String paramName : parameter.keySet()){
-				if(index > 0)
+				if(index > 0){
 					clientJS.append(",");
+					parameterJson += ",";
+				}
 				clientJS.append(paramName);
+				parameterJson += "\""+paramName + "\":"+paramName;
 				index++;
 			}
 			clientJS.append("){" +
@@ -109,7 +113,7 @@ public class JQueryClientProvider extends AbstractHttpMetadataProvider implement
 						  "type: \"POST\","+
 						  "url: '#BASEADDRESS#" +httpAdapter.getValidPath()+ "',"+
 						  "dataType: 'json',"+
-						  "data: JSON.stringify({" + operation + " : {}}),"+
+						  "data: JSON.stringify({" + operation + " : {" + parameterJson + "}}),"+
 						  "contentType: '"+JSONContentType.JSON_CONTENT_TYPE+"'"+
 
 					"});" +
