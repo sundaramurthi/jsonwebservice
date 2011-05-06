@@ -99,8 +99,10 @@ public class MetaDataModelProvider extends AbstractHttpMetadataProvider implemen
 	 * Output responder.
 	 */
 	public void doResponse(WSHTTPConnection ouStream) throws IOException {
-		process();
-		String portDocuments =  endPointDocuments.get(this.codec.getEndpoint().getServiceName());
+		QName serviceName = this.codec.getEndpoint().getServiceName();
+		if(!endPointDocuments.containsKey(serviceName))
+			process();
+		String portDocuments =  endPointDocuments.get(serviceName);
 		if(portDocuments != null){
 			ouStream.getOutput().write(portDocuments.getBytes());
 		}else{

@@ -85,7 +85,6 @@ public class JSMetaDataModelProvider extends AbstractHttpMetadataProvider implem
 			createClientTemplete(operation,methodUrl,mimeType);
 			clientCode.append(",");
 		}*/
-		
 		endPointDocuments.put(this.codec.getEndpoint().getServiceName(),
 				WSJSONWriter.writeMetadata(getMetadataModelMap(this.codec.getEndpoint(),true),
 						this.codec.getCustomSerializer()));
@@ -95,8 +94,10 @@ public class JSMetaDataModelProvider extends AbstractHttpMetadataProvider implem
 	 * Output responder.
 	 */
 	public void doResponse(WSHTTPConnection ouStream) throws IOException {
-		process();
-		String portDocuments =  endPointDocuments.get(this.codec.getEndpoint().getServiceName());
+		QName serviceName = this.codec.getEndpoint().getServiceName();
+		if(!endPointDocuments.containsKey(serviceName))
+			process();
+		String portDocuments =  endPointDocuments.get(serviceName);
 		if(portDocuments != null){
 			ouStream.getOutput().write(portDocuments.getBytes());
 		}else{

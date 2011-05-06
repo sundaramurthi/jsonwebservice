@@ -117,7 +117,9 @@ public class JQueryMetaDataModelServer extends AbstractHttpMetadataProvider impl
 	 * Output responder.
 	 */
 	public void doResponse(WSHTTPConnection ouStream) throws IOException {
-		process();
+		QName serviceName = this.codec.getEndpoint().getServiceName();
+		if(!endPointDocuments.containsKey(serviceName))
+			process();
 		String portDocuments =  endPointDocuments.get(this.codec.getEndpoint().getServiceName());
 		if(portDocuments != null){
 			doResponse(ouStream, portDocuments);
@@ -134,7 +136,7 @@ public class JQueryMetaDataModelServer extends AbstractHttpMetadataProvider impl
 		if(o.equals(this)){
 			return 0;
 		}else{
-			return Integer.MAX_VALUE;
+			return Integer.MIN_VALUE;
 		}
 	}
 	
