@@ -12,7 +12,7 @@
 	<property name="jarname_custom" value="jsonwebservice-custom-docs"/>
 	<property name="version" value="0.7"/>
 	<property name="src" value="${basedir}/src"/>
-	<property name="src_custom_docs" value="${basedir}/src_custom_docs"/>
+	<property name="src_client_jquery" value="${basedir}/src_client_jquery"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
 	<property name="archive" value="${basedir}"/>
@@ -51,7 +51,7 @@
 	<target name="init">
 		<mkdir dir="${buildroot}"/>
 		<mkdir dir="${buildroot}/classes"/>
-		<mkdir dir="${buildroot}/classes_custom_docs"/>
+		<mkdir dir="${buildroot}/classes_client_jquery"/>
 	</target>
 
 	<!-- - - - - - - - - - - - - - - - - - 
@@ -72,11 +72,11 @@
 			</manifest>
 		</jar>
 		
-		<javac classpathref="classpath" srcdir="${src_custom_docs}"
-		        					destdir="${buildroot}/classes_custom_docs" debug="on" source="1.5"/>
+		<javac classpathref="classpath" srcdir="${src_client_jquery}"
+		        					destdir="${buildroot}/classes_client_jquery" debug="on" source="1.5"/>
 		<jar destfile="${archive}/${jarname_custom}-${version}.jar">
-			<fileset dir="${buildroot}/classes_custom_docs"/>
-			<fileset dir="${src_custom_docs}" excludes="**/*.java"/>
+			<fileset dir="${buildroot}/classes_client_jquery"/>
+			<fileset dir="${src_client_jquery}" excludes="**/*.java"/>
 			<manifest>
 				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
