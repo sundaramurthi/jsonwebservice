@@ -1,4 +1,4 @@
-package com.jaxws.json.jquery.doc.provider;
+package com.jaxws.json.yui.doc.provider;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,18 +8,17 @@ import java.io.OutputStream;
 
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
-import com.jaxws.json.codec.doc.provider.DefaultEndpointDocument;
 import com.sun.xml.ws.api.server.WSEndpoint;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
  * @author Sundaramurthi Saminathan
  * @version 1.0
- * @date March 12 2011
+ * @date May 8 2011
  *
- * JqueryDefaultEndpointDocument
+ * YUI DefaultEndpointDocument
  */
-public class JqueryDefaultEndpointDocument extends DefaultEndpointDocument {
+public class DefaultEndpointDocument extends com.jaxws.json.codec.doc.provider.DefaultEndpointDocument {
 	
 	private static final String CLIENT_RESOURCE = "CLIENT_RESOURCE";
 
@@ -55,7 +54,7 @@ public class JqueryDefaultEndpointDocument extends DefaultEndpointDocument {
 			
 			StringBuffer 	buffer 	= new StringBuffer();
 			try{
-				BufferedReader reader	= new BufferedReader(new InputStreamReader(JqueryDefaultEndpointDocument.class.getResourceAsStream("default.html"))); //$NON-NLS-1$
+				BufferedReader reader	= new BufferedReader(new InputStreamReader(DefaultEndpointDocument.class.getResourceAsStream("default.html"))); //$NON-NLS-1$
 				String 			line 	= reader.readLine();
 				while(line != null){
 					buffer.append(line+"\n"); //$NON-NLS-1$
@@ -110,7 +109,7 @@ public class JqueryDefaultEndpointDocument extends DefaultEndpointDocument {
 		if(o.equals(this)){
 			return 0;
 		}else{
-			return -1;
+			return Integer.MIN_VALUE;
 		}
 	}
 }
