@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="src_custom_docs"/>
+	<classpathentry kind="src" path="src_client_jquery"/>
+	<classpathentry kind="src" path="src_client_yui"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ant"/>
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/metro_2.1"/>

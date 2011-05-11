@@ -11,7 +11,6 @@ import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.encode.WSJSONWriter;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
@@ -23,7 +22,7 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  */
 public class MetaDataModelProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
-	private static final String[] queries = new String[]{"jsonmodel"};
+	private static final String[] queries = new String[]{"jsonmodel","defaultjsonmodel"};
 	
 	/**
 	 * Map holder which keeps end point documents.
@@ -47,7 +46,7 @@ public class MetaDataModelProvider extends AbstractHttpMetadataProvider implemen
 	 * Handler flag, If query string is jsonmodel , its handled by model server.
 	 */
 	public boolean canHandle(String queryString) {
-		return queryString != null && queryString.equals(queries[0]);
+		return queryString != null && (queryString.equals(queries[0]) || queryString.equals(queries[1]));
 	}
 	
 	/**
@@ -57,11 +56,6 @@ public class MetaDataModelProvider extends AbstractHttpMetadataProvider implemen
 		this.codec	= codec;
 	}
 	
-	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		// TODO Auto-generated method stub
-
-	}
-
 	/**
 	 * Meta data model content provider.
 	 * @see HttpMetadataProvider.getContentType
@@ -72,7 +66,7 @@ public class MetaDataModelProvider extends AbstractHttpMetadataProvider implemen
 
 	public void process() {
 		endPointDocuments.put(this.codec.getEndpoint().getServiceName(),
-				WSJSONWriter.writeMetadata(getMetadataModelMap(this.codec.getEndpoint(),false),
+				WSJSONWriter.writeMetadata(getMetadataModelMap(this.codec.getEndpoint(),true),
 						this.codec.getCustomSerializer()));
 		
 		// TODO Auto-generated method stub
@@ -104,7 +98,7 @@ public class MetaDataModelProvider extends AbstractHttpMetadataProvider implemen
 			process();
 		String portDocuments =  endPointDocuments.get(serviceName);
 		if(portDocuments != null){
-			ouStream.getOutput().write(portDocuments.getBytes());
+			doResponse(ouStream, portDocuments);
 		}else{
 			ouStream.getOutput().write(String.format("Unable to find default document for %s",
 					this.codec.getEndpoint().getPortName()).getBytes());

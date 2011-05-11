@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -16,9 +17,7 @@ import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.model.wsdl.WSDLFault;
 import com.sun.xml.ws.api.model.wsdl.WSDLPart;
 import com.sun.xml.ws.api.server.WSEndpoint;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
-import com.sun.xml.ws.util.ServiceFinder;
 
 /**
  * @author Sundaramurthi Saminathan
@@ -27,7 +26,7 @@ import com.sun.xml.ws.util.ServiceFinder;
  * 
  * Default JSON service end point document provider.
  */
-public class DefaultEndpointDocument implements HttpMetadataProvider {
+public class DefaultEndpointDocument extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	private static final String[] queries = new String[]{"", "operations"};
 	
 	/**
@@ -40,11 +39,6 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	 */
 	protected JSONCodec codec;
 
-	/**
-	 * Holder for request received HttpAdapter.
-	 */
-	protected HttpAdapter httpAdapter;
-	
 	/**
 	 * Flag to use show request payload enabled or not
 	 */
@@ -74,13 +68,6 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 	}
 	
 	/** 
-	 * Setter for HTTPAdapter. This adapter required to calculate end point URL.
-	 */
-	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		this.httpAdapter	= httpAdapter;
-	}
-	
-	/** 
 	 * Plain html document.
 	 */
 	public String getContentType() {
@@ -105,25 +92,7 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 		
 			templateMain		= templateMain.replaceAll("#SERIVICE_NAME#", endPoint.getServiceName().getLocalPart());
 
-			// NOTE:  endPoint.getSEIModel().getPort().getAddress() is not dynamic. Its address configured in WSDL
-			String 				address 			= "#BASEADDRESS#" + httpAdapter.getValidPath();
-	        if(address != null){
-	        	 if(address.endsWith(".soap")){
-	 	        	// Hack to SOAP implementation class configured to JSON end point.
-	        		 address = address.replace(".soap", ".json");
-	 	        }
-	        	templateMain = templateMain.replaceAll("#END_POINT_URL#", address);
-	        }
-	        StringBuffer queries = new StringBuffer();
-	        for (HttpMetadataProvider metadataProvider : ServiceFinder.find(HttpMetadataProvider.class)) {
-				String querys [] = metadataProvider.getHandlingQueries();
-				for(String query : querys){
-					queries.append(String.format("<a href=\"%s?%s\">%s?%s</a>",address,query,address,query));
-				}
-	        }
-	        templateMain		= templateMain.replaceAll("#DOCUMENT_ENDS#",queries.toString());
-
-	        StringBuffer 	methods = new StringBuffer();
+			StringBuffer 	methods = new StringBuffer();
         
 	        int count = 0;
 			SEIModel seiModel = endPoint.getSEIModel();
@@ -181,7 +150,7 @@ public class DefaultEndpointDocument implements HttpMetadataProvider {
 				+ requestPayloadEnabled
 				+ JSONCodec.responsePayloadEnabled);
 		if(portDocuments != null){
-			ouStream.getOutput().write(portDocuments.replaceAll("#BASEADDRESS#", ouStream.getBaseAddress()).getBytes());
+			doResponse(ouStream, portDocuments);
 		}else{
 			ouStream.getOutput().write(String.format("Unable to find default document for %s",
 					this.codec.getEndpoint().getPortName()).getBytes());

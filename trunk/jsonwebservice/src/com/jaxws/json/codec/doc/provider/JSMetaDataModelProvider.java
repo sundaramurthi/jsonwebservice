@@ -11,7 +11,6 @@ import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.encode.WSJSONWriter;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
@@ -58,14 +57,6 @@ public class JSMetaDataModelProvider extends AbstractHttpMetadataProvider implem
 	}
 	
 	/**
-	 * setter
-	 */
-	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/**
 	 * Meta data model content provider.
 	 * @see HttpMetadataProvider.getContentType
 	 */
@@ -99,7 +90,7 @@ public class JSMetaDataModelProvider extends AbstractHttpMetadataProvider implem
 			process();
 		String portDocuments =  endPointDocuments.get(serviceName);
 		if(portDocuments != null){
-			ouStream.getOutput().write(portDocuments.getBytes());
+			doResponse(ouStream, portDocuments);
 		}else{
 			ouStream.getOutput().write(String.format("Unable to find default document for %s",
 					this.codec.getEndpoint().getPortName()).getBytes());
