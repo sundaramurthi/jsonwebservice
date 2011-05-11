@@ -8,7 +8,8 @@
 <link href="http://developer.yahoo.com/yui/build/resize/assets/skins/sam/resize.css" type="text/css" rel="stylesheet">
 <link href="http://developer.yahoo.com/yui/build/layout/assets/skins/sam/layout.css" type="text/css" rel="stylesheet">
 <link href="http://developer.yahoo.com/yui/build/button/assets/skins/sam/button.css" type="text/css" rel="stylesheet">
-<link href="http://yui.yahooapis.com/2.9.0/build/treeview/assets/skins/sam/treeview.css" type="text/css" rel="stylesheet"/>
+<link href="http://developer.yahoo.com/yui/build/treeview/assets/skins/sam/treeview.css" type="text/css" rel="stylesheet"/>
+<link href="?CLIENT_RESOURCE=style.css" type="text/css" rel="stylesheet"></link>
 <script src="http://developer.yahoo.com/yui/build/yahoo/yahoo-min.js" type="text/javascript"></script>
 <script src="http://developer.yahoo.com/yui/build/event/event-min.js" type="text/javascript"></script>
 <script src="http://developer.yahoo.com/yui/build/dom/dom-min.js" type="text/javascript"></script>
@@ -20,7 +21,6 @@
 <script src="http://developer.yahoo.com/yui/build/layout/layout-min.js" type="text/javascript"></script>
 <script src="http://developer.yahoo.com/yui/build/connection/connection-min.js" type="text/javascript"></script>
 <script src="http://developer.yahoo.com/yui/build/treeview/treeview-min.js" type="text/javascript"></script>
-
 </head>
 <body class=" yui-skin-sam">
 <!-- 	<div id="accordion">
@@ -92,16 +92,19 @@ var ENDPOINT_ADDRESS_PROPERTY = "javax.xml.ws.service.endpoint.address";
 var addTreeNodes = function(oResults, node, level){
 	 if(level > 5)return;
 	 level++;
+	 var i =0;
 	 for(p in oResults){
 		 if(p == ENDPOINT_ADDRESS_PROPERTY)
 			 continue;
-         var tmpNode = new YAHOO.widget.TextNode(p, node, false);
+         var tmpNode = new YAHOO.widget.TextNode(p, node, (level < 3));
        	 if(oResults[ENDPOINT_ADDRESS_PROPERTY]){
        		tmpNode.href = oResults[ENDPOINT_ADDRESS_PROPERTY] + "?form"+p;
        		tmpNode.target = "content";
        	 }
+       	 tmpNode.labelStyle = "ygtvlabel level" + level + " index" + i;
          addTreeNodes(oResults[p],tmpNode, level);
        	 tmpNode.isLeaf	= (level > 4);
+       	 i++;
      }
 };
 (function() {
@@ -130,7 +133,7 @@ var addTreeNodes = function(oResults, node, level){
                     width: (panel.body.offsetWidth - 20),
                     units: [
                         { position: 'top', height: 30, resize: false, body: '#SERIVICE_NAME#', gutter: '2' },
-                        { position: 'left', width: 220, resize: true, body: 'left', gutter: '0 5 0 2', minWidth: 150, maxWidth: 300 },
+                        { position: 'left', width: 260, resize: true, body: 'left', gutter: '0 5 0 2', minWidth: 150, maxWidth: 300 },
                         { position: 'bottom', height: 175, body: '#DOCUMENT_ENDS#', gutter: '2' },
                         { position: 'center', body: '<iframe name="content" width="100%" height="100%" frameborder="1" style="border-color: #DDDDDD;border-style: solid;border-width: 1px;min-height: 400px;">Click any operation to load content</iframe>', gutter: '0 2 0 0' }
                     ]
@@ -167,7 +170,7 @@ var addTreeNodes = function(oResults, node, level){
                     //add child nodes for tree; our top level nodes are bands
                     var bands = ["Operations"];
                     for (var i=0, j=bands.length; i<j; i++) {
-                         var tempNode = new YAHOO.widget.TextNode(bands[i], root, false);
+                         var tempNode = new YAHOO.widget.TextNode(bands[i], root, true);
                     }
                     tree.draw();
                 });
