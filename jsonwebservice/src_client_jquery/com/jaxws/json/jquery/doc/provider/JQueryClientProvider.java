@@ -13,7 +13,6 @@ import com.jaxws.json.codec.JSONContentType;
 import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.sun.xml.ws.api.server.WSEndpoint;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
@@ -38,8 +37,6 @@ public class JQueryClientProvider extends AbstractHttpMetadataProvider implement
 	 */
 	private JSONCodec codec;
 
-	private HttpAdapter httpAdapter;
-
 	/**
 	 * "jsonmodel" query handled.
 	 */
@@ -61,13 +58,6 @@ public class JQueryClientProvider extends AbstractHttpMetadataProvider implement
 		this.codec	= codec;
 	}
 	
-	/**
-	 * setter
-	 */
-	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		this.httpAdapter = httpAdapter;
-	}
-
 	/**
 	 * Meta data model content provider.
 	 * @see HttpMetadataProvider.getContentType

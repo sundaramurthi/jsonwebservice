@@ -14,7 +14,6 @@ import com.jaxws.json.codec.decode.JSONReader;
 import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.encode.WSJSONWriter;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
@@ -60,11 +59,6 @@ public class JQueryMetaDataModelServer extends AbstractHttpMetadataProvider impl
 		this.codec	= codec;
 	}
 	
-	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		// TODO Auto-generated method stub
-
-	}
-
 	/**
 	 * Meta data model content provider.
 	 * @see HttpMetadataProvider.getContentType
