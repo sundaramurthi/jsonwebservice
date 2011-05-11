@@ -1,6 +1,5 @@
 package com.jaxws.json;
 
-import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBException;
@@ -12,14 +11,11 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 
-import org.jvnet.mimepull.MIMEPart;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
-import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.decode.WSJSONPopulator;
-import com.jaxws.json.feature.JSONWebService;
 import com.sun.istack.Nullable;
 import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.ws.api.message.HeaderList;
