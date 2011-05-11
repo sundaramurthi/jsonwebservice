@@ -9,10 +9,12 @@
      ====================================================================== -->
 <project name="jsonwebservice" default="default" basedir=".">
 	<property name="jarname" value="jsonwebservice-ri"/>
-	<property name="jarname_custom" value="jsonwebservice-custom-docs"/>
+	<property name="jarname_client_jquery" value="jsonwebservice-custom-docs-jquery"/>
+	<property name="jarname_client_yui" value="jsonwebservice-custom-docs-yui"/>
 	<property name="version" value="0.7"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="src_client_jquery" value="${basedir}/src_client_jquery"/>
+	<property name="src_client_yui" value="${basedir}/src_client_yui"/>
 	<property name="lib" value="${basedir}/lib"/>
 	<property name="buildroot" value="${basedir}/build"/>
 	<property name="archive" value="${basedir}"/>
@@ -52,6 +54,7 @@
 		<mkdir dir="${buildroot}"/>
 		<mkdir dir="${buildroot}/classes"/>
 		<mkdir dir="${buildroot}/classes_client_jquery"/>
+		<mkdir dir="${buildroot}/classes_client_yui"/>
 	</target>
 
 	<!-- - - - - - - - - - - - - - - - - - 
@@ -74,9 +77,22 @@
 		
 		<javac classpathref="classpath" srcdir="${src_client_jquery}"
 		        					destdir="${buildroot}/classes_client_jquery" debug="on" source="1.5"/>
-		<jar destfile="${archive}/${jarname_custom}-${version}.jar">
+		<jar destfile="${archive}/${jarname_client_jquery}-${version}.jar">
 			<fileset dir="${buildroot}/classes_client_jquery"/>
 			<fileset dir="${src_client_jquery}" excludes="**/*.java"/>
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
+				<attribute name="Implementation-Title" value="JSONWebservice"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Build-Date" value="${TODAY}"/>
+			</manifest>
+		</jar>
+		<javac classpathref="classpath" srcdir="${src_client_yui}"
+		        					destdir="${buildroot}/classes_client_yui" debug="on" source="1.5"/>
+		<jar destfile="${archive}/${jarname_client_yui}-${version}.jar">
+			<fileset dir="${buildroot}/classes_client_yui"/>
+			<fileset dir="${src_client_yui}" excludes="**/*.java"/>
 			<manifest>
 				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Implementation-Vendor" value="Google-Sundar"/>

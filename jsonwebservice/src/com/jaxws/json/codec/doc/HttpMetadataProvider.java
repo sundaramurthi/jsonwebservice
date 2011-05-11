@@ -46,6 +46,12 @@ public interface HttpMetadataProvider extends Comparable<HttpMetadataProvider> {
 	void setHttpAdapter(HttpAdapter httpAdapter);
 	
 	/**
+	 * requesting http transport adapter.
+	 * @return httpAdapter
+	 */
+	 HttpAdapter getHttpAdapter();
+	
+	/**
 	 * @return Content type of document.
 	 */
 	String getContentType();

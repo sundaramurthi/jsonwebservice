@@ -6,9 +6,9 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.doc.AbstractHttpMetadataProvider;
 import com.jaxws.json.codec.doc.HttpMetadataProvider;
 import com.jaxws.json.codec.doc.JSONHttpMetadataPublisher;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
@@ -19,7 +19,7 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  * Meta data document provider which serves currently
  *         configured properties.
  */
-public class ServiceConfigurationProvider implements HttpMetadataProvider {
+public class ServiceConfigurationProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
 	private static final String[] queries = new String[]{"config"};
 	
@@ -76,13 +76,6 @@ public class ServiceConfigurationProvider implements HttpMetadataProvider {
 		this.codec = codec;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.jaxws.json.codec.doc.HttpMetadataProvider#setHttpAdapter(com.sun.xml.ws.transport.http.HttpAdapter)
-	 */
-	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		// Not required for ServiceConfigurationServer
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * 

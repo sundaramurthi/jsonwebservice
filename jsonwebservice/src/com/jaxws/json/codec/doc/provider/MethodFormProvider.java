@@ -18,7 +18,6 @@ import com.sun.xml.ws.api.model.SEIModel;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.ws.api.server.WSEndpoint;
-import com.sun.xml.ws.transport.http.HttpAdapter;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
@@ -41,8 +40,6 @@ public class MethodFormProvider extends AbstractHttpMetadataProvider implements 
 	 * Request recived codec holder.
 	 */
 	private JSONCodec codec = null;
-
-	private HttpAdapter httpAdapter;
 
 	/**
 	 * "config" query handled.
@@ -70,13 +67,6 @@ public class MethodFormProvider extends AbstractHttpMetadataProvider implements 
 		this.codec = codec;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.jaxws.json.codec.doc.HttpMetadataProvider#setHttpAdapter(com.sun.xml.ws.transport.http.HttpAdapter)
-	 */
-	public void setHttpAdapter(HttpAdapter httpAdapter) {
-		this.httpAdapter	= httpAdapter;
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * 
