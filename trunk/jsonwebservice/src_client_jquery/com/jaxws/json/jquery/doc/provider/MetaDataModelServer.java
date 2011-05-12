@@ -23,7 +23,7 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  * 
  * JQuery JSON service end point document provider.
  */
-public class JQueryMetaDataModelServer extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
+public class MetaDataModelServer extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
 	private static final String[] queries = new String[]{"jsonmodel"};
 	
