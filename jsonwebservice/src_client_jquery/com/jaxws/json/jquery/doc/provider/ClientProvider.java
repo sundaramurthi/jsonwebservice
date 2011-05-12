@@ -23,7 +23,7 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
  * 
  * Javascript client provider for jquery users.
  */
-public class JQueryClientProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
+public class ClientProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
 	private static final String[] queries = new String[]{"client"};
 	
@@ -91,21 +91,22 @@ public class JQueryClientProvider extends AbstractHttpMetadataProvider implement
 			int index = 0;
 			for(String paramName : parameter.keySet()){
 				if(index > 0){
-					clientJS.append(",");
 					parameterJson += ",";
 				}
-				clientJS.append(paramName);
+				clientJS.append(paramName + ",");
 				parameterJson += "\""+paramName + "\":"+paramName;
 				index++;
 			}
-			clientJS.append("){" +
+			clientJS.append("callback){" +
 					"$.ajax({"+
 						  "type: \"POST\","+
 						  "url: '#BASEADDRESS#" +httpAdapter.getValidPath()+ "',"+
 						  "dataType: 'json',"+
 						  "data: JSON.stringify({" + operation + " : {" + parameterJson + "}}),"+
-						  "contentType: '"+JSONContentType.JSON_CONTENT_TYPE+"'"+
-
+						  "contentType: '"+JSONContentType.JSON_CONTENT_TYPE+"',"+
+						  "success: callback.success,"+
+						  "error: callback.error,"+
+						  "complete: callback.complete"+
 					"});" +
 				"};");
 		}

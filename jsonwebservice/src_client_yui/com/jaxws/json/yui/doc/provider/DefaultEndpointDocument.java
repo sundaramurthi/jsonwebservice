@@ -34,7 +34,7 @@ public class DefaultEndpointDocument extends com.jaxws.json.codec.doc.provider.D
 	public String getContentType() {
 		if(queryString != null){
 			if(queryString.endsWith(".js")){
-				return "text/javascript; charset=\"utf-8\"";
+				return "text/javascript; charset=\"UTF-8\"";
 			}else if(queryString.endsWith(".css")){
 				return "text/css; charset=\"utf-8\"";
 			}else if(queryString.endsWith(".png")){
