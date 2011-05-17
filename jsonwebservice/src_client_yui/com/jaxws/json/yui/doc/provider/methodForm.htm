@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+ <head>
+ 	<title>#METHOD_NAME#</title>
+ 	<script src="?CLIENT_RESOURCE=js/yui-2.8.x-all.js" type="text/javascript"></script>
+ 	<script src="?CLIENT_RESOURCE=js/inputex-min.js" type="text/javascript"></script>
+ </head>
+ <body>
+	<h2>#METHOD_NAME#</h2>
+	<div id='#METHOD_NAME#'></div>
+	<script type="text/javascript">
+		// Create the JsonSchema builder object
+		var schemaIdentifierMap = #JSON_METHOD_SCHEMA#;
+		var builder = new inputEx.JsonSchema.Builder({
+			'schemaIdentifierMap': schemaIdentifierMap
+		});
+		// Get the inputEx field definition from the "Person" object
+		var inputExDefinition = builder.schemaToInputEx(schemaIdentifierMap["#METHOD_NAME#"]);
+		// Add 'container1' as parent element
+		var #METHOD_NAME#form = new inputEx.JSONForm( { 
+			fields: [inputExDefinition],
+            buttons: [{type: 'submit', value: 'Submit'},{type: 'reset', value: 'Reset'}],
+            ajax : {
+            	"$schema" :schemaIdentifierMap,
+        		uri: '#END_POINT_URL#',
+        		callback: {
+           			success: function(o) { alert("success", o); },
+           			failure: function(o) { alert("failure", o); }
+        		}
+    		},
+            parentEl: '#METHOD_NAME#'
+         });
+	</script>
+ </body>
+</html>
