@@ -32,44 +32,13 @@ THE SOFTWARE.
 	};
 
 	lang.extend(inputEx.JSONForm, inputEx.Form, {
-			setOptions: function(options) {
-		      inputEx.JSONForm.superclass.setOptions.call(this, options);
-		      if(options.ajax) {
-		         this.options.ajax.$schema = options.ajax.$schema;
-		      }
-		   },
-		   populateValues: function(schemaMap, obj){
-			   for(key in schemaMap) {
-			        if(schemaMap.hasOwnProperty(key)) {
-			      	  var paramName = schemaMap[key]; 
-			      	  if(paramName.type === "object"){
-			      		obj[key] = this.populateValues(paramName.properties, {});
-			      	  }else if(paramName.type === "string"){
-			      		obj[key] = "TODO";
-			      	  }else if(paramName.type === "number"){
-			      		obj[key] = 0;
-			      	  }else if(paramName.type === "boolean"){
-			        	obj[key] = false;
-			      	  }else if(paramName.type === "array"){
-			        	obj[key] = [];
-			      	  }else{
-			      		  //any
-			      	  }
-			        }
-			   }
-			   return obj;
-		   },
-		   getJSONValue: function(){
-			   var schema = lang.isFunction(this.options.ajax.$schema) ? this.options.ajax.$schema(this) : this.options.ajax.$schema;
-			   return this.populateValues(schema, {});
-		   },
 		 /**
 		    * Send the form value in JSON through an ajax request
 		    */
 		   asyncRequest: function() {
 		      if(this.options.ajax.showMask) { this.showMask(); }
 			
-				var formValue = this.getJSONValue();
+				var formValue = this.inputs[0].getValue();
 			
 				// options.ajax.uri and options.ajax.method can also be functions that return a the uri/method depending of the value of the form
 				var uri = lang.isFunction(this.options.ajax.uri) ? this.options.ajax.uri(formValue) : this.options.ajax.uri;

@@ -22,7 +22,7 @@
 			fields: [inputExDefinition],
             buttons: [{type: 'submit', value: 'Submit'},{type: 'reset', value: 'Reset'}],
             ajax : {
-            	"$schema" :schemaIdentifierMap,
+            	wrapObject: "#METHOD_NAME#",
         		uri: '#END_POINT_URL#',
         		callback: {
            			success: function(o) { alert("success", o); },

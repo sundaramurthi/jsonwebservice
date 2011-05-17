@@ -55,7 +55,6 @@ a.expandall{
 	padding-right: 10px;
 	background: url("?CLIENT_RESOURCE=images/edited_ov.gif") no-repeat transparent right;
 }
-
-.yui-layout .yui-layout-noscroll div.yui-layout-bd {
+.yui-layout .yui-layout-unit-left div.yui-layout-bd{
     overflow: auto;
 }
