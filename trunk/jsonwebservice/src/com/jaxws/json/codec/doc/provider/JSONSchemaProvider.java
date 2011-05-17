@@ -15,15 +15,20 @@ import com.sun.xml.ws.transport.http.WSHTTPConnection;
 
 /**
  * @author Sundaramurthi Saminathan
- * @since JSONWebservice codec version 0.4
- * @version 2.0
+ * @since JSONWebservice codec version 0.7
+ * @version 1.0
  * 
- * Default JSON service end point document provider.
- * @deprecated suggested to use JSONSchema.
+ * JSON schema provider.
+ * 
+ * Follow up of spec and suggestion from
+ * 
+ * <a href="http://json-schema.org/draft-hyperschema.txt">json-schema.org</a>
+ * <a href="http://groups.google.com/group/json-schema">Google Group</a>
+ * 
  */
-public class MetaDataModelProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
+public class JSONSchemaProvider extends AbstractHttpMetadataProvider implements HttpMetadataProvider {
 	
-	private static final String[] queries = new String[]{"jsonmodel","defaultjsonmodel"};
+	private static final String[] queries = new String[]{"jsonschema","defaultjsonschema"};
 	
 	/**
 	 * Map holder which keeps end point documents.
@@ -68,26 +73,7 @@ public class MetaDataModelProvider extends AbstractHttpMetadataProvider implemen
 	public void process() {
 		endPointDocuments.put(this.codec.getEndpoint().getServiceName(),
 				WSJSONWriter.writeMetadata(getMetadataModelMap(this.codec.getEndpoint(),true),
-						this.codec.getCustomSerializer()));
-		
-		// TODO Auto-generated method stub
-		/*XmlElement xmlElemnt = field.getAnnotation(XmlElement.class);
-		out.append("\""+escapeString(field.getName())+"\":{");
-		// Generate object meta data
-		if(xmlElemnt != null){
-			out.append("\"defaultValue\":");
-			string(xmlElemnt.defaultValue(),out);
-			out.append(", \"nillable\":\""+xmlElemnt.nillable()+"\"");
-			out.append(", \"required\":\""+xmlElemnt.required()+"\"");// TODO difrence betwin nillable and required
-			out.append(", \"type\":\""+field.getType().getSimpleName()+"\"");
-			out.append(", \"restriction\":{");
-				out.append("\"minLength\":0");
-				out.append(",");
-				out.append("\"maxLength\":255");
-				out.append(",\"pattern\":\"\"");
-			out.append("}");
-			
-		}*/
+						this.codec.getCustomSerializer(),true));
 	}
 	
 	/**
@@ -95,7 +81,7 @@ public class MetaDataModelProvider extends AbstractHttpMetadataProvider implemen
 	 */
 	public void doResponse(WSHTTPConnection ouStream) throws IOException {
 		QName serviceName = this.codec.getEndpoint().getServiceName();
-		if(!endPointDocuments.containsKey(serviceName))
+		//if(!endPointDocuments.containsKey(serviceName))
 			process();
 		String portDocuments =  endPointDocuments.get(serviceName);
 		if(portDocuments != null){

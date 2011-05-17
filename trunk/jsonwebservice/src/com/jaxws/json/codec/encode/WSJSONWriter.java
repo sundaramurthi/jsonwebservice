@@ -138,6 +138,8 @@ public class WSJSONWriter extends BeanAware {
 	 * Flag which enable write object as possible JSON document format or not.
 	 */
 	private boolean metaDataMode	= false;
+	
+	private boolean schemaMode		= false;
 
 	/**
 	 * List of response attachments.
@@ -187,7 +189,19 @@ public class WSJSONWriter extends BeanAware {
     public void writeMetadata(DateFormat dateFormat,
     		Collection<Pattern> excludeProperties, Collection<Pattern> includeProperties,
     		Pattern listMapKey,Pattern listMapValue){
+    	this.writeMetadata(dateFormat, excludeProperties, includeProperties, listMapKey, listMapValue,false);
+    }
+    
+    /**
+     * Serialize passed object to JSON string, writes into constructor passed writer object. 
+     * For null properties new instance created and serialized as meta data.
+     * @param object Map object to serialize.
+     */
+    public void writeMetadata(DateFormat dateFormat,
+    		Collection<Pattern> excludeProperties, Collection<Pattern> includeProperties,
+    		Pattern listMapKey,Pattern listMapValue,boolean isSchema){
     	this.initValues(dateFormat, excludeProperties, includeProperties, listMapKey, listMapValue);
+    	this.schemaMode	= isSchema;
     	this.metaDataMode	= true;
     	// Convert passed object to value.
     	this.process(rootObject, null);
@@ -200,14 +214,25 @@ public class WSJSONWriter extends BeanAware {
      * @return
      */
     public static final String writeMetadata(Object rootObject,
-    		Map<Class<? extends Object>, JSONObjectCustomizer> objectCustomizers){
+    		Map<Class<? extends Object>, JSONObjectCustomizer> objectCustomizers,boolean isSchema){
     	ByteArrayOutputStream out = new ByteArrayOutputStream();
     	WSJSONWriter	writter = new WSJSONWriter(out, rootObject, objectCustomizers);
     	writter.writeMetadata(JSONCodec.dateFormat, JSONCodec.excludeProperties, 
     			JSONCodec.includeProperties, JSONCodec.globalMapKeyPattern, 
-    			JSONCodec.globalMapValuePattern);
+    			JSONCodec.globalMapValuePattern, isSchema);
     	return out.toString();
 	}
+    
+    /**
+     * Utility method to serialize object.
+     * @param rootObject
+     * @param objectCustomizers
+     * @return
+     */
+    public static final String writeMetadata(Object rootObject,
+    		Map<Class<? extends Object>, JSONObjectCustomizer> objectCustomizers){
+    	return writeMetadata(rootObject, objectCustomizers,false);
+    }
 
     
     /**
@@ -285,6 +310,40 @@ public class WSJSONWriter extends BeanAware {
         		//this.stack.push(object); Since object pop after process not nice to push wrapper.
         	}
         }
+        if(this.schemaMode){
+        	this.add("{");
+        	
+        	if(object instanceof String || 
+            		object instanceof Character || 
+            		object instanceof Locale ||
+            		object instanceof Class){
+        		this.add("\"type\":\"string\",\"default\":");
+        	} else if (object instanceof Number) {
+        		this.add("\"type\":\"number\",\"default\":");// TODO integer type
+        	} else if (object instanceof Boolean) {
+        		this.add("\"type\":\"boolean\",\"default\":");
+        	} else if (object instanceof Date) {
+        		this.add("\"type\":\"string\",\"format\":\"date\",\"default\":");
+        	} else if (object instanceof Calendar) {
+        		this.add("\"type\":\"string\",\"format\":\"date\",\"default\":");
+        	} else if (object instanceof Map) {
+        		this.add("\"type\":\"object\",\"properties\":");
+        		// TODO
+        	} else if (object.getClass().isArray()) {
+        		this.add("\"type\":\"array\",\"items\":");
+        	} else if (object instanceof Iterable) {
+        		this.add("\"type\":\"array\",\"items\":");
+        	} else if (object instanceof Enum) {
+        		this.add("\"type\":\"string\",\"enum\":");
+        		//TODO check more
+        	} else if (object instanceof JAXBElement<?>) {
+        		// called back with object
+        	} else if (object instanceof Node) {
+        		this.add("\"type\":\"any\",\"default\":");
+        	} else {
+        		this.add("\"type\":\"object\",\"properties\":");
+        	}
+        }
         /*
       	 * Step 5. convert given object to JSON.
       	 */
@@ -328,10 +387,14 @@ public class WSJSONWriter extends BeanAware {
         	// Step 5.12: handle has Object
             this.bean(object, clazz);
         }
+        
+        if(this.schemaMode){
+        	this.add("}");
+        }
         this.stack.pop();
     }
-    
-	/**
+
+    /**
      * Step 5.1:  Convert to string with escape.
      * escape characters
      */
@@ -450,7 +513,7 @@ public class WSJSONWriter extends BeanAware {
             hasData = true;
             // Process key
             // TODO if key is not primitive, it is not valid JSON output. 
-            this.process(key, method);
+            this.string(String.valueOf(key));
             this.add(":");
             // Process value
             this.process(entry.getValue(), method);

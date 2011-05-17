@@ -123,7 +123,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 					if(globalType != null){
 						clazz	= globalType.jaxbType;
 						if(BeanAware.isJSONPrimitive(clazz)){
-							parameterMap.put(part.getKey(), clazz.getSimpleName());
+							parameterMap.put(part.getKey(), beanAware.getNewInstance(clazz));
 						} else if(clazz.isEnum()){
 							parameterMap.put(part.getKey(), clazz.getEnumConstants()[0]);
 						}else{

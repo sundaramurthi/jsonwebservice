@@ -104,8 +104,7 @@ public class MethodFormProvider extends AbstractHttpMetadataProvider implements 
 				contents.put(operation.getOperation().getName().getLocalPart(), 
 						content.toString().replaceAll("#INPUT_JSON#", String.format("{\"%s\":%s}",operation.getName().getLocalPart(),
 								requestJSON))
-						.replaceAll("#METHOD_NAME#", operation.getName().getLocalPart())
-						.replaceAll("#END_POINT_URL#", "#BASEADDRESS#" + httpAdapter.getValidPath()));
+						.replaceAll("#METHOD_NAME#", operation.getName().getLocalPart()));
 			}
 			operationDocuments.put(port.getBinding().getName(), contents);
 		}
