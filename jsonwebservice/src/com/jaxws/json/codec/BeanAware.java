@@ -142,6 +142,18 @@ public abstract class BeanAware {
 				return new HashMap<String,Object>();
 			} else if (Set.class.isAssignableFrom(clazz)) {
                 return new HashSet<Object>();
+            } else if (Integer.class.isAssignableFrom(clazz)) {
+                return new Integer(0);
+            } else if (Long.class.isAssignableFrom(clazz)) {
+                return new Long(0);
+            } else if (Double.class.isAssignableFrom(clazz)) {
+                return new Double(0.0);
+            } else if (Float.class.isAssignableFrom(clazz)) {
+                return new Float(0.0);
+            } else if (Number.class.isAssignableFrom(clazz)) {
+                return 0;
+            } else if (Boolean.class.isAssignableFrom(clazz)) {
+                return new Boolean(false);
             } else if(XMLGregorianCalendar.class.isAssignableFrom(clazz)){
             	if(datatypeFactory == null){
     				try {
