@@ -334,14 +334,17 @@ public class WSJSONWriter extends BeanAware {
         	} else if (object instanceof Iterable) {
         		this.add("\"type\":\"array\",\"items\":");
         	} else if (object instanceof Enum) {
-        		this.add("\"type\":\"string\",\"enum\":");
-        		//TODO check more
+        		this.add("\"type\":\"string\",\"enum\":[");
+        		for(Object o : clazz.getEnumConstants()){
+        			this.add("\""+((Enum<?>)o).name()+"\",");
+        		}
+        		this.add("null],\"default\":");
         	} else if (object instanceof JAXBElement<?>) {
         		// called back with object
         	} else if (object instanceof Node) {
         		this.add("\"type\":\"any\",\"default\":");
         	} else {
-        		this.add("\"type\":\"object\",\"properties\":");
+        		this.add("\"type\":\"object\",\"title\":\""+clazz.getSimpleName()+"\",\"properties\":");// TODO schema complex name
         	}
         }
         /*
@@ -1246,6 +1249,8 @@ public class WSJSONWriter extends BeanAware {
   			}else if(propertyType.isAssignableFrom(Calendar.class)){
   				return Calendar.getInstance();
   			}else if(propertyType.isEnum()){
+  				if(this.schemaMode)
+  					return propertyType.getEnumConstants()[0];
   				StringBuffer b = new StringBuffer();
   				if(defaultVal != null){
   					// Write default value as first constant in meta data.
