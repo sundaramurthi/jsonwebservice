@@ -212,6 +212,7 @@ public class FormDecoder {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void processPostBody(Map<String,Object> jsonMap,ServletRequest request){
 		StringBuffer	buffer	= new StringBuffer(); 
 		try{
