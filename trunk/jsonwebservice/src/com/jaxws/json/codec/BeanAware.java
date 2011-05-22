@@ -154,6 +154,8 @@ public abstract class BeanAware {
                 return 0;
             } else if (Boolean.class.isAssignableFrom(clazz)) {
                 return new Boolean(false);
+            } else if(clazz.isEnum()){
+            	return clazz.getEnumConstants()[0];
             } else if(XMLGregorianCalendar.class.isAssignableFrom(clazz)){
             	if(datatypeFactory == null){
     				try {

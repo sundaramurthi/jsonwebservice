@@ -3,6 +3,7 @@ package com.jaxws.json.yui.doc.provider;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,13 +105,19 @@ public class MethodFormProvider extends AbstractHttpMetadataProvider implements 
 				@SuppressWarnings("unchecked")
 				Map<String, Object> operationMap = (Map<String, Object>) selectedPort.get(operation);
 				@SuppressWarnings("unchecked")
-				Map<String, Object> parameter = (Map<String, Object>) operationMap.get(operation);
+				Map<String, Object> parameter = (Map<String, Object>) operationMap.remove(operation);
 				
-				String schemaSrting = WSJSONWriter.writeMetadata(parameter,
+				String schemaIn = WSJSONWriter.writeMetadata(parameter,
+						this.codec.getCustomSerializer(),true);
+				
+				Collection<Object> value = operationMap.values();
+				String schemaOut = WSJSONWriter.writeMetadata(value.size() ==1 ? value.toArray()[0] : new HashMap<String,String>(),
 						this.codec.getCustomSerializer(),true);
 				contents.put(operation, 
-						content.toString().replaceAll("#JSON_METHOD_SCHEMA#","{\"" + operation + "\" : " + schemaSrting +"}")
+						content.toString().replaceAll("#JSON_METHOD_SCHEMA#","{\"" + operation + "\" : " + schemaIn +"}")
+						.replaceAll("#JSON_METHOD_RESPONSE_SCHEMA#","{\"" + operation + "\" : " + schemaOut +"}")
 						.replaceAll("#METHOD_NAME#", operation));
+				operationMap.put(operation, parameter);
 			}
 			operationDocuments.put(portName, contents);
 		}

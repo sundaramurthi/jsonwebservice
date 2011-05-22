@@ -3,6 +3,7 @@ package com.jaxws.json.parser;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.namespace.QName;
@@ -27,7 +28,7 @@ import com.sun.xml.ws.wsdl.parser.SOAPConstants;
 import com.sun.xml.ws.wsdl.parser.WSDLConstants;
 
 public class WSDLJSONParserExtension extends WSDLParserExtension {
-	
+	private static final Logger 	LOG		= Logger.getLogger(WSDLJSONParserExtension.class.getName());
 	@Override
 	public boolean bindingElements(WSDLBoundPortType binding,
 			XMLStreamReader reader) {
@@ -102,14 +103,18 @@ public class WSDLJSONParserExtension extends WSDLParserExtension {
 			XMLStreamReader reader,BindingMode mode){
 		QName name = reader.getName();
 		WSDLBoundOperationImpl bindingOp = (WSDLBoundOperationImpl)operation;
-		if (JSONConstants.QNAME_BODY.equals(name)) {
-            bindingOp.setInputExplicitBodyParts(parseBodyBinding(reader, bindingOp, mode));
+		if (JSONConstants.QNAME_BODY.equals(name) || SOAPConstants.QNAME_BODY.equals(name)) {
+			if(mode == BindingMode.INPUT)
+				bindingOp.setInputExplicitBodyParts(parseBodyBinding(reader, bindingOp, mode));
+			else if(mode == BindingMode.OUTPUT)
+				bindingOp.setOutputExplicitBodyParts(parseBodyBinding(reader, bindingOp, mode));
             goToEnd(reader);
             return true;
-        }else   if (SOAPConstants.QNAME_BODY.equals(name)) {
-            bindingOp.setInputExplicitBodyParts(parseBodyBinding(reader, bindingOp, mode));
-            goToEnd(reader);
-        } else if(JSONConstants.QNAME_CONTENT.equals(name)){
+        } else if(JSONConstants.QNAME_CONTENT.equals(name) || 
+        		/* remove in latter by notfiying major users.
+        		 * FOR Support 06 and early users.*/com.sun.xml.rpc.wsdl.document.mime.MIMEConstants.QNAME_CONTENT.equals(name)){
+        	// Direct content type appears in req/res binding. Vilating BP. 
+        	// But for just content response E.g image this is required to avoid mutipart type
         	String type = reader.getAttributeValue(null, "type");
         	String part = reader.getAttributeValue(null, "part");
         	if(type != null && bindingOp != null){
@@ -120,12 +125,45 @@ public class WSDLJSONParserExtension extends WSDLParserExtension {
         			bindingOp.getOutputMimeTypes().put(part != null ? part : "main" , type);
         		}
         	}
-        	
+        	// Special case only in json
+        	if(com.sun.xml.rpc.wsdl.document.mime.MIMEConstants.QNAME_CONTENT.equals(name)){
+        		LOG.warning("Your operation json binding mime part using xmlsoap mime (http://schemas.xmlsoap.org/wsdl/mime/) namespace." +
+        				"This namespace not going to be supported in feature version of jsonsoap plugin." +
+        				" Suggested to update this namespce to jsonsoap (http://schemas.jsonsoap.org/wsdl/mime/) ");
+        	}
+        	/*
+        	 * TODO PUT parts part of operation
+        	 * 
+        	 *  Map<String, ParameterBinding> parts = null;
+		        if (mode == BindingMode.INPUT) {
+		            parts = op.getInputParts();
+		        } else if (mode == BindingMode.OUTPUT) {
+		            parts = op.getOutputParts();
+		        } else if (mode == BindingMode.FAULT) {
+		            parts = op.getFaultParts();
+		        }
+        
+                String part = reader.getAttributeValue(null, "part");
+                String type = reader.getAttributeValue(null, "type");
+                if ((part == null) || (type == null)) {
+                    XMLStreamReaderUtil.skipElement(reader);
+                    continue;
+                }
+                ParameterBinding sb = ParameterBinding.createAttachment(type);
+                if (parts != null && sb != null && part != null)
+                    parts.put(part, sb);
+                XMLStreamReaderUtil.next(reader);
+        	 */
+        	goToEnd(reader);
+        	return true;
 			//bindingOp.addExtension(ex );
         	//operation.getOperation().addExtension(arg0)
         	//operation.getOutput().addExtension(WSDLExtension )
-        }else if(JSONConstants.QNAME_MULTIPART_RELATED.equals(name)){
-        	//return true;
+        }else if(JSONConstants.QNAME_MULTIPART_RELATED.equals(name)){//
+        	//<mime:multipartRelated><mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated>
+        	parseMimeMultipartBinding(reader, bindingOp, mode);
+			//goToEnd(reader);
+        	return true;
         }
 		return false;
 	}
@@ -166,6 +204,24 @@ public class WSDLJSONParserExtension extends WSDLParserExtension {
 	private static void goToEnd(XMLStreamReader reader) {
         while (XMLStreamReaderUtil.nextElementContent(reader) != XMLStreamConstants.END_ELEMENT) {
             XMLStreamReaderUtil.skipElement(reader);
+        }
+    }
+	
+	private void parseMimeMultipartBinding(XMLStreamReader reader, WSDLBoundOperationImpl op, BindingMode mode) {
+        while (XMLStreamReaderUtil.nextElementContent(reader) != XMLStreamConstants.END_ELEMENT) {
+            QName name = reader.getName();
+            if (JSONConstants.QNAME_PART.equals(name)) {
+                parseMIMEPart(reader, op, mode);
+            } else {
+                XMLStreamReaderUtil.skipElement(reader);
+            }
+        }
+    }
+
+    private void parseMIMEPart(XMLStreamReader reader, WSDLBoundOperationImpl op, BindingMode mode) {
+        while (XMLStreamReaderUtil.nextElementContent(reader) != XMLStreamConstants.END_ELEMENT) {
+        	if(!handleOperationInOutElements(op, reader, mode))
+                XMLStreamReaderUtil.skipElement(reader);
         }
     }
 

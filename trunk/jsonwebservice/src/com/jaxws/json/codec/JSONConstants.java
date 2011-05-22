@@ -8,7 +8,8 @@ public interface JSONConstants {
         "http://schemas.jsonsoap.org/wsdl/json/";
 
     
-    public static final String NS_SOAP_ENCODING = "http://schemas.xmlsoap.org/soap/encoding/";
+    public static final String NS_SOAP_ENCODING = 
+    	"http://schemas.jsonsoap.org/soap/encoding/";
 
     // other URIs
     public final String URI_JSON_TRANSPORT_HTTP =
@@ -35,7 +36,7 @@ public interface JSONConstants {
     // Copy from default package of MIMEContants
     
     // namespace URIs
-    public static String NS_WSDL_MIME = "http://schemas.xmlsoap.org/wsdl/mime/";
+    public static String NS_WSDL_MIME = "http://schemas.jsonsoap.org/wsdl/mime/";
 
     // QNames
     public static QName QNAME_CONTENT = new QName(NS_WSDL_MIME, "content");
@@ -43,5 +44,6 @@ public interface JSONConstants {
         new QName(NS_WSDL_MIME, "multipartRelated");
     public static QName QNAME_PART = new QName(NS_WSDL_MIME, "part");
     public static QName QNAME_MIME_XML = new QName(NS_WSDL_MIME, "mimeXml");
+    public static QName QNAME_MIME_JSON = new QName(NS_WSDL_MIME, "mimeJSON");
 }
 

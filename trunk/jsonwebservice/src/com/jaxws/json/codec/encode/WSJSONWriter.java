@@ -317,15 +317,15 @@ public class WSJSONWriter extends BeanAware {
             		object instanceof Character || 
             		object instanceof Locale ||
             		object instanceof Class){
-        		this.add("\"type\":\"string\",\"default\":");
+        		this.add("\"type\":\"string\",\"required\":false,\"default\":");// TODO required for all
         	} else if (object instanceof Number) {
         		this.add("\"type\":\"number\",\"default\":");// TODO integer type
         	} else if (object instanceof Boolean) {
         		this.add("\"type\":\"boolean\",\"default\":");
         	} else if (object instanceof Date) {
-        		this.add("\"type\":\"string\",\"format\":\"date\",\"default\":");
+        		this.add("\"type\":\"string\",\"required\":false,\"format\":\"date\",\"default\":");
         	} else if (object instanceof Calendar) {
-        		this.add("\"type\":\"string\",\"format\":\"date\",\"default\":");
+        		this.add("\"type\":\"string\",\"required\":false,\"format\":\"date\",\"default\":");
         	} else if (object instanceof Map) {
         		this.add("\"type\":\"object\",\"properties\":");
         		// TODO
@@ -605,8 +605,8 @@ public class WSJSONWriter extends BeanAware {
     			}
     		}
          } 
-    	
-        this.add("[");
+    	if(!this.schemaMode)
+    		this.add("[");
         if(this.metaDataMode && method != null && method.getGenericReturnType() != null){
     		Class<?> parameterType  = (Class<?>)((ParameterizedType)method.getGenericReturnType()).
 					getActualTypeArguments()[0];
@@ -641,8 +641,8 @@ public class WSJSONWriter extends BeanAware {
                 this.setExprStack(expr);
             }
         }
-
-        this.add("]");
+        if(!this.schemaMode)
+        	this.add("]");
     }
     
     /**
