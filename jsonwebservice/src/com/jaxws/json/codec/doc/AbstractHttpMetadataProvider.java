@@ -97,7 +97,7 @@ public abstract class AbstractHttpMetadataProvider implements
 		return metadataModel;
 	}
 	
-	private String getCurrentEndPointUrl(){
+	protected String getCurrentEndPointUrl(){
 		// NOTE:  endPoint.getSEIModel().getPort().getAddress() is not dynamic. Its address configured in WSDL
 		return "#BASEADDRESS#" + ((getHttpAdapter() != null) ? getHttpAdapter().getValidPath() : "");
 	}
