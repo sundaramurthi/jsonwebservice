@@ -18,6 +18,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -34,6 +36,7 @@ import com.jaxws.json.feature.JSONObject;
  *  
  */
 public abstract class BeanAware {
+	private static final Logger	LOG		= Logger.getLogger(BeanAware.class.getName());
 	private static DatatypeFactory datatypeFactory; 
 	/**
 	 * Private bean property cache.
@@ -167,8 +170,7 @@ public abstract class BeanAware {
             	return datatypeFactory.newXMLGregorianCalendar();
             }
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOG.log(Level.FINE, "Failed in iniate", e);
 		}
 		return null;
 	}
