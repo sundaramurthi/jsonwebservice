@@ -36,7 +36,7 @@ div.inputEx-invalid div.inputEx-label {
 }
 
 div.inputEx-invalid div.inputEx-label label {
-   background:transparent url(../images/error_bang.gif) no-repeat scroll 0 1px;
+   background:transparent url(?CLIENT_RESOURCE=inputex/images/error_bang.gif) no-repeat scroll 0 1px;
    padding-left:20px;
 }
 

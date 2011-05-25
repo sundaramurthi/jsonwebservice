@@ -96,7 +96,7 @@ inputEx.Field.prototype = {
 	render: function() {
 	
 	   // Create a DIV element to wrap the editing el and the image
-	   this.divEl = inputEx.cn('div', {className: 'inputEx-fieldWrapper'});
+	   this.divEl = inputEx.cn('div', {className: 'inputEx-fieldWrapper '+this.options.name});// Auth: SUndar '+this.options.name
 	   if(this.options.id) {
 	      this.divEl.id = this.options.id;
 	   }
@@ -106,7 +106,7 @@ inputEx.Field.prototype = {
 	   
 	   // Label element
 	   if (YAHOO.lang.isString(this.options.label)) {
-	      this.labelDiv = inputEx.cn('div', {id: this.divEl.id+'-label', className: 'inputEx-label', 'for': this.divEl.id+'-field'});
+	      this.labelDiv = inputEx.cn('div', {id: this.divEl.id+'-label', className: 'inputEx-label '+this.options.name, 'for': this.divEl.id+'-field'});
 	      this.labelEl = inputEx.cn('label', null, null, this.options.label === "" ? "&nbsp;" : this.options.label);
 	      this.labelDiv.appendChild(this.labelEl);
 	      this.divEl.appendChild(this.labelDiv);
