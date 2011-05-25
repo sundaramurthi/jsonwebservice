@@ -287,8 +287,14 @@ public class WSJSONWriter extends BeanAware {
          if (this.stack.contains(object) && !(clazz.isPrimitive() || clazz.equals(String.class))) {
              // Step 2.1 : object is cyclic reference and not primitive write as null 
         	 LOG.log(Level.FINE, "Cyclic reference detected on " + object);
-             this.add("null");
-             return;
+        	//TODO folowing logic required globaly, normal json also haveing same problem. with empty list
+ 	       	if(object instanceof ArrayList && this.schemaMode){
+ 	       		// TODO find way to solve empty list object compare issue.
+ 	       		this.stack.push(object);
+ 	       	} else {
+ 	       		this.add("null");
+ 	       		return;
+ 	       	}
          }else{
         	 this.stack.push(object);
          }
@@ -317,15 +323,15 @@ public class WSJSONWriter extends BeanAware {
             		object instanceof Character || 
             		object instanceof Locale ||
             		object instanceof Class){
-        		this.add("\"type\":\"string\",\"required\":false,\"default\":");// TODO required for all
+        		this.add("\"type\":\"string\",\"nillable\":true,\"default\":");// TODO required for all
         	} else if (object instanceof Number) {
         		this.add("\"type\":\"number\",\"default\":");// TODO integer type
         	} else if (object instanceof Boolean) {
         		this.add("\"type\":\"boolean\",\"default\":");
         	} else if (object instanceof Date) {
-        		this.add("\"type\":\"string\",\"required\":false,\"format\":\"date\",\"default\":");
+        		this.add("\"type\":\"string\",\"nillable\":true,\"default\":");//\"format\":\"date\",
         	} else if (object instanceof Calendar) {
-        		this.add("\"type\":\"string\",\"required\":false,\"format\":\"date\",\"default\":");
+        		this.add("\"type\":\"string\",\"nillable\":true,\"default\":");
         	} else if (object instanceof Map) {
         		this.add("\"type\":\"object\",\"properties\":");
         		// TODO
