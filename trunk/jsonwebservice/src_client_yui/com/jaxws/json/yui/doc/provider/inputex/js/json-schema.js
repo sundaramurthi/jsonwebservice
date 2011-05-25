@@ -250,6 +250,13 @@ inputEx.JsonSchema.Builder.prototype = {
 	   if(!p.optional) {
 	      fieldDef.required = true;
 	   }
+	   //CODEC CHANGE MAINTANIN Author: Sundar JSON schema don't suggest optional, use required or nillable
+	   if(typeof p.required != 'undefined') {
+		   fieldDef.required = p.required;
+	   }else if(typeof p.nillable != 'undefined'){
+		   fieldDef.required = !p.nillable;
+	   }
+	   //END
 
 	    for(key in schemaMap) {
 	        if(schemaMap.hasOwnProperty(key)) {
@@ -378,6 +385,9 @@ inputEx.JsonSchema.Builder.prototype = {
 	                fieldDef.type = "html";
 	             } else if(p.format == "date") {
 	                fieldDef.type = "date";
+	                // add default date picker Autor: sundar
+	                //fieldDef._inputex = {"_type": "datepicker", valueFormat: 'Y-m-d', value: '2009-01-01'};
+	                //end
 	                fieldDef.tooltipIcon = true;
 	             } else if(p.format == 'url') {
 	            	 fieldDef.type = 'url';

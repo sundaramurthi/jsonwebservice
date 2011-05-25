@@ -54,7 +54,7 @@ div.inputEx-invalid > div.inputEx-label {
 }
 
 div.inputEx-invalid > div.inputEx-label label {
-   background:transparent url(../images/error_bang.gif) no-repeat scroll 0 1px;
+   background:transparent url(?CLIENT_RESOURCE=inputex/images/error_bang.gif) no-repeat scroll 0 1px;
    padding-left:20px;
 }
 
@@ -104,7 +104,7 @@ legend.inputEx-Group-legend {
 div.inputEx-Group div.inputEx-Group-collapseImg {
    width: 14px;
    height: 14px;
-   background-image: url(../images/sprite-menu.gif);
+   background-image: url(?CLIENT_RESOURCE=inputex/images/sprite-menu.gif);
    background-color: transparent;
    background-repeat: no-repeat;
    background-attachment: scroll;
@@ -167,7 +167,7 @@ div.inputEx-Form-Mask div.inputEx-Form-Mask-bg {
 div.inputEx-Form-Mask div.inputEx-Form-Mask-spinner {
    width: 36px;
    height: 36px;
-   background-image: url(../images/spinner.gif);
+   background-image: url(?CLIENT_RESOURCE=inputex/images/spinner.gif);
 }
 div.inputEx-Form-Mask span {
    color:#666666;
@@ -204,14 +204,14 @@ div.inputEx-UrlField img {
 
 /* Buttons */
 img.inputEx-ListField-addButton {
-    background: transparent url(../images/add.png) no-repeat scroll 0%;
+    background: transparent url(?CLIENT_RESOURCE=inputex/images/add.png) no-repeat scroll 0%;
     width: 16px;
     height: 16px;
     cursor: pointer;
  }
 
 img.inputEx-ListField-delButton {
-   background: transparent url(../images/delete.png) no-repeat scroll 0%;
+   background: transparent url(?CLIENT_RESOURCE=inputex/images/delete.png) no-repeat scroll 0%;
    width: 16px;
    height: 16px;
    float: left;
@@ -227,10 +227,10 @@ div.inputEx-ListField-Arrow {
 }
 
 div.inputEx-ListField-ArrowUp {
-   background: transparent url(../images/bullet_arrow_up.png) no-repeat scroll 0%;
+   background: transparent url(?CLIENT_RESOURCE=inputex/images/bullet_arrow_up.png) no-repeat scroll 0%;
 }
 div.inputEx-ListField-ArrowDown {
-   background: transparent url(../images/bullet_arrow_down.png) no-repeat scroll 0%;
+   background: transparent url(?CLIENT_RESOURCE=inputex/images/bullet_arrow_down.png) no-repeat scroll 0%;
 }
 
 div.inputEx-ListField-subFieldEl {
@@ -282,7 +282,7 @@ div.inputEx-AutoComplete div.yui-ac-container {
  */
 
 div.inputEx-DateField {
-   background: transparent url(../images/calendar.gif) no-repeat scroll left center;
+   background: transparent url(?CLIENT_RESOURCE=inputex/images/calendar.gif) no-repeat scroll left center;
    padding-left: 20px;
 }
 
@@ -320,7 +320,7 @@ div.inputEx-PickerField .yui-overlay {
 * Date Picker
 */
 div.inputEx-DatePickerField .yui-menu-button button {
-    background-image: url(../images/calendar.gif);
+    background-image: url(?CLIENT_RESOURCE=inputex/images/calendar.gif);
 }
 
 
@@ -334,7 +334,7 @@ div.inputEx-ColorField div.yui-overlay div.bd {
 }
 
 div.inputEx-ColorField .yui-menu-button button {
-    background-image: url(../images/palette.png);
+    background-image: url(?CLIENT_RESOURCE=inputex/images/palette.png);
 }
 
 div.inputEx-ColorField-button {
@@ -430,14 +430,14 @@ div.inputEx-SliderField {
 
 div.inputEx-SliderField div.inputEx-SliderField-bg {
    position: relative;
-   background:url('../images/slider-bg-h.gif') 5px 0 no-repeat;
+   background:url(?CLIENT_RESOURCE=inputex/css/'../images/slider-bg-h.gif') 5px 0 no-repeat;
    height:28px;
    width:112px;
    float: left;
 }
 
 div.inputEx-SliderField div.inputEx-SliderField-thumb {
-   background: url('../images/thumb-n.gif') 0px 0px no-repeat;
+   background: url(?CLIENT_RESOURCE=inputex/css/'../images/thumb-n.gif') 0px 0px no-repeat;
    cursor: pointer;
    position: absolute;
    top: 4px;
@@ -555,7 +555,7 @@ div.inputEx-CombineField-separator {
 div.inputEx-TypeField-EditButton {
    width: 16px;
    height: 16px;
-   background-image: url(../images/pencil.png);
+   background-image: url(?CLIENT_RESOURCE=inputex/images/pencil.png);
    cursor: pointer;
    float: left;
    margin-left:4px;
@@ -563,7 +563,7 @@ div.inputEx-TypeField-EditButton {
 }
 
 div.inputEx-TypeField-EditButton.opened {
-   background-image: url(../images/pencil_delete.png);
+   background-image: url(?CLIENT_RESOURCE=inputex/images/pencil_delete.png);
 }
 
 div.inputEx-TypeField-FieldValueWrapper {
@@ -587,8 +587,8 @@ div.inputEx-TypeField-PropertiesPanel {
  */
 
 div.inputEx-MenuField div.inputEx-Result {background-color:#FFFFFF; border:1px solid #CCCCCC; padding:2px 25px 2px 5px; cursor:pointer}
-div.inputEx-MenuField div.inputEx-RightArrow {background-image:url(../images/menu-right-arrow.png);background-position:right center;background-repeat:no-repeat;}
-div.inputEx-MenuField div.inputEx-DownArrow {background-image:url(../images/menu-down-arrow.png);background-position:right center;background-repeat:no-repeat;}
+div.inputEx-MenuField div.inputEx-RightArrow {background-image:url(?CLIENT_RESOURCE=inputex/images/menu-right-arrow.png);background-position:right center;background-repeat:no-repeat;}
+div.inputEx-MenuField div.inputEx-DownArrow {background-image:url(?CLIENT_RESOURCE=inputex/images/menu-down-arrow.png);background-position:right center;background-repeat:no-repeat;}
 
 
 /**
@@ -600,12 +600,12 @@ ul.inputEx-JsonTreeInspector li {
 }
  
 ul.inputEx-JsonTreeInspector li.collapsed {
-   background:transparent url(../images/plus.gif) no-repeat scroll 0 0;
+   background:transparent url(?CLIENT_RESOURCE=inputex/images/plus.gif) no-repeat scroll 0 0;
    cursor: pointer;
 }
 
 ul.inputEx-JsonTreeInspector li.expanded {
-   background:transparent url(../images/minus.gif) no-repeat scroll 0 0;
+   background:transparent url(?CLIENT_RESOURCE=inputex/images/minus.gif) no-repeat scroll 0 0;
    cursor: pointer;
 }
 
@@ -654,7 +654,7 @@ tbody.yui-dt-data td.yui-dt-editable div.inputEx-dtInPlaceEdit-onModifyItem{
 tbody.yui-dt-data div.inputEx-dtInPlaceEdit-deleteLinkSpinner{
 	width:16px;
 	height:16px;
-	background:transparent url(../images/ajax-loader.gif) no-repeat scroll 20px 4px;
+	background:transparent url(?CLIENT_RESOURCE=inputex/images/ajax-loader.gif) no-repeat scroll 20px 4px;
 }
 
 .yui-dt-editor .yui-dt-button button {
@@ -680,17 +680,17 @@ div.inputEx-fieldWrapper div.availabilityDiv div.icon {
 
 div.inputEx-fieldWrapper div.availabilityDiv.loading div.icon {
 	display:block;
-	background: transparent url(../images/ajax-loader.gif) no-repeat 0 3px;
+	background: transparent url(?CLIENT_RESOURCE=inputex/images/ajax-loader.gif) no-repeat 0 3px;
 }
 
 div.inputEx-fieldWrapper div.availabilityDiv.available div.icon {
 	display:block;
-	background: transparent url(../images/tick.gif) no-repeat 0 3px;
+	background: transparent url(?CLIENT_RESOURCE=inputex/images/tick.gif) no-repeat 0 3px;
 }
 
 div.inputEx-fieldWrapper div.availabilityDiv.unavailable div.icon {
 	display:block;
-	background: transparent url(../images/exclamation.gif) no-repeat 0 3px;
+	background: transparent url(?CLIENT_RESOURCE=inputex/images/exclamation.gif) no-repeat 0 3px;
 }
 
 

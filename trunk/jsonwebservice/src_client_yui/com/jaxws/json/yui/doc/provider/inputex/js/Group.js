@@ -79,7 +79,7 @@ lang.extend(inputEx.Group, inputEx.Field, {
    renderFields: function(parentEl) {
       
       this.fieldset = inputEx.cn('fieldset');
-      this.legend = inputEx.cn('legend', {className: 'inputEx-Group-legend'});
+      this.legend = inputEx.cn('legend', {className: 'inputEx-Group-legend'+(this.options.name ?' '+this.options.name : '')});// Author: sundar added name class
    
       // Option Collapsible
       if(this.options.collapsible) {

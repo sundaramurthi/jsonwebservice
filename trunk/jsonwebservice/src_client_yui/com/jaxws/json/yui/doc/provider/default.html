@@ -51,6 +51,9 @@
 </div>
 
 <script>
+if(typeof window.TREEEXPANDLEVEL == 'undefined'){
+	window.TREEEXPANDLEVEL = 3;
+}
 var ENDPOINT_ADDRESS_PROPERTY = "javax.xml.ws.service.endpoint.address";
 var addTreeNodes = function(oResults, node, level){
 	 if(level > 5)return;
@@ -59,7 +62,7 @@ var addTreeNodes = function(oResults, node, level){
 	 for(p in oResults){
 		 if(p == ENDPOINT_ADDRESS_PROPERTY)
 			 continue;
-         var tmpNode = new YAHOO.widget.TextNode(p, node, (level < 3));
+         var tmpNode = new YAHOO.widget.TextNode(p, node, (level < window.TREEEXPANDLEVEL));
        	 if(oResults[ENDPOINT_ADDRESS_PROPERTY]){
        		tmpNode.href = oResults[ENDPOINT_ADDRESS_PROPERTY] + "?form"+p;
        		tmpNode.target = "content";
@@ -93,7 +96,7 @@ var loader = new YAHOO.util.YUILoader({
 		            underlay: 'none',
 		            width: '1200px',
 		            height: '800px',
-		            xy: [5, 5]
+		            xy: [2, 2]
 		        });
 		        panel.setHeader('#SERIVICE_NAME#');
 		        panel.setBody('<div id="layout"></div>');
@@ -106,7 +109,7 @@ var loader = new YAHOO.util.YUILoader({
 		                        { position: 'top', height: 30, resize: false, body: '#SERIVICE_NAME#', gutter: '2' },
 		                        { position: 'left', width: 260, resize: true, body: 'left', gutter: '0 5 0 2', minWidth: 150, maxWidth: 300 },
 		                        { position: 'bottom', height: 175, body: '#DOCUMENT_ENDS#', gutter: '2' },
-		                        { position: 'center', body: '<iframe name="content" width="100%" height="100%" frameborder="1" style="border-color: #DDDDDD;border-style: solid;border-width: 1px;min-height: 400px;">Click any operation to load content</iframe>', gutter: '0 2 0 0' }
+		                        { position: 'center', body: '<iframe name="content" id="content" width="100%" height="100%" frameborder="0" style="border: none;min-height: 400px;">Click any operation to load content</iframe>', gutter: '0 2 0 0' }
 		                    ]
 		                });
 		

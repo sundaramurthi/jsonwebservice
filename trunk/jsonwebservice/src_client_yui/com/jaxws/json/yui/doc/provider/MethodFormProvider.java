@@ -111,7 +111,8 @@ public class MethodFormProvider extends AbstractHttpMetadataProvider implements 
 						this.codec.getCustomSerializer(),true);
 				
 				Collection<Object> value = operationMap.values();
-				String schemaOut = WSJSONWriter.writeMetadata(value.size() ==1 ? value.toArray()[0] : new HashMap<String,String>(),
+				Object obj = value.size() ==1 ? value.toArray()[0] : new HashMap<String,String>();
+				String schemaOut = WSJSONWriter.writeMetadata(obj,
 						this.codec.getCustomSerializer(),true);
 				contents.put(operation, 
 						content.toString().replaceAll("#JSON_METHOD_SCHEMA#","{\"" + operation + "\" : " + schemaIn +"}")

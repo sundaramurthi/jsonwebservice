@@ -5,23 +5,25 @@
  	<title>#METHOD_NAME#</title>
  	<link href="?CLIENT_RESOURCE=inputex/build/inputex-min.css" type="text/css" rel="stylesheet"/>
  	<style type="text/css">
-	  html, body { border-width: 0px; margin: 0px; width: 100%; height: 100%; background-color: #F2F2F2; }
+	  html {background-color: #F2F2F2; }
  	</style>
  	<script src="?CLIENT_RESOURCE=inputex/lib/yui/yuiloader/yuiloader-min.js"></script>  
  	<script src="?CLIENT_RESOURCE=inputex/js/inputex-loader.js"></script>
  </head>
  <body>
 	<h2>#METHOD_NAME#</h2>
-	<div id='#METHOD_NAME#'></div>
+	<div id='#METHOD_NAME#' class='inputForm'></div>
 	<h2>#METHOD_NAME# Response</h2>
-	<div id='#METHOD_NAME#out'></div>
+	<div id='#METHOD_NAME#out' class='outputForm'></div>
 	<script type="text/javascript">
 		var loader = new YAHOO.util.YUILoader({ 
 			require: ["yahoo","event","connection","utilities","container","dom","button","calendar","element",
 			          "dragdrop","resize","animation","layout","json","datasource","datatable","event","inputex","inputex-field",
 			          "inputex-jsonschema","inputex-datatable","inputex-button","inputex-jsonform","inputex-stringfield",
 			          "inputex-checkbox","inputex-datefield","inputex-integerfield","inputex-selectfield","inputex-emailfield",
-			          "inputex-numberfield","inputex-passwordfield","inputex-radiofield","inputex-textarea","inputex-filefield"], 
+			          "inputex-numberfield","inputex-passwordfield","inputex-radiofield","inputex-textarea","inputex-filefield",
+			          "inputex-ddlist","inputex-listfield","inputex-datepickerfield","inputex-autocomplete","inputex-dateselectmonthfield",
+			          "inputex-datesplitfield","inputex-datetimefield"], 
 			loadOptional: true, 
 			base: "?CLIENT_RESOURCE=inputex/lib/yui/",
 			onSuccess: function() {
