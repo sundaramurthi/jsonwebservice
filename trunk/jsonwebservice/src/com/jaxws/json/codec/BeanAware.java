@@ -3,6 +3,8 @@
  */
 package com.jaxws.json.codec;
 
+import java.beans.BeanDescriptor;
+import java.beans.FeatureDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -16,6 +18,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
@@ -78,6 +82,25 @@ public abstract class BeanAware {
 				|| Calendar.class.isAssignableFrom(clazz); // GregorianCalendar, Calendar;
 		// XMLGregorianCallender should be responded as bean with year, day , month property.
 	}
+	
+	/**
+ 	 * Utility method to return bean property information.
+ 	 * @param clazz
+ 	 * @return
+ 	 */
+	protected static BeanDescriptor getBeanDescriptor(Class<?> clazz){
+		try{
+			BeanDescriptor beanDescriptor = ((clazz.isAnnotationPresent(JSONObject.class) && 
+	    			clazz.getAnnotation(JSONObject.class).ignoreHierarchy()) 
+	    			? Introspector.getBeanInfo(clazz) 
+	    					: Introspector.getBeanInfo(clazz,clazz.isEnum() ? Enum.class : clazz.equals(Object.class)? null : Object.class)).getBeanDescriptor();
+			populateFeatureDescriptor(clazz, beanDescriptor);
+	 		return beanDescriptor;
+		}catch(IntrospectionException exp){
+			return null;
+		}
+ 	}
+	
 	/**
  	 * Utility method to return bean property information.
  	 * @param clazz
@@ -95,9 +118,54 @@ public abstract class BeanAware {
         	// There is no property descriptor, then use public fields, RPC document require this
         	props	= PublicFieldPropertyDescriptor.getDiscriptors(clazz.getFields(), clazz);
         }
+ 		populatePropertyDescriptors(clazz, props);
  		propertyDescriptorCache.put(clazz, props);
  		return props;
  	}
+	
+	private static void populatePropertyDescriptors(Class<?> clazz, PropertyDescriptor[] props){
+		for(PropertyDescriptor prop : props){
+			populateFeatureDescriptor(clazz, prop);
+		}
+	}
+	
+	private static void populateFeatureDescriptor(Class<?> clazz, FeatureDescriptor prop){
+		try{
+			ResourceBundle bundle = ResourceBundle.getBundle(clazz.getName());
+			prop.setDisplayName(
+					bundle.getString(prop.getName()+".displayName"));
+			
+		}catch(MissingResourceException ex){
+			try{
+				ResourceBundle bundle = ResourceBundle.getBundle("beanLocales");
+				prop.setDisplayName(
+						bundle.getString(clazz.getName() + "." + prop.getName() + ".displayName"));
+			}catch(MissingResourceException exp){
+				try{
+					ResourceBundle bundle = ResourceBundle.getBundle("beanLocales");
+					prop.setDisplayName(
+							bundle.getString(prop.getName()+".displayName"));
+				}catch(MissingResourceException expe){}
+			}
+		}
+		try{
+			ResourceBundle bundle = ResourceBundle.getBundle(clazz.getName());
+			prop.setShortDescription(
+					bundle.getString(prop.getName()+".shortDescription"));
+		}catch(MissingResourceException ex){
+			try{
+				ResourceBundle bundle = ResourceBundle.getBundle("beanLocales");
+				prop.setShortDescription(
+						bundle.getString(clazz.getName() + "." + prop.getName()+".shortDescription"));
+			}catch(MissingResourceException exp) {
+				try{
+					ResourceBundle bundle = ResourceBundle.getBundle("beanLocales");
+					prop.setDisplayName(
+							bundle.getString(prop.getName()+".shortDescription"));
+				}catch(MissingResourceException expe){}
+			}
+		}
+	}
  	
  	/**
 	 * Utility method to read declaring field including private scope.
