@@ -42,7 +42,7 @@ lang.extend(inputEx.Group, inputEx.Field, {
    
       this.options.legend = options.legend || '';
    
-      this.options.collapsible = lang.isUndefined(options.collapsible) ? false : options.collapsible;
+      this.options.collapsible = lang.isUndefined(options.collapsible) ? true : options.collapsible;// Author false to true
       this.options.collapsed = lang.isUndefined(options.collapsed) ? false : options.collapsed;
       
       this.options.disabled = lang.isUndefined(options.disabled) ? false : options.disabled;
@@ -79,7 +79,7 @@ lang.extend(inputEx.Group, inputEx.Field, {
    renderFields: function(parentEl) {
       
       this.fieldset = inputEx.cn('fieldset');
-      this.legend = inputEx.cn('legend', {className: 'inputEx-Group-legend'+(this.options.name ?' '+this.options.name : '')});// Author: sundar added name class
+      this.legend = inputEx.cn('legend', {className: 'inputEx-Group-legend'+(this.options.name ?' '+this.options.name : ' noname')});// Author: sundar added name class
    
       // Option Collapsible
       if(this.options.collapsible) {
@@ -467,10 +467,10 @@ lang.extend(inputEx.Group, inputEx.Field, {
 inputEx.registerType("group", inputEx.Group, [
    { type: "string", label: "Name", name: "name", value: '' },
    { type: 'string', label: 'Legend', name:'legend'},
-   { type: 'boolean', label: 'Collapsible', name:'collapsible', value: false},
+   { type: 'boolean', label: 'Collapsible', name:'collapsible', value: true},
    { type: 'boolean', label: 'Collapsed', name:'collapsed', value: false},
    { type: 'list', label: 'Fields', name: 'fields', elementType: {type: 'type' } }
-], true);
+], true);// author sundar collapsible false -> true
 
 
 })();

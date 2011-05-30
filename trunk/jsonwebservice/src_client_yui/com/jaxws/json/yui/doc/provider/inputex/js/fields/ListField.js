@@ -82,6 +82,34 @@ lang.extend(inputEx.ListField,inputEx.Field, {
 	      this.addButton = inputEx.cn('a', {className: 'inputEx-List-link'}, null, this.options.listAddLabel);
 	      this.fieldContainer.appendChild(this.addButton);
       }
+	   
+	   /**
+		 * Datasource and inputEx fields used for both examples
+		 */
+	   if(this.options.elementType.type == 'group'){
+		   var fields = this.options.elementType.fields;
+		   var isTable	= true;
+		   for(var i =0; i < fields.length; i++){
+			   isTable = isTable && fields[i].type != 'list' && fields[i].type != 'group';
+		   }
+		   if(isTable){
+			   var divCont = inputEx.cn('div', null, {marginLeft: "4px"}, '');
+			   this.fieldContainer.appendChild(divCont  );
+			   var myDataSource = new YAHOO.util.DataSource([]);
+			   myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+				
+			this.dataTable = new inputEx.widget.DataTable({
+					parentEl: divCont, 
+					fields: fields,
+					datasource: myDataSource,
+					datatableOpts: {caption:this.options.label},
+					allowInsert:false,
+					allowModify: false,
+					allowDelete: false
+				});
+		   }
+	   }
+ 
 	},
 	   
 	/**
@@ -160,6 +188,10 @@ lang.extend(inputEx.ListField,inputEx.Field, {
 	   }
 	   
 	   inputEx.ListField.superclass.setValue.call(this, value, sendUpdatedEvt);
+	   
+	   if(this.dataTable){
+		   this.dataTable.options.datasource = new YAHOO.util.DataSource(value);
+	   }
 	},
 	   
 	/**

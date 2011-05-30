@@ -724,6 +724,13 @@ inputEx.JsonSchema.Builder.prototype = {
 	   if(!p.optional) {
 	      fieldDef.required = true;
 	   }
+	   //CODEC CHANGE MAINTANIN Author: Sundar JSON schema don't suggest optional, use required or nillable
+	   if(typeof p.required != 'undefined') {
+		   fieldDef.required = p.required;
+	   }else if(typeof p.nillable != 'undefined'){
+		   fieldDef.required = !p.nillable;
+	   }
+	   //END
 
 	    for(key in schemaMap) {
 	        if(schemaMap.hasOwnProperty(key)) {
@@ -852,6 +859,9 @@ inputEx.JsonSchema.Builder.prototype = {
 	                fieldDef.type = "html";
 	             } else if(p.format == "date") {
 	                fieldDef.type = "date";
+	                // add default date picker Autor: sundar
+	                //fieldDef._inputex = {"_type": "datepicker", valueFormat: 'Y-m-d', value: '2009-01-01'};
+	                //end
 	                fieldDef.tooltipIcon = true;
 	             } else if(p.format == 'url') {
 	            	 fieldDef.type = 'url';
@@ -1246,7 +1256,7 @@ inputEx.Field.prototype = {
 	render: function() {
 	
 	   // Create a DIV element to wrap the editing el and the image
-	   this.divEl = inputEx.cn('div', {className: 'inputEx-fieldWrapper'});
+	   this.divEl = inputEx.cn('div', {className: 'inputEx-fieldWrapper '+this.options.name});// Auth: SUndar '+this.options.name
 	   if(this.options.id) {
 	      this.divEl.id = this.options.id;
 	   }
@@ -1256,7 +1266,7 @@ inputEx.Field.prototype = {
 	   
 	   // Label element
 	   if (YAHOO.lang.isString(this.options.label)) {
-	      this.labelDiv = inputEx.cn('div', {id: this.divEl.id+'-label', className: 'inputEx-label', 'for': this.divEl.id+'-field'});
+	      this.labelDiv = inputEx.cn('div', {id: this.divEl.id+'-label', className: 'inputEx-label '+this.options.name, 'for': this.divEl.id+'-field'});
 	      this.labelEl = inputEx.cn('label', null, null, this.options.label === "" ? "&nbsp;" : this.options.label);
 	      this.labelDiv.appendChild(this.labelEl);
 	      this.divEl.appendChild(this.labelDiv);
@@ -1595,7 +1605,7 @@ lang.extend(inputEx.Group, inputEx.Field, {
    
       this.options.legend = options.legend || '';
    
-      this.options.collapsible = lang.isUndefined(options.collapsible) ? false : options.collapsible;
+      this.options.collapsible = lang.isUndefined(options.collapsible) ? true : options.collapsible;// Author false to true
       this.options.collapsed = lang.isUndefined(options.collapsed) ? false : options.collapsed;
       
       this.options.disabled = lang.isUndefined(options.disabled) ? false : options.disabled;
@@ -1632,7 +1642,7 @@ lang.extend(inputEx.Group, inputEx.Field, {
    renderFields: function(parentEl) {
       
       this.fieldset = inputEx.cn('fieldset');
-      this.legend = inputEx.cn('legend', {className: 'inputEx-Group-legend'});
+      this.legend = inputEx.cn('legend', {className: 'inputEx-Group-legend'+(this.options.name ?' '+this.options.name : ' noname')});// Author: sundar added name class
    
       // Option Collapsible
       if(this.options.collapsible) {
@@ -2020,10 +2030,10 @@ lang.extend(inputEx.Group, inputEx.Field, {
 inputEx.registerType("group", inputEx.Group, [
    { type: "string", label: "Name", name: "name", value: '' },
    { type: 'string', label: 'Legend', name:'legend'},
-   { type: 'boolean', label: 'Collapsible', name:'collapsible', value: false},
+   { type: 'boolean', label: 'Collapsible', name:'collapsible', value: true},
    { type: 'boolean', label: 'Collapsed', name:'collapsed', value: false},
    { type: 'list', label: 'Fields', name: 'fields', elementType: {type: 'type' } }
-], true);
+], true);// author sundar collapsible false -> true
 
 
 })();(function () {
@@ -4971,6 +4981,34 @@ lang.extend(inputEx.ListField,inputEx.Field, {
 	      this.addButton = inputEx.cn('a', {className: 'inputEx-List-link'}, null, this.options.listAddLabel);
 	      this.fieldContainer.appendChild(this.addButton);
       }
+	   
+	   /**
+		 * Datasource and inputEx fields used for both examples
+		 */
+	   if(this.options.elementType.type == 'group'){
+		   var fields = this.options.elementType.fields;
+		   var isTable	= true;
+		   for(var i =0; i < fields.length; i++){
+			   isTable = isTable && fields[i].type != 'list' && fields[i].type != 'group';
+		   }
+		   if(isTable){
+			   var divCont = inputEx.cn('div', null, {marginLeft: "4px"}, '');
+			   this.fieldContainer.appendChild(divCont  );
+			   var myDataSource = new YAHOO.util.DataSource([]);
+			   myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+				
+			this.dataTable = new inputEx.widget.DataTable({
+					parentEl: divCont, 
+					fields: fields,
+					datasource: myDataSource,
+					datatableOpts: {caption:this.options.label},
+					allowInsert:false,
+					allowModify: false,
+					allowDelete: false
+				});
+		   }
+	   }
+ 
 	},
 	   
 	/**
@@ -5049,6 +5087,10 @@ lang.extend(inputEx.ListField,inputEx.Field, {
 	   }
 	   
 	   inputEx.ListField.superclass.setValue.call(this, value, sendUpdatedEvt);
+	   
+	   if(this.dataTable){
+		   this.dataTable.options.datasource = new YAHOO.util.DataSource(value);
+	   }
 	},
 	   
 	/**
@@ -7698,161 +7740,757 @@ lang.extend(inputEx.MultiAutoComplete, inputEx.AutoComplete, {
 // Register this class as "multiautocomplete" type
 inputEx.registerType("multiautocomplete", inputEx.MultiAutoComplete);
 
-})();(function() {
-
-/**
- * Create a uneditable field where you can stick the html you want
- * Added Options:
- * <ul>
- *    <li>visu: inputEx visu type</li>
- * </ul>
- * @class inputEx.UneditableField
- * @extends inputEx.Field
- * @constructor
- * @param {Object} options inputEx.Field options object
- */
-inputEx.UneditableField = function(options) {
-	inputEx.UneditableField.superclass.constructor.call(this,options);
-};
-YAHOO.lang.extend(inputEx.UneditableField, inputEx.Field, {
-   
-   /**
-    * Set the default values of the options
-    * @param {Object} options Options object as passed to the constructor
-    */
-	setOptions: function(options) {
-      inputEx.UneditableField.superclass.setOptions.call(this,options);
-      this.options.visu = options.visu;
-   },
-   
-   /**
-    * Store the value and update the visu
-    * @param {Any} val The value that will be sent to the visu
-    * @param {boolean} [sendUpdatedEvt] (optional) Wether this setValue should fire the updatedEvt or not (default is true, pass false to NOT send the event)
-    */
-   setValue: function(val, sendUpdatedEvt) {
-      this.value = val;
-      
-      inputEx.renderVisu(this.options.visu, val, this.fieldContainer);
-      
-	   inputEx.UneditableField.superclass.setValue.call(this, val, sendUpdatedEvt);
-   },
-   
-   /**
-    * Return the stored value
-    * @return {Any} The previously stored value
-    */
-   getValue: function() {
-      return this.value;
-   }
-   
-});
-
-// Register this class as "url" type
-inputEx.registerType("uneditable", inputEx.UneditableField);
-
 })();(function () {
-     var lang=YAHOO.lang;
-     
+	var util = YAHOO.util, lang = YAHOO.lang, Event = util.Event, Dom = util.Dom;
+	
+	inputEx.JSONForm = function(options) {
+	   inputEx.JSONForm.superclass.constructor.call(this, options);
+	};
+
+	lang.extend(inputEx.JSONForm, inputEx.Form, {
+		 /**
+		    * Send the form value in JSON through an ajax request
+		    */
+		   asyncRequest: function() {
+		      if(this.options.ajax.showMask) { this.showMask(); }
+			
+				var formValue = this.inputs[0].getValue();
+			
+				// options.ajax.uri and options.ajax.method can also be functions that return a the uri/method depending of the value of the form
+				var uri = lang.isFunction(this.options.ajax.uri) ? this.options.ajax.uri(formValue) : this.options.ajax.uri;
+				var method = lang.isFunction(this.options.ajax.method) ? this.options.ajax.method(formValue) : this.options.ajax.method;
+			
+				var postData = null;
+				
+				// Classic application/x-www-form-urlencoded (like html forms)
+				if(this.options.ajax.contentType == "application/x-www-form-urlencoded" && method != "PUT") {
+					var params = [];
+					for(var key in formValue) {
+						if(formValue.hasOwnProperty(key)) {
+							var pName = (this.options.ajax.wrapObject ? this.options.ajax.wrapObject+'[' : '')+key+(this.options.ajax.wrapObject ? ']' : '');
+							params.push( pName+"="+window.encodeURIComponent(formValue[key]));
+						}
+					}
+					postData = params.join('&');
+				}
+				// The only other contentType available is "application/json"
+				else {
+					util.Connect.setDefaultPostHeader(false);
+					util.Connect.initHeader("Content-Type" , "application/json" , false);
+					var p;
+					if(this.options.ajax.wrapObject) {
+						p = {};
+						p[this.options.ajax.wrapObject] = formValue;
+					}
+					else {
+						p = formValue;
+					}
+					postData = lang.JSON.stringify(p);
+				}
+				
+		      util.Connect.asyncRequest( method, uri, {
+		         success: function(o) {
+		            if(this.options.ajax.showMask) { this.hideMask(); }
+		            if( lang.isFunction(this.options.ajax.callback.success) ) {
+		               this.options.ajax.callback.success.call(this.options.ajax.callback.scope,o);
+		            }
+		         },
+
+		         failure: function(o) {
+		            if(this.options.ajax.showMask) { this.hideMask(); }
+		            if( lang.isFunction(this.options.ajax.callback.failure) ) {
+		               this.options.ajax.callback.failure.call(this.options.ajax.callback.scope,o);
+		            }
+		         },
+
+		         scope:this
+		      }, postData);
+		   }
+	});
+})();
+(function() {
+
+   var util = YAHOO.util, lang = YAHOO.lang, Dom = util.Dom, Event = util.Event, msgs = inputEx.messages;
+
 /**
- * Create a slider using YUI widgets
- * @class inputEx.SliderField
- * @extends inputEx.Field
+ * Create an editable datatable
+ * @class inputEx.widget.DataTable
  * @constructor
- * @param {Object} options inputEx.Field options object
+ * @param {Object} options Options:
+ * <ul>
+ *    <li>parentEl: DOMelement in which we have to insert the datatable</li>
+ *
+ *		<li>datasource (or datasourceConfig)</li>
+ *    <li>datatableOpts: additionnal datatable options</li>
+ *    <li>fields: inputEx fields</li>
+ *    <li>dialogLabel: title of the dialog</li>
+ *    <li>columnDefs: YUI datatable columnDefs</li>
+ *
+ *    <li>id: (optional, default is autogenerated) sets the id of the div wrapper around the widget</li>
+ *    <li>allowInsert: adds the 'Insert' button (optional, default true)</li>
+ *    <li>allowModify: default true</li>
+ *    <li>allowDelete: default true</li>
+ *    <li>showHideColumnsDlg: add a link to a dialog to show/hide columns</li>
+ * 	<li>panelConfig: (optional) YUI's dialog panelConfig object</li>
+ *
+ * </ul>
  */
-inputEx.SliderField = function(options) {
-   inputEx.SliderField.superclass.constructor.call(this,options);
+inputEx.widget.DataTable = function(options) {
+   
+   this.setOptions(options);
+   
+   this.render();
+   
+   this.initEvents();
+	
 };
 
-YAHOO.lang.extend(inputEx.SliderField, inputEx.Field, {
+inputEx.widget.DataTable.prototype = {
+   
    /**
-    * Set the classname to 'inputEx-SliderField'
-    * @param {Object} options Options object as passed to the constructor
+    * Set the options
     */
    setOptions: function(options) {
-      inputEx.SliderField.superclass.setOptions.call(this, options);
+
+      this.options = {};
+      this.options.id = options.id || Dom.generateId();
+      this.options.parentEl = lang.isString(options.parentEl) ? Dom.get(options.parentEl) : options.parentEl;
       
-      this.options.className = options.className ? options.className : 'inputEx-SliderField';
-   	   
-      this.options.minValue = lang.isUndefined(options.minValue) ? 0 : options.minValue;
-      this.options.maxValue = lang.isUndefined(options.maxValue) ? 100 : options.maxValue;
+		this.options.columnDefs = options.columnDefs;
+
+      this.options.allowInsert = lang.isUndefined(options.allowInsert) ? true : options.allowInsert;
+      this.options.allowModify = lang.isUndefined(options.allowModify) ? true : options.allowModify;
+      this.options.allowDelete = lang.isUndefined(options.allowDelete) ? true : options.allowDelete; 
       
-      this.options.displayValue = lang.isUndefined(options.displayValue) ? true : options.displayValue;
-   },
+      this.options.showHideColumnsDlg = lang.isUndefined(options.showHideColumnsDlg) ? false : options.showHideColumnsDlg; 
       
-   /**
-    * render a slider widget
-    */
-   renderComponent: function() {
-            
-      this.sliderbg = inputEx.cn('div', {id: YAHOO.util.Dom.generateId(), className: 'inputEx-SliderField-bg'});
-      this.sliderthumb = inputEx.cn('div', {className: 'inputEx-SliderField-thumb'} );      
-      this.sliderbg.appendChild(this.sliderthumb);
-      this.fieldContainer.appendChild(this.sliderbg);
-      
-      if(this.options.displayValue) {
-         this.valueDisplay = inputEx.cn('div', {className: 'inputEx-SliderField-value'}, null, String(this.options.minValue) );
-         this.fieldContainer.appendChild(this.valueDisplay);
-      }
-      
-      this.fieldContainer.appendChild( inputEx.cn('div',null,{clear: 'both'}) );
-            
-      this.slider = YAHOO.widget.Slider.getHorizSlider(this.sliderbg, this.sliderthumb, 0,100);
+      this.options.datasource = options.datasource;
+
+		// Create a datasource if it does not exist, from the datasourceConfig Object
+		if(!options.datasource && options.datasourceConfig) {
+			var ds = new YAHOO.util.DataSource(options.datasourceConfig.url), fields = [];
+			if(options.datasourceConfig.keys) {
+				for ( var i = 0 ; i < options.datasourceConfig.keys.length ; i++ ) {
+	         	fields.push({ key: options.datasourceConfig.keys[i] });
+	      	}
+			}
+	      ds.responseType = options.datasourceConfig.responseType || YAHOO.util.DataSource.TYPE_JSON;
+	      ds.responseSchema = options.datasourceConfig.responseSchema || { resultsList : "Result", fields : fields};
+			this.options.datasource = ds;
+		}
+
+      this.options.datatableOpts = options.datatableOpts;
+      this.options.fields = options.fields;
+
+		this.options.dialogId = options.dialogId || null;
+		this.options.dialogLabel = options.dialogLabel || "";
+		
+		this.options.panelConfig = options.panelConfig || {
+			constraintoviewport: true, 
+			underlay:"shadow", 
+			close:true, 
+			fixedcenter: true,
+			visible:true, 
+			draggable:true,
+			modal: true
+		};
    },
    
+   
+   /**
+    * Init the events
+    */
    initEvents: function() {
       
-      // Fire the updated event when we released the slider
-      // the slider 'change' event would generate too much events (if used in a group, it gets validated too many times)
-      this.slider.on('slideEnd', this.fireUpdatedEvt, this, true);
+      // Call the rendering method when the container is available
+      Event.onAvailable(this.options.id, this.renderDatatable, this, true);
       
-      // Update the displayed value
-      if(this.options.displayValue) {
-         this.updatedEvt.subscribe( function(e,params) {
-            var val = params[0];
-            this.valueDisplay.innerHTML = val;
-         }, this, true);
+      // Table options
+      if(this.options.showHideColumnsDlg) {
+         Event.addListener(this.tableOptions, 'click', this.showTableOptions, this, true);
       }
+
+      /**
+   	 * @event Event fired when an item is removed
+   	 * @param {YAHOO.widget.Record} Removed record
+   	 * @desc YAHOO custom event fired when an item is removed
+   	 */
+    	this.itemRemovedEvt = new util.CustomEvent('itemRemoved', this);
+
+      /**
+   	 * @event Event fired when an item is added
+    	 * @param {YAHOO.widget.Record} Added record
+   	 * @desc YAHOO custom event fired when an item is added
+   	 */
+    	this.itemAddedEvt = new util.CustomEvent('itemAdded', this);
+
+      /**
+   	 * @event Event fired when an item is modified
+    	 * @param {YAHOO.widget.Record} Modified record
+   	 * @desc YAHOO custom event fired when an item is modified
+   	 */
+    	this.itemModifiedEvt = new util.CustomEvent('itemModified', this);
    },
    
    /**
-    * Function to set the value
-    * @param {Any} value The new value
-    * @param {boolean} [sendUpdatedEvt] (optional) Wether this setValue should fire the updatedEvt or not (default is true, pass false to NOT send the event)
-    */  
-   setValue: function(val, sendUpdatedEvt) {
+    * Render the main container only (not the datatable)
+    */
+   render: function() {
       
-      var v = val;
-      if(v < this.options.minValue) {
-         v = this.options.minValue;
+      /**
+       * Main container 
+       */
+      this.element = inputEx.cn('div', {id: this.options.id });
+      
+      if(this.options.showHideColumnsDlg) {
+         this.renderShowHideColumnsDlg();
       }
-      if(v > this.options.maxValue) {
-         v = this.options.maxValue;
+
+      // append it immediatly to the parent DOM element
+      this.options.parentEl.appendChild(this.element);
+      
+   },
+   
+   
+   /**
+    * Render the datatable
+    */
+   renderDatatable: function() {
+      
+      var columndefs = this.setColumnDefs();
+
+		/**
+		 * YUI's datatable instance
+		 */
+      this.datatable = new YAHOO.widget.DataTable(this.element, columndefs, this.options.datasource, this.options.datatableOpts);
+      this.datatable.subscribe('cellClickEvent', this._onCellClick, this, true);
+
+		// Automatically set up the paginator
+		if(this.options.datatableOpts && this.options.datatableOpts.paginator) {
+			this.datatable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) {
+				if(oPayload) {
+	        		oPayload.totalRecords = oResponse.meta.totalRecords;
+				}
+	        	return oPayload;
+	    	};
+		}
+            
+      // Insert button
+      if ( this.options.allowInsert ){
+         this.insertButton = inputEx.cn('input', {type:'button', value:msgs.insertItemText}, null, null);
+         Event.addListener(this.insertButton, 'click', this.onInsertButton, this, true);
+         this.options.parentEl.appendChild(this.insertButton);
+      }
+
+		
+      // Set up editing flow
+      var highlightEditableCell = function(oArgs) {
+          var elCell = oArgs.target;
+          if(Dom.hasClass(elCell, "yui-dt-editable") || Dom.hasClass(elCell,"yui-dt-col-delete") || Dom.hasClass(elCell,"yui-dt-col-modify") ) {
+              this.highlightCell(elCell);
+          }
+      };
+		
+		// Locals
+		this.datatable.set("MSG_LOADING", msgs.loadingText );
+		this.datatable.set("MSG_EMPTY", msgs.emptyDataText );
+		this.datatable.set("MSG_ERROR", msgs.errorDataText );
+
+      this.datatable.subscribe("cellMouseoverEvent", highlightEditableCell);
+      this.datatable.subscribe("cellMouseoutEvent", this.datatable.onEventUnhighlightCell);
+
+   },
+
+	/**
+	 * Set the column definitions, create them if none from the fields, adds the modify and delete buttons
+	 */
+	setColumnDefs: function() {
+		
+		var columndefs = this.options.columnDefs || this.fieldsToColumndefs(this.options.fields);
+
+    	// Adding modify column if we use form editing and if allowModify is true
+      if(this.options.allowModify ) {
+    	   columndefs = columndefs.concat([{
+    	      key:'modify',
+    	      label:' ',
+    	      formatter:function(elCell) {
+               elCell.innerHTML = msgs.modifyText;
+               elCell.style.cursor = 'pointer';
+            }
+         }]);
       }
       
-      var percent = Math.floor(v-this.options.minValue)*100/this.options.maxValue;
+      // Adding delete column
+      if(this.options.allowDelete) {
+      	 columndefs = columndefs.concat([{
+      	    key:'delete',
+      	    label:' ',
+      	    formatter:function(elCell) {
+               elCell.innerHTML = msgs.deleteText;
+               elCell.style.cursor = 'pointer';
+            }
+         }]);
+      }
+		
+		return columndefs;
+	},
+	
+   /**
+    * Render the dialog for row edition
+    */
+   renderDialog: function() {
       
-      this.slider.setValue(percent);
+     var that = this;
       
-      inputEx.SliderField.superclass.setValue.call(this, val, sendUpdatedEvt);
+     this.dialog = new inputEx.widget.Dialog({
+				id: this.options.dialogId,
+				inputExDef: {
+				         type: 'form',
+			            fields: this.options.fields,
+			            buttons: [
+			               {type: 'submit', value: msgs.saveText, onClick: function() { that.onDialogSave(); return false; /* prevent form submit */} },
+			               {type: 'link', value: msgs.cancelText, onClick: function() { that.onDialogCancel(); } }
+			            ]
+				      },
+				title: this.options.dialogLabel,
+				panelConfig: this.options.panelConfig
+		});
+		
+		// Add a listener on the closing button and hook it to onDialogCancel()
+		YAHOO.util.Event.addListener(that.dialog.close,"click",function(){
+			that.onDialogCancel();
+		},that);
+		
+   },
+
+	/**
+    * When saving the Dialog
+    */
+   onDialogSave: function() {
+		
+		var newvalues, record;
+		
+	  	//Validate the Form
+	  	if ( !this.dialog.getForm().validate() ) return ;
+	   
+		// Update the record
+		if(!this.insertNewRecord){
+						
+			// Update the row
+			newvalues = this.dialog.getValue();
+			this.datatable.updateRow( this.selectedRecord , newvalues );
+
+			// Get the new record
+			record = this.datatable.getRecord(this.selectedRecord);
+			
+			// Fire the modify event
+         this.itemModifiedEvt.fire(record);
+
+		}
+		// Adding new record
+		else{
+			// Insert a new row
+	      this.datatable.addRow({});
+
+			// Set the Selected Record
+			var rowIndex = this.datatable.getRecordSet().getLength() - 1;
+			this.selectedRecord = rowIndex;
+			
+			// Update the row
+			newvalues = this.dialog.getValue();
+			this.datatable.updateRow( this.selectedRecord , newvalues );
+			
+			// Get the new record
+			record = this.datatable.getRecord(this.selectedRecord);
+						
+			// Fire the add event
+         this.itemAddedEvt.fire(record);
+		}
+      
+      this.dialog.hide();
+   },
+
+	/**
+    * When canceling the Dialog
+    */
+	onDialogCancel: function(){
+		this.insertNewRecord = false;
+		this.dialog.hide();
+	},
+
+   
+   /**
+    * Handling cell click events
+    */
+   _onCellClick: function(ev,args) {
+      var target = Event.getTarget(ev);
+      var column = this.datatable.getColumn(target);      
+      var rowIndex = this.datatable.getTrIndex(target);
+      if (column.key == 'delete') {
+         if (confirm(msgs.confirmDeletion)) {
+            var record = this.datatable.getRecord(target);
+            if(this.editingNewRecord) {
+               this.editingNewRecord = false;
+            }
+            else {
+               this.itemRemovedEvt.fire( record );
+            }
+            this.datatable.deleteRow(target);
+            this.hideSubform();
+         }
+      }
+      else if(column.key == 'modify') {
+         this.onClickModify(rowIndex);
+      } 
+      else {				
+      	this.onCellClick(ev,rowIndex);
+      }
    },
 
    /**
-    * Get the value from the slider
-    * @return {int} The integer value
+    * Public cell click handler
     */
-   getValue: function() {
-      var val = Math.floor(this.options.minValue+(this.options.maxValue-this.options.minValue)*this.slider.getValue()/100);
-      return val;
-   }
-    
-});
+   onCellClick: function(ev, rowIndex) {
 
-// Register this class as "slider" type
-inputEx.registerType("slider", inputEx.SliderField, [
-   { type: 'integer', label: 'Min. value',  name: 'minValue', value: 0 },
-   { type: 'integer', label: 'Max. value', name: 'maxValue', value: 100 }
-]);
+   },
+   
+   /**
+    * Opens the Dialog to edit the row
+    * Called when the user clicked on modify button
+    */
+   onClickModify: function(rowIndex) {
+
+      if(!this.dialog) {
+         this.renderDialog();
+      }
+
+      // NOT Inserting new record
+		this.insertNewRecord = false;
+		
+		// Set the selected Record
+		this.selectedRecord = rowIndex;
+		
+		// Get the selected Record
+		var record = this.datatable.getRecord(this.selectedRecord);
+		
+		this.dialog.whenFormAvailable({
+			fn: function() {
+				this.dialog.setValue(record.getData());
+				this.dialog.show();
+			},
+			scope: this
+		});
+		
+	},
+   
+   /**
+    * Insert button event handler
+    */
+   onInsertButton: function(e) {
+
+      if(!this.dialog) {
+         this.renderDialog();
+      }
+		
+		// Inserting new record
+		this.insertNewRecord = true;
+		
+		this.dialog.whenFormAvailable({
+			fn: function() {
+				this.dialog.getForm().clear();
+				this.dialog.show();
+			},
+			scope: this
+		});
+		
+   },
+   
+   /**
+    * Remove the record that has not been saved
+    */
+   removeUnsavedRecord: function(record) {
+      this.datatable.deleteRow(record);
+   },
+   
+   /**
+    * Cancel row edition
+    */
+   onCancelForm: function(e) {
+      Event.stopEvent(e); 
+      this.hideSubform();
+      
+      if(this.editingNewRecord) {
+         this.removeUnsavedRecord();
+         this.editingNewRecord = false;
+      }
+   },
+   
+   
+   /**
+    * Convert an inputEx fields definition to a DataTable columns definition
+    */
+   fieldsToColumndefs: function(fields) {
+      var columndefs = [];
+    	for(var i = 0 ; i < fields.length ; i++) {
+    		columndefs.push( this.fieldToColumndef(fields[i]) );
+    	}
+    	return columndefs;
+   },
+
+   /**
+    * Convert a single inputEx field definition to a DataTable column definition
+    */
+   fieldToColumndef: function(field) {
+      
+      var key, label, colmunDef;
+      
+      // Retro-compatibility with inputParms
+      if (lang.isObject(field.inputParams)) {
+         key = field.inputParams.name;
+         label = field.inputParams.label;
+      
+      // New prefered way to set options of a field
+      } else {
+         key = field.name;
+         label = field.label;
+      }
+      
+      columnDef = {
+         key: key,
+         label: label,
+         sortable: true, 
+         resizeable: true
+      };
+
+      // Field formatter
+      if(field.type == "date") {
+      	columnDef.formatter = YAHOO.widget.DataTable.formatDate;
+      }
+		else if(field.type == "integer" || field.type == "number") {
+			columnDef.formatter = YAHOO.widget.DataTable.formatNumber;
+			/*columnDef.sortOptions = {
+				defaultDir: "asc",
+				sortFunction: // TODO: sort numbers !!!
+			}*/
+		}
+      // TODO: other formatters
+      return columnDef;
+   },
+   
+   /**
+    * Render the dialog (+link) to show/hide columns
+    */
+   renderShowHideColumnsDlg: function() {
+      this.tableOptions = inputEx.cn('a', {href: '#'}, null, msgs.tableOptions);
+      this.options.parentEl.appendChild(this.tableOptions);
+      
+      this.tableOptionsDlg = new YAHOO.widget.SimpleDialog( Dom.generateId(), {
+              width: "30em",
+		        visible: false,
+		        modal: true,
+		        buttons: [ 
+				      { text:msgs.columnDialogCloseButton,  handler: function(e) { this.hide(); } }
+              ],
+              fixedcenter: true,
+              constrainToViewport: true
+	   });
+	
+		Dom.addClass(this.tableOptionsDlg.element.firstChild, "inputex-datatable-columnsDlg");
+		
+	   this.tableOptionsDlg.bodyId = Dom.generateId();
+	   this.tableOptionsDlg.setHeader(msgs.columnDialogTitle);
+	   this.tableOptionsDlg.setBody("<div id='"+this.tableOptionsDlg.bodyId+"'></div>");
+	   this.tableOptionsDlg.render(document.body);
+   },
+   
+   /**
+    * Display the dialog to show/hide fields
+    */
+   showTableOptions: function(e) {
+      
+      Event.stopEvent(e);
+      
+      if(!this.noNewCols) {
+          
+          var that = this;
+          var handleButtonClick = function(e, oSelf) {
+              var sKey = this.get("name");
+              if(this.get("value") === "Hide") {
+                  // Hides a Column
+                  that.datatable.hideColumn(sKey);
+              }
+              else {
+                  // Shows a Column
+                  that.datatable.showColumn(sKey);
+              }
+          };
+          
+           // Populate Dialog
+           // Using a template to create elements for the SimpleDialog
+           var allColumns = this.datatable.getColumnSet().keys;
+           var elPicker = Dom.get(this.tableOptionsDlg.bodyId);
+           
+           var elTemplateCol = document.createElement("div");
+           Dom.addClass(elTemplateCol, "dt-dlg-pickercol");
+           var elTemplateKey = elTemplateCol.appendChild(document.createElement("span"));
+           Dom.addClass(elTemplateKey, "dt-dlg-pickerkey");
+           var elTemplateBtns = elTemplateCol.appendChild(document.createElement("span"));
+           Dom.addClass(elTemplateBtns, "dt-dlg-pickerbtns");
+           var onclickObj = {fn:handleButtonClick, obj:this, scope:false };
+           
+           // Create one section in the SimpleDialog for each Column
+           var elColumn, elKey, elButton, oButtonGrp;
+           for(var i=0,l=allColumns.length;i<l;i++) {
+               var oColumn = allColumns[i];
+               
+               // Use the template
+               elColumn = elTemplateCol.cloneNode(true);
+               
+               // Write the Column key
+               elKey = elColumn.firstChild;
+               elKey.innerHTML = (oColumn.label && oColumn.label !== "") ? oColumn.label : oColumn.getKey();
+               
+               if(oColumn.getKey() != "delete" && oColumn.getKey() != "modify") {
+               
+                  // Create a ButtonGroup
+                  oButtonGrp = new YAHOO.widget.ButtonGroup({ 
+                                  id: "buttongrp"+i, 
+                                  name: oColumn.getKey(), 
+                                  container: elKey.nextSibling
+                  });
+                  oButtonGrp.addButtons([
+                      { label: msgs.showColumnButton, value: "Show", checked: ((!oColumn.hidden)), onclick: onclickObj},
+                      { label: msgs.hideColumnButton, value: "Hide", checked: ((oColumn.hidden)), onclick: onclickObj}
+                  ]);
+                    
+                  elPicker.appendChild(elColumn);
+               
+               }
+           }
+           this.noNewCols = true;
+   	}
+       this.tableOptionsDlg.show();
+      
+   }
+   
+};
+
+
+msgs.saveText = "Save";
+msgs.cancelText = "Cancel";
+msgs.deleteText = "delete";
+msgs.modifyText = "modify";
+msgs.insertItemText = "Insert";
+msgs.addButtonText = "Add";
+msgs.loadingText = "Loading...";
+msgs.emptyDataText = "No records found.";
+msgs.errorDataText = "Data error.";
+msgs.confirmDeletion = "Are you sure?";
+
+msgs.tableOptions = "Table options";
+msgs.showColumnButton = "Show";
+msgs.hideColumnButton = "Hide";
+msgs.columnDialogTitle = "Choose which columns you would like to see";
+msgs.columnDialogCloseButton = "Close";
+
+})();(function() {
+
+   var lang = YAHOO.lang;
+   
+inputEx.widget.ListCustom = function(options) {
+  
+	this.listSelectOptions = options.listSelectOptions;
+	this.maxItems = options.maxItems;
+	this.maxItemsAlert = options.maxItemsAlert;
+
+	inputEx.widget.ListCustom.superclass.constructor.call(this,options);
+
+	this.selects = [];
+};
+YAHOO.lang.extend(inputEx.widget.ListCustom,inputEx.widget.DDList,{
+/**
+    * Add an item to the list
+    * @param {String|Object} item Either a string with the given value or an object with "label" and "value" attributes
+    */
+   addItem: function(item) {
+
+      if (this.maxItems && this.items.length >= this.maxItems){
+				this.maxItemsAlert ? this.maxItemsAlert.call() : alert("You're limited to "+this.maxItems+" items");
+			  return;	
+			}
+			
+      var label = (typeof item == "object") ? item.label : item	;
+      var li = inputEx.cn('li', {className: 'inputEx-DDList-item'});
+      var span = inputEx.cn('span', null, null, label)
+
+      if(this.listSelectOptions){
+        var select = new inputEx.SelectField(this.listSelectOptions); 
+        this.selects.push(select);
+        li.appendChild(select.el);
+        item.getValue = function(){
+				  return {select: select.getValue(), label: this.label, value: this.value};
+				}
+				item.setValue = function(obj){
+				  span.innerHTML = obj.label;
+				  this.label = obj.label;
+				  this.value = obj.value;
+				  select.setValue(obj.select);
+				}
+		  } else {
+			  item.getValue = function(){
+					result = {};
+					if(this.value) result.value = this.value;
+					if(this.label) result.label = this.label;
+					return result;
+				}				
+			  item.setValue = function(obj){
+				  span.innerHTML = obj.label;
+				  this.label = obj.label;
+				  this.value = obj.value;
+				}
+			}
+      li.appendChild(span);
+ 
+
+      // Option for the "remove" link (default: true)
+		if(!!this.options.allowDelete){
+			var removeLink = inputEx.cn('div', {className:"removeButton"}, null, ""); 
+	      li.appendChild( removeLink );
+	      Event.addListener(removeLink, 'click', function(e) {
+	         var a = Event.getTarget(e);
+	         var li = a.parentNode;
+	         this.removeItem( inputEx.indexOf(li,this.ul.childNodes) );
+	      }, this, true);
+      }
+      // Don't want any drag and drop
+      //var dditem = new inputEx.widget.DDListItem(li);
+      //
+      
+      this.items.push( item );
+
+      this.ul.appendChild(li);
+   },
+   getValue: function(){
+		 var results = [];
+		 for(var i in this.items){
+		   results.push(this.items[i].getValue());
+		 }
+		 return results;
+	 },
+   setValue: function(objs){	  
+			if(this.items.length > objs.length){
+			  for (var i = 0; i< this.items.length -objs.length; i++){
+				  this.removeItem(this.items.length-1-i);
+				}
+			}
+			for (i in objs){
+				if (this.items[i]){
+				 this.items[i].setValue(objs[i]);
+				} else {
+				 this.addItem(objs[i]);
+				}
+			} 
+	 }
+}); 
 
 })();
