@@ -77,14 +77,14 @@ public class ClientProvider extends AbstractHttpMetadataProvider implements Http
 		
 		StringBuffer clientJS			= new StringBuffer();
 		clientJS.append(
-				"if(typeof YAHOO == \"undefined\" || !YAHOO){" +
-					"var file = document.createElement('script');file.setAttribute(\"type\",\"text/javascript\");" +
-					"file.setAttribute(\"src\",\"" + address + "?CLIENT_RESOURCE=js/yahoo-all.js\");" +
-					"document.getElementsByTagName(\"head\")[0].appendChild(file);"+
-				"}" 
+				"if(typeof YAHOO == \"undefined\" || !YAHOO){\n" +
+					"var file = document.createElement('script');file.setAttribute(\"type\",\"text/javascript\");\n" +
+					"file.setAttribute(\"src\",\"" + address + "?CLIENT_RESOURCE=js/yahoo-all.js\");\n" +
+					"document.getElementsByTagName(\"head\")[0].appendChild(file);\n"+
+				"}\n" 
 		);
 		
-		clientJS.append("var " + portName + " = {};");
+		clientJS.append("var " + portName + " = {};\n");
 		for(String operation : selectedPort.keySet()){
 			clientJS.append(portName + "." + operation +" = function(");
 			Map<String, Object> operationMap = (Map<String, Object>) selectedPort.get(operation);
@@ -99,13 +99,18 @@ public class ClientProvider extends AbstractHttpMetadataProvider implements Http
 				parameterJson += "\""+paramName + "\":"+paramName;
 				index++;
 			}
-			clientJS.append(" callback){" +
-					"YAHOO.util.Connect.setDefaultPostHeader(false);" +
-					"YAHOO.util.Connect.initHeader(\"Content-Type\",\"" + JSONContentType.JSON_CONTENT_TYPE + "\");" +
-					"YAHOO.util.Connect.asyncRequest('POST', '#BASEADDRESS#" + httpAdapter.getValidPath() + "', callback, "+
-						"YAHOO.lang.JSON.stringify({" + operation + " : {" + parameterJson + "}})"+
-					");"+
-				"};");
+			clientJS.append(" callback){\n" +
+					"if(typeof callback == 'undefined' || callback == null){" +
+					" callback = {success: function(o){alert(o);},"+
+					" failure: function(o){alert(o);},"+
+					" argument: []}"+
+					"}"+
+					"YAHOO.util.Connect.setDefaultPostHeader(false);\n" +
+					"YAHOO.util.Connect.initHeader(\"Content-Type\",\"" + JSONContentType.JSON_CONTENT_TYPE + "\");\n" +
+					"YAHOO.util.Connect.asyncRequest('POST', '#BASEADDRESS#" + httpAdapter.getValidPath() + "', callback, \n"+
+						"YAHOO.lang.JSON.stringify({" + operation + " : {" + parameterJson + "}})\n"+
+					");\n"+
+				"};\n");
 		}
 		endPointClientJs.put(this.codec.getEndpoint().getServiceName(),
 				clientJS.toString());
