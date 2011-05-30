@@ -1,5 +1,6 @@
 package com.jaxws.json.codec.encode;
 
+import java.beans.BeanDescriptor;
 import java.beans.IndexedPropertyDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -179,7 +180,7 @@ public class WSJSONWriter extends BeanAware {
     		Pattern listMapKey,Pattern listMapValue){
     	this.initValues(dateFormat, excludeProperties, includeProperties, listMapKey, listMapValue);
     	// Convert passed object to value.
-    	this.process(rootObject, null);
+    	this.process(rootObject, null, null);
     }
     /**
      * Serialize passed object to JSON string, writes into constructor passed writer object. 
@@ -204,7 +205,7 @@ public class WSJSONWriter extends BeanAware {
     	this.schemaMode	= isSchema;
     	this.metaDataMode	= true;
     	// Convert passed object to value.
-    	this.process(rootObject, null);
+    	this.process(rootObject, null, null);
     }
     
     /**
@@ -268,7 +269,7 @@ public class WSJSONWriter extends BeanAware {
      * @param method
      * @throws JSONFault
      */
-    private void process(Object object, Method method) throws JSONFault {
+    private void process(Object object, Method method, PropertyDescriptor descriptor) throws JSONFault {
     	/*
     	 * Step 1. If object is null write null and return.
     	 * Detect cyclic references
@@ -318,6 +319,17 @@ public class WSJSONWriter extends BeanAware {
         }
         if(this.schemaMode){
         	this.add("{");
+        	// Genaral property
+        	if(descriptor != null){
+        		this.add("\"title\":\""+descriptor.getDisplayName()+"\"," +
+        				"\"description\":\""+descriptor.getShortDescription()+"\","+
+        				"\"readonly\":"+(descriptor.getWriteMethod() == null)+",");
+        	}else if(!isJSONPrimitive(clazz)){
+				BeanDescriptor beanDescriptor = getBeanDescriptor(clazz);
+				if(beanDescriptor != null)
+	        		this.add("\"title\":\""+beanDescriptor.getDisplayName()+"\"," +
+	        				"\"description\":\""+beanDescriptor.getShortDescription()+"\",");
+        	}
         	
         	if(object instanceof String || 
             		object instanceof Character || 
@@ -350,7 +362,7 @@ public class WSJSONWriter extends BeanAware {
         	} else if (object instanceof Node) {
         		this.add("\"type\":\"any\",\"default\":");
         	} else {
-        		this.add("\"type\":\"object\",\"title\":\""+clazz.getSimpleName()+"\",\"properties\":");// TODO schema complex name
+        		this.add("\"type\":\"object\",\"properties\":");// TODO schema complex name
         	}
         }
         /*
@@ -388,7 +400,7 @@ public class WSJSONWriter extends BeanAware {
             this.enumeration((Enum<?>) object, clazz);
         } else if (object instanceof JAXBElement<?>){
         	// Step 5.10: handle has JAXB element
-            this.process(((JAXBElement<?>)object).getValue(), null);
+            this.process(((JAXBElement<?>)object).getValue(), null, descriptor);
         } else if (object instanceof Node){
         	// Step 5.11: handle has JAXB element
             this.xmlNode((Node)object, null, false);
@@ -525,7 +537,7 @@ public class WSJSONWriter extends BeanAware {
             this.string(String.valueOf(key));
             this.add(":");
             // Process value
-            this.process(entry.getValue(), method);
+            this.process(entry.getValue(), method, null);
             if (this.buildExpr) {
                 this.setExprStack(expr);
             }
@@ -558,7 +570,7 @@ public class WSJSONWriter extends BeanAware {
                 this.add(',');
             }
             hasData = true;
-            this.process(Array.get(object, i), method);
+            this.process(Array.get(object, i), method, null);
             if (this.buildExpr) {
                 this.setExprStack(expr);
             }
@@ -620,11 +632,11 @@ public class WSJSONWriter extends BeanAware {
     			if(method != null) {
     				this.process(getMetaDataInstance(parameterType, customInfo,
     						getDeclaredField(method.getDeclaringClass(),
-    								Introspector.decapitalize(method.getName().substring(3)))),null);
+    								Introspector.decapitalize(method.getName().substring(3)))), null, null);
     			}
     			// JAXB Choice
     		} else {
-    			this.process(getNewInstance(parameterType),method);
+    			this.process(getNewInstance(parameterType), method, null);
     		}
         }
         boolean hasData = false;
@@ -642,7 +654,7 @@ public class WSJSONWriter extends BeanAware {
                 this.add(',');
             }
             hasData = true;
-            this.process(iterator.next(), method);
+            this.process(iterator.next(), method, null);
             if (this.buildExpr) {
                 this.setExprStack(expr);
             }
@@ -690,7 +702,7 @@ public class WSJSONWriter extends BeanAware {
     	// handle any object type.
     	if(clazz.equals(Object.class)){
     		clazz	= object.getClass();
-    		hasData = hasData | this.add("class", clazz.getName(), null, hasData);
+    		hasData = hasData | this.add("class", clazz.getName(), null, hasData, null);
     	}
     	
         try {
@@ -779,7 +791,7 @@ public class WSJSONWriter extends BeanAware {
    	                        			if(!stackNillableInstances.contains(propertyType)){
 	   	                        			stackNillableInstances.push(propertyType);
 	   	                        			value = getNewInstance(propertyType);
-	   	                        			hasData = this.add(name, value, null, hasData) || hasData;
+	   	                        			hasData = this.add(name, value, null, hasData, property) || hasData;
 	   	                        			stackNillableInstances.pop();
    	                        			}
    	                        			continue nextProperty;
@@ -863,7 +875,7 @@ public class WSJSONWriter extends BeanAware {
 	 	                    				}
 	 	                    			}
  	                    			}
- 	                    			hasData = this.add(name, group, null, hasData) || hasData;
+ 	                    			hasData = this.add(name, group, null, hasData, property) || hasData;
  	                    			continue nextProperty;
  	                    		} else {
  	                    			// If choice element id empty, don't print it at all
@@ -918,7 +930,7 @@ public class WSJSONWriter extends BeanAware {
 	 	                    			}
  	                    			}
  	                    			for(Map.Entry<String, List<Object>> entry : group.entrySet()){
- 	                    				hasData = this.add(entry.getKey(), entry.getValue(), null, hasData) || hasData;
+ 	                    				hasData = this.add(entry.getKey(), entry.getValue(), null, hasData, property) || hasData;
  	                                    // TODO this.setExprStack(expr);
  	                    			}
  	                    			continue nextProperty;
@@ -976,7 +988,7 @@ public class WSJSONWriter extends BeanAware {
                      /*
                 	 *  Step 5.10.2.4.6: write value
                 	 */ 
-                     boolean propertyPrinted = this.add(name, value, accessor, hasData);
+                     boolean propertyPrinted = this.add(name, value, accessor, hasData, property);
                      hasData = hasData || propertyPrinted;
                      if (this.buildExpr) {
                          this.setExprStack(expr);
@@ -987,7 +999,7 @@ public class WSJSONWriter extends BeanAware {
             // special-case handling for an Enumeration - include the name() as a property */
             if (object instanceof Enum) {
                 Object value = ((Enum<?>) object).name();
-                this.add("_name", value, object.getClass().getMethod("name"), hasData);
+                this.add("_name", value, object.getClass().getMethod("name"), hasData, null);
             }
         } catch (Exception e) {
             throw new JSONFault("Server.json", "Failed to serialize object "+clazz.getName(), "JSONCodec", null, e);
@@ -1001,7 +1013,7 @@ public class WSJSONWriter extends BeanAware {
      * Step 5.10.1: add object again
      * Add name/value pair to buffer
      */
-    private boolean add(String name, Object value, Method method, boolean hasData) throws JSONFault {
+    private boolean add(String name, Object value, Method method, boolean hasData, PropertyDescriptor descriptor) throws JSONFault {
         if (!JSONCodec.excludeNullProperties || value != null || this.metaDataMode) {
             if (hasData) {
                 this.add(',');
@@ -1009,7 +1021,7 @@ public class WSJSONWriter extends BeanAware {
             this.add('"');
             this.add(name);
             this.add("\":");
-            this.process(value, method);
+            this.process(value, method, descriptor);
             return true;
         }
 
@@ -1041,7 +1053,7 @@ public class WSJSONWriter extends BeanAware {
             return true;
 		}else if(node instanceof Attr){
 			Attr atr = (Attr)node;
-			return this.add(atr.getName(),atr.getValue(),null,false);
+			return this.add(atr.getName(),atr.getValue(),null,false, null);
 		}
 		return false;
 	}
