@@ -133,8 +133,10 @@ public class MethodFormProvider extends AbstractHttpMetadataProvider implements 
 	 */
 	public void doResponse(WSHTTPConnection ouStream) throws IOException {
 		process();
-		String oper = ouStream.getQueryString().substring(4);
-		if(!oper.isEmpty())
+		String queryString = ouStream.getQueryString();
+		String oper = queryString.indexOf("&") > 4 ? queryString.substring(4, queryString.indexOf("&")) : queryString.substring(4);
+		if(!oper.isEmpty() && operationDocuments.get(this.codec.getEndpoint().getPortName().getLocalPart())
+				.containsKey(oper))
 			doResponse(ouStream,
 					operationDocuments.get(this.codec.getEndpoint().getPortName().getLocalPart())
 					.get(oper));

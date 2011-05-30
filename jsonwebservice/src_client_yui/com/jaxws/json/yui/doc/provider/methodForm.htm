@@ -16,14 +16,18 @@
 	<h2>#METHOD_NAME# Response</h2>
 	<div id='#METHOD_NAME#out' class='outputForm'></div>
 	<script type="text/javascript">
+	/**
+	"inputex","inputex-field",
+    "inputex-jsonschema","inputex-datatable","inputex-button","inputex-jsonform","inputex-stringfield",
+    "inputex-checkbox","inputex-datefield","inputex-integerfield","inputex-selectfield","inputex-emailfield",
+    "inputex-numberfield","inputex-passwordfield","inputex-radiofield","inputex-textarea","inputex-filefield",
+    "inputex-ddlist","inputex-listfield","inputex-datepickerfield","inputex-autocomplete","inputex-dateselectmonthfield",
+    "inputex-datesplitfield","inputex-datetimefield"*/
+	
 		var loader = new YAHOO.util.YUILoader({ 
-			require: ["yahoo","event","connection","utilities","container","dom","button","calendar","element",
-			          "dragdrop","resize","animation","layout","json","datasource","datatable","event","inputex","inputex-field",
-			          "inputex-jsonschema","inputex-datatable","inputex-button","inputex-jsonform","inputex-stringfield",
-			          "inputex-checkbox","inputex-datefield","inputex-integerfield","inputex-selectfield","inputex-emailfield",
-			          "inputex-numberfield","inputex-passwordfield","inputex-radiofield","inputex-textarea","inputex-filefield",
-			          "inputex-ddlist","inputex-listfield","inputex-datepickerfield","inputex-autocomplete","inputex-dateselectmonthfield",
-			          "inputex-datesplitfield","inputex-datetimefield"], 
+			require: ["yahoo","event","connection","utilities","container","dom","button","element",
+			          "layout","json","datasource","datatable","event","inputex-css","inputex-build"
+			          ], 
 			loadOptional: true, 
 			base: "?CLIENT_RESOURCE=inputex/lib/yui/",
 			onSuccess: function() {
@@ -72,9 +76,36 @@
 		    		},
 		            parentEl: '#METHOD_NAME#'
 		         });
+				var url = window.location.toString();
+				 //get the parameters
+				 url.match(/\?(.+)$/);
+				 var params = RegExp.$1;
+				 // split up the query string and store in an
+				 // associative array
+				 var params = params.split("&");
+				 var queryStringList = {};
+				 
+				 for(var i=0;i<params.length;i++) {
+					 var tmp = params[i].split("=");
+					 if(tmp.length == 2 && #METHOD_NAME#form.form[tmp[0]]){
+					 	#METHOD_NAME#form.form[tmp[0]].value=tmp[1];
+					 }
+				 }
 			}
 		}); 
-		YAHOO.addInputExModules(loader, '?CLIENT_RESOURCE=inputex/'); 
+		loader.addModule({
+			name: 'inputex-build',
+			type: 'js',
+	  	   	fullpath: '?CLIENT_RESOURCE=inputex/build/inputex.js',
+	  	   	requires:[]
+		});
+		loader.addModule({
+			name: 'inputex-css',
+			type: 'css',
+			fullpath: '?CLIENT_RESOURCE=inputex/build/inputex-min.css',
+			requires: ['reset', 'fonts']
+		});
+		//YAHOO.addInputExModules(loader, '?CLIENT_RESOURCE=inputex/'); 
 		loader.insert(); 
 	</script>
  </body>

@@ -6,50 +6,6 @@
 <script src="?CLIENT_RESOURCE=inputex/lib/yui/yuiloader/yuiloader-min.js"></script>  
 </head>
 <body class=" yui-skin-sam">
-<span class="yui-resize-status"></span>
-<span class="yui-resize-status" style="display: none;"></span>
-
-
-<div class="yui-panel-container show-scrollbars" id="main_c" style="z-index: 2; visibility: visible; left: 100px; top: 100px;">
-	<div id="main" class="yui-module yui-overlay yui-panel yui-resize" style="visibility: inherit; width: 863px; height: 379px; left: 0px; top: 0px;">
-		<div class="hd" style="cursor: move;" id="main_h">#SERIVICE_NAME#</div>
-		<div class="bd" style="height: 333.667px;">
-			<div id="layout" style="height: 334px; width: 845px; display: block;" class="yui-layout">
-				<div style="height: 334px; width: 845px;" class="yui-layout-doc">
-					<div id="yui-gen1" style="height: 25px; position: absolute; width: 845px;" class="yui-layout-unit yui-layout-unit-top">
-						<div class="yui-layout-wrap" id="yui-gen2" style="height: 21px; width: 841px; top: 2px; left: 2px;">
-							<div class="yui-layout-bd yui-layout-bd-nohd yui-layout-bd-noft" style="height: 19px; width: 839px; top: 0px;">#SERIVICE_NAME#</div>
-						</div>
-					</div>
-					<div id="yui-gen3" style="width: 150px; position: absolute; top: 25px; height: 284px; left: 0px;" class="yui-resize yui-layout-unit yui-layout-unit-left">
-						<div class="yui-layout-wrap" id="yui-gen4" style="height: 284px; width: 143px; top: 0px; left: 2px;">
-							<div class="yui-layout-bd yui-layout-bd-nohd yui-layout-bd-noft" style="height: 282px; width: 141px; top: 0px;"></div>
-						</div>
-						<div id="yui-gen5" class="yui-resize-handle yui-resize-handle-r">
-							<div class="yui-layout-resize-knob"></div>
-						</div>
-					</div>
-					<div class="yui-resize-proxy" style="height: 0px; width: 150px;"><div class="yui-layout-handle-r"></div></div>
-					<div id="yui-gen6" style="height: 25px; position: absolute; top: 309px; width: 845px;" class="yui-layout-unit yui-layout-unit-bottom">
-						<div class="yui-layout-wrap" id="yui-gen7" style="height: 21px; width: 841px; top: 2px; left: 2px;">
-							<div class="yui-layout-bd yui-layout-bd-nohd yui-layout-bd-noft" style="height: 19px; width: 839px; top: 0px;"></div>
-						</div>
-					</div>
-					<div id="yui-gen8" style="position: absolute; height: 284px; width: 695px; top: 25px; left: 150px;" class="yui-layout-unit yui-layout-unit-center">
-						<div class="yui-layout-wrap" id="yui-gen9" style="height: 284px; width: 693px; top: 0px; left: 0px;">
-							<div class="yui-layout-bd yui-layout-bd-nohd yui-layout-bd-noft" style="height: 282px; width: 691px; top: 0px;">Content</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div id="yui-gen0" class="yui-resize-handle yui-resize-handle-br">
-			<div class="yui-resize-handle-inner-br"></div>
-		</div>
-	</div>
-	<div class="underlay"></div>
-</div>
-
 <script>
 if(typeof window.TREEEXPANDLEVEL == 'undefined'){
 	window.TREEEXPANDLEVEL = 3;
@@ -75,13 +31,11 @@ var addTreeNodes = function(oResults, node, level){
 };
 
 var loader = new YAHOO.util.YUILoader({ 
-	require: ["yahoo","event","connection","utilities","container","dom","treeview","button","calendar","element",
-	          "dragdrop","resize","animation","layout","json","datasource","datatable","event","app-style"], 
+	require: ["yahoo","event","connection","utilities","container","dom","treeview","button","element",
+	          "layout","json","event","app-style"], 
 	loadOptional: true, 
 	base: "?CLIENT_RESOURCE=inputex/lib/yui/",
 	onSuccess: function() {
-		
-		(function() {
 		    var Dom = YAHOO.util.Dom,
 		        Event = YAHOO.util.Event,
 		        layout = null,
@@ -89,94 +43,54 @@ var loader = new YAHOO.util.YUILoader({
 		    var tree;
 		
 		    Event.onDOMReady(function() {
-		        var panel = new YAHOO.widget.Panel('main', {
-		            draggable: true,
-		            close: false,
-		            autofillheight: "body", // default value, specified here to highlight its use in the example            
-		            underlay: 'none',
-		            width: '1200px',
-		            height: '800px',
-		            xy: [2, 2]
-		        });
-		        panel.setHeader('#SERIVICE_NAME#');
-		        panel.setBody('<div id="layout"></div>');
-		        panel.renderEvent.subscribe(function() {
-		            Event.onAvailable('layout', function() {
-		                layout = new YAHOO.widget.Layout('layout', {
-		                    height: (panel.body.offsetHeight - 20),
-		                    width: (panel.body.offsetWidth - 20),
-		                    units: [
-		                        { position: 'top', height: 30, resize: false, body: '#SERIVICE_NAME#', gutter: '2' },
-		                        { position: 'left', width: 260, resize: true, body: 'left', gutter: '0 5 0 2', minWidth: 150, maxWidth: 300 },
-		                        { position: 'bottom', height: 175, body: '#DOCUMENT_ENDS#', gutter: '2' },
-		                        { position: 'center', body: '<iframe name="content" id="content" width="100%" height="100%" frameborder="0" style="border: none;min-height: 400px;">Click any operation to load content</iframe>', gutter: '0 2 0 0' }
-		                    ]
-		                });
-		
-		                layout.on('render', function() {
-		                    var c = layout.getUnitByPosition('left');
-		                    c.set('body', '<div id="operations"></div>');
-		                    tree = new YAHOO.widget.TreeView("operations");
-		                    tree.setDynamicLoad(function(node,fnLoadComplete){
-		                    	if(node.index == 1){
-			                    	YAHOO.util.Connect.asyncRequest('GET', '?defaultjsonmodel', {
-			                            success: function(oResponse) {
-			                            	YAHOO.log("XHR transaction was successful.", "info", "example");
-			                                //YAHOO.log(oResponse.responseText);
-			                                var oResults = eval("(" + oResponse.responseText + ")");
-			                                addTreeNodes(oResults,node, 1);
-			                                oResponse.argument.fnLoadComplete();
-			                            }, failure: function(oResponse) {
-			                                YAHOO.log("Failed to process XHR transaction.", "info", "example");
-			                                oResponse.argument.fnLoadComplete();
-			                            }, argument: {
-			                                "node": node,
-			                                "fnLoadComplete": fnLoadComplete
-			                            },
-			                            timeout: 7000
-			                           }
-			                    	);
-		                    	}else{
-			                    	fnLoadComplete();
-		                    	}
-		                    });
-		                    var root = tree.getRoot();
-		                    //add child nodes for tree; our top level nodes are bands
-		                    var bands = ["Operations"];
-		                    for (var i=0, j=bands.length; i<j; i++) {
-		                         var tempNode = new YAHOO.widget.TextNode(bands[i], root, true);
-		                    }
-		                    tree.draw();
-		                });
-		                
-		                layout.render();
-		            });
-		        });
-		        panel.render();
-		        resize = new YAHOO.util.Resize('main', {
-		            handles: ['br'],
-		            autoRatio: true,
-		            status: false,
-		            minWidth: 380,
-		            minHeight: 300
-		        });
-		        resize.on('resize', function(args) {
-		            var panelHeight = args.height,
-		            padding = 20;
-		            //Hack to trick IE into behaving
-		            Dom.setStyle('layout', 'display', 'none');
-		            this.cfg.setProperty("height", panelHeight + 'px');
-		            layout.set('height', this.body.offsetHeight - padding);
-		            layout.set('width', this.body.offsetWidth - padding);
-		            //Hack to trick IE into behaving
-		            Dom.setStyle('layout', 'display', 'block');
-		            layout.resize();
-		            
-		        }, panel, true);
+		        
+                layout = new YAHOO.widget.Layout({
+                    units: [
+                        { position: 'top', height: 100, body: '#SERIVICE_NAME#', gutter: '2' },
+                        { position: 'left', width: 260, body: 'left', gutter: '0 5 0 2', minWidth: 150, maxWidth: 300, scroll: true },
+                        { position: 'bottom', height: 75, body: '#DOCUMENT_ENDS#', gutter: '2',scroll: true },
+                        { position: 'center', body: '<iframe name="content" id="content" width="100%" height="100%" frameborder="0" style="border: none;min-height: 400px;">Click any operation to load content</iframe>', gutter: '0 2 0 0' }
+                    ]
+                });
+
+                layout.on('render', function() {
+                    var c = layout.getUnitByPosition('left');
+                    c.set('body', '<div id="operations"></div>');
+                    tree = new YAHOO.widget.TreeView("operations");
+                    tree.setDynamicLoad(function(node,fnLoadComplete){
+                    	if(node.index == 1){
+	                    	YAHOO.util.Connect.asyncRequest('GET', '?defaultjsonmodel', {
+	                            success: function(oResponse) {
+	                            	YAHOO.log("XHR transaction was successful.", "info", "example");
+	                                //YAHOO.log(oResponse.responseText);
+	                                var oResults = eval("(" + oResponse.responseText + ")");
+	                                addTreeNodes(oResults,node, 1);
+	                                oResponse.argument.fnLoadComplete();
+	                            }, failure: function(oResponse) {
+	                                YAHOO.log("Failed to process XHR transaction.", "info", "example");
+	                                oResponse.argument.fnLoadComplete();
+	                            }, argument: {
+	                                "node": node,
+	                                "fnLoadComplete": fnLoadComplete
+	                            },
+	                            timeout: 7000
+	                           }
+	                    	);
+                    	}else{
+	                    	fnLoadComplete();
+                    	}
+                    });
+                    var root = tree.getRoot();
+                    //add child nodes for tree; our top level nodes are bands
+                    var bands = ["Operations"];
+                    for (var i=0, j=bands.length; i<j; i++) {
+                         var tempNode = new YAHOO.widget.TextNode(bands[i], root, true);
+                    }
+                    tree.draw();
+                });
+                
+                layout.render();
 		    });
-		})();
-
-
 	}
 });
 loader.addModule(
