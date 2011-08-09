@@ -13,6 +13,8 @@ import javax.xml.ws.Holder;
 import com.test.jsonwebservice.rpc.AnyTypeObject;
 import com.test.jsonwebservice.rpc.DateObject;
 import com.test.jsonwebservice.rpc.EnumConst;
+import com.test.jsonwebservice.rpc.ListObj1;
+import com.test.jsonwebservice.rpc.ListWithList;
 import com.test.jsonwebservice.rpc.Object;
 import com.test.jsonwebservice.rpc.ObjectReservedFields;
 import com.test.jsonwebservice.rpc.ParameterTest;
@@ -113,7 +115,11 @@ public class ParameterTestImpl implements ParameterTest {
 
 	public Object test20StringInObjectOut(String string) {
 		Object obj = new Object();
-		obj.setProperty1(Integer.parseInt(string));
+		try{
+			obj.setProperty1(Integer.parseInt(string));
+		}catch(NumberFormatException e){
+			obj.setProperty1(-1);
+		}
 		return obj;
 	}
 
@@ -235,7 +241,7 @@ public class ParameterTestImpl implements ParameterTest {
 	}
 
 	public void test39ObjectStringInEmptyOut(Object object, String string) {
-		if(object == null || string == null || object.getProperty1() == 0)
+		if(object == null || string == null)
 			throw new RuntimeException();
 	}
 
@@ -322,4 +328,9 @@ public class ParameterTestImpl implements ParameterTest {
 		return anyTypeObject.getAnyTypeNonNil();
 	}
 
+    public ListWithList test52EmptyInListWithListOut(){
+    	ListWithList out = new ListWithList();
+    	out.getListObj().add(new ListObj1());
+    	return out;
+    }
 }
