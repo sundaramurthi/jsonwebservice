@@ -6,13 +6,16 @@ import java.io.InputStream;
 
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
+import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.ws.Holder;
 
 import com.test.jsonwebservice.rpc.AttachmentTest;
 
-@WebService(name = "AttachmentTest", targetNamespace = "http://jsonwebservice.test.com/rpc",
-		endpointInterface="com.test.jsonwebservice.rpc.AttachmentTest")
-@SOAPBinding(style = SOAPBinding.Style.RPC)
+@SOAPBinding(style=Style.RPC)
+@WebService(name="AttachmentTest",serviceName = "RPCTestService", portName = "AttachmentPort",
+		targetNamespace = "http://jsonwebservice.test.com/rpc",
+		endpointInterface="com.test.jsonwebservice.rpc.AttachmentTest",
+		wsdlLocation="WEB-INF/wsdl/rpc.wsdl")
 public class AttachmentTestImpl implements AttachmentTest {
 	private static final String IMAGE = "testImage.gif";
 	

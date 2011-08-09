@@ -5,7 +5,7 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns="http://schemas.xmlsoap.org/wsdl/"
 	xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
-  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/">
+  xmlns:mime="http://schemas.jsonsoap.org/wsdl/mime/">
 
 	<types>
 		<xsd:schema targetNamespace="http://jsonwebservice.test.com/rpc">
@@ -19,7 +19,7 @@
 			<xsd:simpleType name="Integer5">
 			  <xsd:restriction base="xsd:int">
 			  	<xsd:minLength value="0"/>
-		      <xsd:maxLength value="3"/>
+		      	<xsd:maxLength value="3"/>
 			  </xsd:restriction>
 			</xsd:simpleType>
 	
@@ -101,6 +101,25 @@
 			 	 	<xsd:element name="map" type="tns:GlobalKeyValueMapObject" minOccurs="0" maxOccurs="unbounded"/>
 			 	 </xsd:sequence>
 			 </xsd:complexType>	
+			 
+			 <xsd:complexType name="ListObj2">
+				<xsd:sequence>
+					<xsd:element name="obj" type="tns:Object" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			 </xsd:complexType>
+			 
+			 <xsd:complexType name="ListObj1">
+				<xsd:sequence>
+					<xsd:element name="obj2" type="tns:ListObj2" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			 </xsd:complexType>
+			 
+			 <xsd:complexType name="ListWithList">
+				<xsd:sequence>
+					<xsd:element name="listObj" type="tns:ListObj1" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			 </xsd:complexType>
+			 
 			 
 			 <xsd:complexType name="XmlElementsObj">
 			 	 <xsd:choice minOccurs="0" maxOccurs="unbounded">
@@ -262,6 +281,10 @@
 	
 	<message name="anyTypeObjectMessage">
 		<part name="anyTypeObject" type="tns:AnyTypeObject"/>
+	</message>
+	
+	<message name="listWithListMessage">
+		<part name="listWithList" type="tns:ListWithList"/>
 	</message>
 	
 	
@@ -616,6 +639,12 @@
 			<input name="test51AnyTypeObjectIn" message="tns:anyTypeObjectMessage" />
 			<output name="test51AnyTypeOut" 	message="tns:anyTypeMessage" />
 		</operation>
+		
+		<operation name="test52EmptyInListWithListOut">
+			<input name="test52EmptyIn" message="tns:emptyMessage" />
+			<output name="test52ListWithListOut" 	message="tns:listWithListMessage" />
+		</operation>
+		
 	</portType>
 
 	<portType name="CustomizeTest">
@@ -890,6 +919,7 @@
 		<operation name="test49Integer5InEmptyOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test49Integer5InEmptyOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
 		<operation name="test50AnyTypeInAnyTypeObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test50AnyTypeInAnyTypeObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
 		<operation name="test51AnyTypeObjectInAnyTypeOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test51AnyTypeObjectInAnyTypeOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
+		<operation name="test52EmptyInListWithListOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test52EmptyInListWithListOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
 		
 	</binding>
 	
@@ -946,7 +976,11 @@
 	
 	<binding name="AttachmentTestService" type="tns:AttachmentTest">
 		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
-		<operation name="test1EmptyInImageOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/attachment/test1EmptyInImageOut"	style="rpc" /><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><mime:multipartRelated><mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated></output></operation>
+		<operation name="test1EmptyInImageOut">
+			<json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/attachment/test1EmptyInImageOut"	style="rpc" />
+			<input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input>
+			<output><mime:multipartRelated><mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated></output>
+		</operation>
 		<operation name="test2ImageInEmptyOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/attachment/test2ImageInEmptyOut"	style="rpc" /><input><mime:multipartRelated><mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
 		<operation name="test3ImageInImageOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/attachment/test3ImageInImageOut"	style="rpc" /><input><mime:multipartRelated><mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated></input><output><mime:multipartRelated><mime:part><mime:content part="image" type="image/jpeg"/></mime:part></mime:multipartRelated></output></operation>  
 		<operation name="test4EmptyInImageWithInfoOut"><json:operation soapAction="http://jsonwebservice.googlecode.com/rpc/attachment/test4EmptyInImageWithInfoOut"	style="rpc" /><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input>
