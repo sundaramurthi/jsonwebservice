@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="/unitTest/json/parameter?client"></script>
+</head>
+<body onload="test()">
+body
+<script type="text/javascript">
+var callback = {
+		success: function(o){alert(o);},
+		error: function(o){alert(o);},
+		complete: function(o){}
+};
+function test(){
+	ParameterPort.test1EmptyInOut(callback);
+	ParameterPort.test2StringInEmptyOut("oko", callback);
+	ParameterPort.test3EmptyInStringOut(callback);
+	ParameterPort.test4StringInStringOut("oko", callback);
+	ParameterPort.test18ObjectInObjectOut({property1:1}, callback);
+	ParameterPort.test39ObjectStringInEmptyOut({property1:1},"param2",callback);
+}
+</script>
+</body>
+</html>

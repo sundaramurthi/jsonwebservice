@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>#SERIVICE_NAME# JSONSOAP Webservice explorer</title>
+<script src="?CLIENT_RESOURCE=inputex/lib/yui/yuiloader/yuiloader-min.js"></script>  
+</head>
+<body class=" yui-skin-sam">
+<script>
+if(typeof window.TREEEXPANDLEVEL == 'undefined'){
+	window.TREEEXPANDLEVEL = 3;
+}
+var ENDPOINT_ADDRESS_PROPERTY = "javax.xml.ws.service.endpoint.address";
+var addTreeNodes = function(oResults, node, level){
+	 if(level > 5)return;
+	 level++;
+	 var i =0;
+	 for(p in oResults){
+		 if(p == ENDPOINT_ADDRESS_PROPERTY)
+			 continue;
+         var tmpNode = new YAHOO.widget.TextNode(p, node, (level < window.TREEEXPANDLEVEL));
+       	 if(oResults[ENDPOINT_ADDRESS_PROPERTY]){
+       		tmpNode.href = oResults[ENDPOINT_ADDRESS_PROPERTY] + "?form"+p;
+       		tmpNode.target = "content";
+       	 }
+       	 tmpNode.labelStyle = "ygtvlabel level" + level + " index" + i;
+         addTreeNodes(oResults[p],tmpNode, level);
+       	 tmpNode.isLeaf	= (level > 4);
+       	 i++;
+     }
+};
+
+var loader = new YAHOO.util.YUILoader({ 
+	require: ["yahoo","event","connection","utilities","container","dom","treeview","button","element",
+	          "layout","json","event","app-style"], 
+	loadOptional: true, 
+	base: "?CLIENT_RESOURCE=inputex/lib/yui/",
+	onSuccess: function() {
+		    var Dom = YAHOO.util.Dom,
+		        Event = YAHOO.util.Event,
+		        layout = null,
+		        resize = null;
+		    var tree;
+		
+		    Event.onDOMReady(function() {
+		        
+                layout = new YAHOO.widget.Layout({
+                    units: [
+                        { position: 'top', height: 100, body: '#SERIVICE_NAME#', gutter: '2' },
+                        { position: 'left', width: 260, body: 'left', gutter: '0 5 0 2', minWidth: 150, maxWidth: 300, scroll: true },
+                        { position: 'bottom', height: 75, body: '#DOCUMENT_ENDS#', gutter: '2',scroll: true },
+                        { position: 'center', body: '<iframe name="content" id="content" width="100%" height="100%" frameborder="0" style="border: none;min-height: 400px;">Click any operation to load content</iframe>', gutter: '0 2 0 0' }
+                    ]
+                });
+
+                layout.on('render', function() {
+                    var c = layout.getUnitByPosition('left');
+                    c.set('body', '<div id="operations"></div>');
+                    tree = new YAHOO.widget.TreeView("operations");
+                    tree.setDynamicLoad(function(node,fnLoadComplete){
+                    	if(node.index == 1){
+	                    	YAHOO.util.Connect.asyncRequest('GET', '?defaultjsonmodel', {
+	                            success: function(oResponse) {
+	                            	YAHOO.log("XHR transaction was successful.", "info", "example");
+	                                //YAHOO.log(oResponse.responseText);
+	                                var oResults = eval("(" + oResponse.responseText + ")");
+	                                addTreeNodes(oResults,node, 1);
+	                                oResponse.argument.fnLoadComplete();
+	                            }, failure: function(oResponse) {
+	                                YAHOO.log("Failed to process XHR transaction.", "info", "example");
+	                                oResponse.argument.fnLoadComplete();
+	                            }, argument: {
+	                                "node": node,
+	                                "fnLoadComplete": fnLoadComplete
+	                            },
+	                            timeout: 7000
+	                           }
+	                    	);
+                    	}else{
+	                    	fnLoadComplete();
+                    	}
+                    });
+                    var root = tree.getRoot();
+                    //add child nodes for tree; our top level nodes are bands
+                    var bands = ["Operations"];
+                    for (var i=0, j=bands.length; i<j; i++) {
+                         var tempNode = new YAHOO.widget.TextNode(bands[i], root, true);
+                    }
+                    tree.draw();
+                });
+                
+                layout.render();
+		    });
+	}
+});
+loader.addModule(
+		{
+	name: 'app-style',
+	type: 'css',
+	   	fullpath: '?CLIENT_RESOURCE=style.css'
+});
+loader.insert(); 
+</script>
+
+</body></html>

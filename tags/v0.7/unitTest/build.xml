@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     Dec 24, 2010 8:58:07 PM                                                        
+
+     jsonwebservice    
+     JAX-WS JSON webservice
+                   
+     Sundar                                                                
+     ====================================================================== -->
+<project name="unitTest" default="war" basedir=".">
+	
+	<property name="build" value="${basedir}/build"/>
+
+	<path id ="classpath">
+		<fileset dir="${basedir}/WebContent/WEB-INF/lib" includes="*.jar"/>
+	</path>
+
+	<taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport" classpathref="classpath"/>
+	
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: clean                      
+         - - - - - - - - - - - - - - - - - -->
+	<target name="clean">
+		<delete dir="${build}"></delete>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: init                      
+         - - - - - - - - - - - - - - - - - -->
+	<target name="init">
+		<mkdir dir="${build}/${ant.project.name}/WEB-INF/classes"/>
+	</target>
+
+	<!-- ================================= 
+          target: wsimport              
+         ================================= -->
+    <target name="wsimport" description="create pojos">
+    	<mkdir dir="${build}/tmp-jar"/>
+    	<wsimport wsdl="${basedir}/WebContent/WEB-INF/wsdl/rpc.wsdl"
+    					  destdir="${build}/tmp-jar"
+    					  sourcedestdir="${build}/tmp-jar"
+    					  keep="true"
+    					  extension="true"
+    					  verbose="true"
+    		xendorsed="true"
+    					  wsdllocation="http://localhost:8080/${ant.project.name}/json/parameter.json">
+    	</wsimport>
+    	<jar destfile="${basedir}/WebContent/WEB-INF/lib/rpc.jar" basedir="${build}/tmp-jar"/>
+    	<delete dir="${build}/tmp-jar"/>
+    </target>
+
+	<!-- ================================= 
+          target: war              
+         ================================= -->
+    <target name="war" depends="clean,init,wsimport" description="create test war file">
+    	
+    	<copydir dest="${build}/${ant.project.name}" src="${basedir}/WebContent/"/>
+    	<javac srcdir="${basedir}/src"
+    				destdir="${build}/${ant.project.name}/WEB-INF/classes" debug="off" source="1.5">
+    		<classpath><fileset dir="${build}/${ant.project.name}/WEB-INF/lib/" includes="*.jar"/></classpath>
+    	</javac>	
+    	
+        <war destfile="${basedir}/${ant.project.name}.war" webxml="${build}/${ant.project.name}/WEB-INF/web.xml"/>
+    </target>
+
+
+</project>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     Dec 24, 2010 8:58:07 PM                                                        
+
+     jsonwebservice    
+     JAX-WS JSON webservice
+                   
+     Sundaramurthi Saminathan                                                                
+     ====================================================================== -->
+<project name="jsonwebservice" default="default" basedir=".">
+	<property name="jarname" value="jsonwebservice-ri"/>
+	<property name="jarname_client_jquery" value="jsonwebservice-custom-docs-jquery"/>
+	<property name="jarname_client_yui" value="jsonwebservice-custom-docs-yui"/>
+	<property name="version" value="0.7"/>
+	<property name="src" value="${basedir}/src"/>
+	<property name="src_client_jquery" value="${basedir}/src_client_jquery"/>
+	<property name="src_client_yui" value="${basedir}/src_client_yui"/>
+	<property name="lib" value="${basedir}/lib"/>
+	<property name="buildroot" value="${basedir}/build"/>
+	<property name="archive" value="${basedir}"/>
+	<tstamp/>
+	
+	<property name="user.name" value="Sundaramurthi"/>
+
+	<path id ="classpath">
+		<fileset dir="${lib}" includes="*.jar"/>
+		<pathelement location="${buildroot}/classes"/>
+	</path>
+
+	
+	<description>
+            JAX-WS JSON webservice
+    </description>
+
+	<!-- ================================= 
+          target: default              
+         ================================= -->
+	<target name="default" depends="build" description="JAX-WS JSON webservice">
+
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: clean                      
+         - - - - - - - - - - - - - - - - - -->
+	<target name="clean">
+		<delete dir="${buildroot}" failonerror="on">
+		</delete>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: init                      
+         - - - - - - - - - - - - - - - - - -->
+	<target name="init">
+		<mkdir dir="${buildroot}"/>
+		<mkdir dir="${buildroot}/classes"/>
+		<mkdir dir="${buildroot}/classes_client_jquery"/>
+		<mkdir dir="${buildroot}/classes_client_yui"/>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: build                      
+         - - - - - - - - - - - - - - - - - -->
+	<target name="build" depends="clean,init">
+		<javac classpathref="classpath" srcdir="${src}"
+        					destdir="${buildroot}/classes" debug="on" source="1.5"/>
+		<jar destfile="${archive}/${jarname}-${version}.jar">
+			<fileset dir="${buildroot}/classes"/>
+			<fileset dir="${src}"/>
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
+				<attribute name="Implementation-Title" value="JSONWebservice"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Build-Date" value="${TODAY}"/>
+			</manifest>
+		</jar>
+		
+		<javac classpathref="classpath" srcdir="${src_client_jquery}"
+		        					destdir="${buildroot}/classes_client_jquery" debug="on" source="1.5"/>
+		<jar destfile="${archive}/${jarname_client_jquery}-${version}.jar">
+			<fileset dir="${buildroot}/classes_client_jquery"/>
+			<fileset dir="${src_client_jquery}"/>
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
+				<attribute name="Implementation-Title" value="JSONWebservice"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Build-Date" value="${TODAY}"/>
+			</manifest>
+		</jar>
+		
+		
+		<concat destfile="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/build/inputex.js" force="yes">
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/license.txt"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/inputex.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/Visus.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/json-schema.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/mixins/choice.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/Field.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/Group.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/widgets/Button.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/Form.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/CombineField.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/StringField.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/AutoComplete.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/CheckBox.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/ColorField.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/DateField.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/DateSplitField.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/DatePickerField.js"/> 
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/EmailField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/HiddenField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/InPlaceEdit.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/IntegerField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/ListField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/NumberField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/PairField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/PasswordField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/RadioField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/RTEField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/SelectField.js"/> 
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/Textarea.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/TimeField.js"/> 
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/DateTimeField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/UneditableField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/UrlField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/widgets/ddlist.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/MultiSelectField.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/AutoComplete.js"/>  
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/fields/MultiAutoComplete.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/JSONForm.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/widgets/DataTable.js"/>
+			<fileset file="${src_client_yui}/com/jaxws/json/yui/doc/provider/inputex/js/widgets/listCustom.js"/>
+		  </concat>
+		
+		<javac classpathref="classpath" srcdir="${src_client_yui}"
+		        					destdir="${buildroot}/classes_client_yui" debug="on" source="1.5"/>
+		<jar destfile="${archive}/${jarname_client_yui}-${version}.jar">
+			<fileset dir="${buildroot}/classes_client_yui"/>
+			<fileset dir="${src_client_yui}"/>
+			<manifest>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Implementation-Vendor" value="Google-Sundar"/>
+				<attribute name="Implementation-Title" value="JSONWebservice"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Build-Date" value="${TODAY}"/>
+			</manifest>
+		</jar>
+		
+		<javadoc destdir="${basedir}/../wiki/api"
+			           author="true"
+			           version="true"
+			           use="true"
+			           windowtitle="${ant.project.name}-${version} API" classpathref="classpath" >
+
+	    <fileset dir="${basedir}/src" defaultexcludes="yes">
+	      <include name="com/jaxws/json/**/*.java"/>
+	    </fileset>
+
+	    <doctitle><![CDATA[<h1>${ant.project.name}-${version} API</h1>]]></doctitle>
+	    <bottom><![CDATA[<i>Copyright &#169; 2010 JSONWebservice. All Rights Reserved.</i>]]></bottom>
+	    <tag name="todo" scope="all" description="To do:"/>
+	  </javadoc>
+	</target>
+</project>
