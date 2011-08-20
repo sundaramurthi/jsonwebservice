@@ -79,7 +79,7 @@ public class ClientProvider extends AbstractHttpMetadataProvider implements Http
 		clientJS.append(
 				"if(typeof YAHOO == \"undefined\" || !YAHOO){\n" +
 					"var file = document.createElement('script');file.setAttribute(\"type\",\"text/javascript\");\n" +
-					"file.setAttribute(\"src\",\"" + address + "?CLIENT_RESOURCE=js/yahoo-all.js\");\n" +
+					"file.setAttribute(\"src\",\"" + address + "?CLIENT_RESOURCE=js/yui-2.8.x-all.js\");\n" +
 					"document.getElementsByTagName(\"head\")[0].appendChild(file);\n"+
 				"}\n" 
 		);
