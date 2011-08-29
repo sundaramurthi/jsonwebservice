@@ -433,9 +433,16 @@ public class WSJSONPopulator extends BeanAware {
 						XmlElement 		element 	= f.getAnnotation(XmlElement.class);
 						// JSON property name is same as in XML annotation, but class property name is different. 
 						if(!element.name().equals(NULL) && elements.containsKey(element.name())){
-							writeMethod.invoke(object,
-									convert(propertyType, f.getType(), elements.get(element.name()), 
-											writeMethod.getAnnotation(JSONWebService.class), writeMethod));
+							if(writeMethod != null){
+								writeMethod.invoke(object,convert(propertyType, f.getType(), elements.get(element.name()), 
+										writeMethod != null ? writeMethod.getAnnotation(JSONWebService.class) : null, writeMethod));
+							}else if(prop.getReadMethod() != null && prop.getReadMethod().invoke(object) instanceof Collection){
+								Collection objectList = (Collection) prop.getReadMethod().invoke(object);
+								Method readMethod = prop.getReadMethod();
+								Object convertedValue = this.convert(readMethod.getReturnType(), readMethod.getGenericReturnType(), elements.get(element.name()), 
+										null, readMethod);
+								objectList.addAll((Collection) convertedValue);
+							}
 						} else if (!element.defaultValue().equals(NULL) && isJSONPrimitive(propertyType)){
 							if(traceEnabled)
 								traceLog.info(String.format("Input do not have %s. Populating default value: %s. flag to populate: %b",
@@ -677,7 +684,7 @@ public class WSJSONPopulator extends BeanAware {
             	newCollection.addAll(values);
                 if(traceEnabled)
                 	traceLog.warn(String.format("Unparameterazed list with object type found. accessor: \"%s\" class: %s",
-                			accessor.getName(),accessor.getDeclaringClass()));
+                			accessor != null ? accessor.getName() : "",accessor != null ? accessor.getDeclaringClass() : ""));
             } else if (isJSONPrimitive(itemClass)) {
                 //primitive array
             	for (Object listValue : values) {
