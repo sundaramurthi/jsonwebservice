@@ -522,4 +522,14 @@ public class ParameterTest extends JSONCodecTest /*implements com.test.jsonwebse
 		assertEquals(out, expected);
 	}
 	
+	// Bugs: Issue 19 camel case issue
+	public void test53CamelCaseListInOut() throws MalformedURLException, IOException{
+		String in 	= "{\"test53CamelCaseListInOut\":{\"camelCase\":{\"InInt\":10,\"Instrument\":\"OK\",\"MyString\":\"tt\",\"Results\":[{\"MethodID\":\"11\",\"OrderID\":\"myid\"," +
+				"\"ReplicationNo\":1,\"SampleNo\":2,\"Unit\":\"dd\",\"Value\":\"v\"}]}}}";
+		System.out.println("IN: " + in);
+		String out 		= postOnEndPoint(in);
+		System.out.println("OUT: " + out);
+		String expected 	= "{\"statusFlag\":true,\"camelCase\":{\"InInt\":10,\"Instrument\":\"OK\",\"MyString\":\"tt\",\"Results\":[{\"MethodID\":\"11\",\"OrderID\":\"myid\",\"ReplicationNo\":1,\"SampleNo\":2,\"Unit\":\"dd\",\"Value\":\"v\"}]}}";
+		assertEquals(out, expected);
+	}
 }

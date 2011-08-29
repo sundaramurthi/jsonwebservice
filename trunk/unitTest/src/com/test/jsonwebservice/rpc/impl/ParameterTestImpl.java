@@ -2,6 +2,7 @@ package com.test.jsonwebservice.rpc.impl;
 
 import java.util.GregorianCalendar;
 
+import javax.jws.WebMethod;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 import javax.jws.soap.SOAPBinding.Style;
@@ -11,6 +12,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.ws.Holder;
 
 import com.test.jsonwebservice.rpc.AnyTypeObject;
+import com.test.jsonwebservice.rpc.CamelCase;
 import com.test.jsonwebservice.rpc.DateObject;
 import com.test.jsonwebservice.rpc.EnumConst;
 import com.test.jsonwebservice.rpc.ListObj1;
@@ -332,5 +334,16 @@ public class ParameterTestImpl implements ParameterTest {
     	ListWithList out = new ListWithList();
     	out.getListObj().add(new ListObj1());
     	return out;
+    }
+    /**
+     * 
+     * @param camelCase
+     */
+    @WebMethod
+    public void test53CamelCaseListInOut(
+        Holder<CamelCase> camelCase){
+    	if(camelCase == null || camelCase.value == null || camelCase.value.getResults().isEmpty()){
+			throw new RuntimeException();
+		}
     }
 }
