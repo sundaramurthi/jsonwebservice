@@ -13,6 +13,7 @@
 
 	<path id ="classpath">
 		<fileset dir="${basedir}/WebContent/WEB-INF/lib" includes="*.jar"/>
+		<fileset dir="${basedir}/../jsonwebservice" includes="*.jar"/>
 	</path>
 
 	<taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport" classpathref="classpath"/>
@@ -56,11 +57,22 @@
     	
     	<copydir dest="${build}/${ant.project.name}" src="${basedir}/WebContent/"/>
     	<javac srcdir="${basedir}/src"
-    				destdir="${build}/${ant.project.name}/WEB-INF/classes" debug="off" source="1.5">
-    		<classpath><fileset dir="${build}/${ant.project.name}/WEB-INF/lib/" includes="*.jar"/></classpath>
-    	</javac>	
+    				destdir="${build}/${ant.project.name}/WEB-INF/classes" debug="off" source="1.5" classpathref="classpath"/>
     	
-        <war destfile="${basedir}/${ant.project.name}.war" webxml="${build}/${ant.project.name}/WEB-INF/web.xml"/>
+        <war destfile="${basedir}/${ant.project.name}.war" webxml="${build}/${ant.project.name}/WEB-INF/web.xml">
+        	<fileset dir="${build}/${ant.project.name}"/>
+        	<zipfileset file="${basedir}/../jsonwebservice/jsonwebservice-ri-*" prefix="WEB-INF/lib"></zipfileset>
+        </war>
+        <war destfile="${basedir}/${ant.project.name}_yui.war" webxml="${build}/${ant.project.name}/WEB-INF/web.xml">
+        	<fileset dir="${build}/${ant.project.name}"/>
+        	<zipfileset file="${basedir}/../jsonwebservice/jsonwebservice-ri-*" prefix="WEB-INF/lib"></zipfileset>
+        	<zipfileset file="${basedir}/../jsonwebservice/jsonwebservice-custom-docs-yui-*" prefix="WEB-INF/lib"></zipfileset>
+        </war>
+        <war destfile="${basedir}/${ant.project.name}_jquery.war" webxml="${build}/${ant.project.name}/WEB-INF/web.xml">
+        	<fileset dir="${build}/${ant.project.name}"/>
+        	<zipfileset file="${basedir}/../jsonwebservice/jsonwebservice-ri-*" prefix="WEB-INF/lib"></zipfileset>
+        	<zipfileset file="${basedir}/../jsonwebservice/jsonwebservice-custom-docs-jquery-*" prefix="WEB-INF/lib"></zipfileset>
+        </war>
     </target>
 
 

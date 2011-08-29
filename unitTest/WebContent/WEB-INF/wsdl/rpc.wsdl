@@ -202,6 +202,27 @@
 					<xsd:element name="dble2" type="xsd:double" minOccurs="0"/>
 		 	  </xsd:sequence>
 		 	</xsd:complexType>
+		 	
+		 	<xsd:complexType name="ResultType">
+				<xsd:sequence>
+					<xsd:element name="OrderID" type="xsd:string"/>
+					<xsd:element name="SampleNo" type="xsd:int"/>
+					<xsd:element name="MethodID" type="xsd:string" />
+					<xsd:element name="ReplicationNo" type="xsd:int"/>
+					<xsd:element name="Value" type="xsd:string"/>
+					<xsd:element name="Unit" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+	
+		 	<xsd:complexType name="CamelCase"><!-- Issue 19 -->
+		 		<xsd:sequence>
+					<!-- TODO using camel case lead fail back element process, it lead miner delay in process, Improve performane -->
+					<xsd:element name="MyString" type="xsd:string"/>
+					<xsd:element name="InInt" type="xsd:int" nillable="true"/>
+					<xsd:element minOccurs="1" maxOccurs="1" name="Instrument" type="xsd:string"/>
+					<xsd:element minOccurs="1" maxOccurs="unbounded" name="Results" type="tns:ResultType"/>
+		 		</xsd:sequence>
+		 	</xsd:complexType>
 		</xsd:schema>
 	</types>
 
@@ -375,6 +396,11 @@
 	<!-- Performance message -->
 	<message name="largeListMessage">
 		<part name="largeList" type="tns:LargeList"/>
+	</message>
+	
+	<!-- Camel case messages -->
+	<message name="camelCaseMessage">
+		<part name="camelCase" type="tns:CamelCase"/>
 	</message>
 	
 	<portType name="ParameterTest">
@@ -643,6 +669,11 @@
 		<operation name="test52EmptyInListWithListOut">
 			<input name="test52EmptyIn" message="tns:emptyMessage" />
 			<output name="test52ListWithListOut" 	message="tns:listWithListMessage" />
+		</operation>
+		
+		<operation name="test53CamelCaseListInOut"><!-- Bugzila Issue 19 -->
+			<input name="test53CamelCaseIn" message="tns:camelCaseMessage" />
+			<output name="test53CamelCaseOut" 	message="tns:camelCaseMessage" />
 		</operation>
 		
 	</portType>
@@ -920,6 +951,7 @@
 		<operation name="test50AnyTypeInAnyTypeObjectOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test50AnyTypeInAnyTypeObjectOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
 		<operation name="test51AnyTypeObjectInAnyTypeOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test51AnyTypeObjectInAnyTypeOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
 		<operation name="test52EmptyInListWithListOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test52EmptyInListWithListOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
+		<operation name="test53CamelCaseListInOut"><json:operation soapAction="http://jsonwebservice.test.com/rpc/test53CamelCaseListInOut" style="rpc"/><input><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></input><output><json:body use="literal" namespace="http://jsonwebservice.test.com/rpc"/></output></operation>
 		
 	</binding>
 	
