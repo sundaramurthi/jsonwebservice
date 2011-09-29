@@ -492,7 +492,7 @@ public class WSJSONPopulator extends BeanAware {
 						ContentDisposition disp = new ContentDisposition(contentDisposition.get(0));
 						if(disp.getParameter("name") != null && disp.getParameter("name").equals(propertyName)){
 							if(clazz.isAssignableFrom(DataHandler.class))
-								return new DataHandler(new MimePartDataSource(new MimeBodyPart(mimePart.read())));
+								return new DataHandler(new MimePartDataSource(new MimeBodyPart(mimePart)));
 							else if(clazz.isAssignableFrom(javax.xml.transform.Source.class))
 								return new StreamSource(mimePart.read());
 						}
