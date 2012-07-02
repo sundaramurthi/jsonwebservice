@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -599,7 +600,10 @@ public class WSJSONPopulator extends BeanAware {
     		JSONWebService customizeInfo, Method accessor) throws Exception {
         if (value == null)
             return null;
-        else if (value instanceof List) {
+        if(value instanceof String && ((String) value).startsWith("[") && ((String) value).endsWith("]")){
+        	value = Arrays.asList(((String)value).substring(1, ((String)value).length()-1).split(","));
+        }
+        if (value instanceof List) {
             Class<?> arrayType = clazz.getComponentType();
             List values = (List) value;
             Object newArray = Array.newInstance(arrayType, values.size());
