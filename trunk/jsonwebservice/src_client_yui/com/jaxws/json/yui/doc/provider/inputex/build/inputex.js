@@ -801,6 +801,11 @@ inputEx.JsonSchema.Builder.prototype = {
 	        	  fieldDef.name = propertyName;
 	          }
 	
+	          // test for undefined object
+	          var clazz = null;
+	          if(p.properties && p.properties.hasOwnProperty("class") && p.properties["class"].hasOwnProperty("default") && p.properties["class"]["default"] == "java.lang.Object"){
+	        	  fieldDef.type = "json";
+	          }
 	          for(key in p.properties) {
 	             if(p.properties.hasOwnProperty(key)) {
 	                fields.push( this.schemaToInputEx(p.properties[key], key) );
