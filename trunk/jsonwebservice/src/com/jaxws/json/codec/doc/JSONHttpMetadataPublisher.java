@@ -3,7 +3,6 @@ package com.jaxws.json.codec.doc;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,6 +12,7 @@ import java.util.TreeSet;
 
 import com.jaxws.json.codec.BeanAware;
 import com.jaxws.json.codec.JSONCodec;
+import com.jaxws.json.codec.WrapedWSHTTPConnection;
 import com.jaxws.json.codec.encode.WSJSONWriter;
 import com.sun.istack.NotNull;
 import com.sun.xml.bind.v2.runtime.JAXBContextImpl;
@@ -30,11 +30,7 @@ import com.sun.xml.ws.util.ServiceFinder;
  * @mail sundaramurthis@gmail.com
  */
 public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
-	/**
-	 * Template cache
-	 */
 	
-	private static final String	X_JSON_HTTP_METADATA_PUBLISHER_HANDLED	= "X-JSONHttpMetadataPublisherHandled";
 	/**
 	 * meta data model cache.
 	 */
@@ -52,7 +48,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	@Override
 	public boolean handleMetadataRequest(HttpAdapter adapter,
 			WSHTTPConnection connection) throws IOException {
-		if(connection.getResponseHeaders().containsKey(X_JSON_HTTP_METADATA_PUBLISHER_HANDLED)){
+		if(connection instanceof WrapedWSHTTPConnection){
 			return false;
 		}
 		String 	queryString 	= connection.getQueryString();
@@ -70,9 +66,8 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				return true;
 			}
 		}
-		connection.getResponseHeaders().put(X_JSON_HTTP_METADATA_PUBLISHER_HANDLED, Collections.EMPTY_LIST);
 		// Call http get operationn. 
-		adapter.invokeAsync(connection);
+		adapter.invokeAsync(new WrapedWSHTTPConnection(connection,"POST"));
 		int i = 0;
 		while(!connection.isClosed()){
 			// Wait until response complete
