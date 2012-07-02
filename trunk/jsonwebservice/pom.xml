@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.jaxws.json</groupId>
   <artifactId>jsonwebservice-ri</artifactId>
-  <version>0.7.0</version>
+  <version>0.8.0</version>
   <name>jsonwebservice</name>
   <description>Json codec for jax-ws</description>
   <build>
