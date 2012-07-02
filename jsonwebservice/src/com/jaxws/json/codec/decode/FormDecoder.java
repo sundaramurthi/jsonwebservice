@@ -72,8 +72,8 @@ public class FormDecoder {
 		this.packet 		= packet;
 		this.contentType 	= contentType;
 		this.JSON_PARAM_NAME =  (packet.supports(MessageContext.HTTP_REQUEST_HEADERS) && 
-					((Headers)packet.get(MessageContext.HTTP_REQUEST_HEADERS)).getFirst(JSONCodec.XJSONPARAM_HEADER) != null)? 
-					((Headers)packet.get(MessageContext.HTTP_REQUEST_HEADERS)).getFirst(JSONCodec.XJSONPARAM_HEADER) :
+					((Map<?,?>)packet.get(MessageContext.HTTP_REQUEST_HEADERS)).get(JSONCodec.XJSONPARAM_HEADER) != null)? 
+					(String)((Map<?,?>)packet.get(MessageContext.HTTP_REQUEST_HEADERS)).get(JSONCodec.XJSONPARAM_HEADER) :
 						JSONCodec.XJSONPARAM_DEFAULT;
 	}
 	
