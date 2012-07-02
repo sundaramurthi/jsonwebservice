@@ -3,6 +3,7 @@ package com.jaxws.json.codec.doc;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,6 +34,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	 * Template cache
 	 */
 	
+	private static final String	X_JSON_HTTP_METADATA_PUBLISHER_HANDLED	= "X-JSONHttpMetadataPublisherHandled";
 	/**
 	 * meta data model cache.
 	 */
@@ -50,6 +52,9 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 	@Override
 	public boolean handleMetadataRequest(HttpAdapter adapter,
 			WSHTTPConnection connection) throws IOException {
+		if(connection.getResponseHeaders().containsKey(X_JSON_HTTP_METADATA_PUBLISHER_HANDLED)){
+			return false;
+		}
 		String 	queryString 	= connection.getQueryString();
 		ServiceFinder<HttpMetadataProvider> providers = ServiceFinder.find(HttpMetadataProvider.class);
 		HttpMetadataProvider[] providersArray = providers.toArray();
@@ -65,6 +70,7 @@ public class JSONHttpMetadataPublisher extends HttpMetadataPublisher {
 				return true;
 			}
 		}
+		connection.getResponseHeaders().put(X_JSON_HTTP_METADATA_PUBLISHER_HANDLED, Collections.EMPTY_LIST);
 		// Call http get operationn. 
 		adapter.invokeAsync(connection);
 		int i = 0;
