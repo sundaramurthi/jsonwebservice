@@ -1,6 +1,7 @@
 package com.jaxws.json.codec.decode;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -15,7 +16,6 @@ import com.jaxws.json.codec.DebugTrace;
 import com.jaxws.json.codec.JSONCodec;
 import com.jaxws.json.codec.JSONFault;
 import com.jaxws.json.codec.MessageBodyBuilder;
-import com.sun.xml.bind.StringInputStream;
 import com.sun.xml.ws.api.message.Messages;
 import com.sun.xml.ws.api.message.Packet;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -244,7 +244,7 @@ public class JSONDecoder {
 					throw new RuntimeException("Invalid Operation name in query parameter.(Please pass valid opeartion name as query parameter)");
 				}
 			}
-			return new StringInputStream(URLDecoder.decode(queryStringUpdated,System.getProperty("javaEncoding", "UTF-8")));
+			return new ByteArrayInputStream(URLDecoder.decode(queryStringUpdated, System.getProperty("javaEncoding", "UTF-8")).getBytes());
 		}
 	}
 }
