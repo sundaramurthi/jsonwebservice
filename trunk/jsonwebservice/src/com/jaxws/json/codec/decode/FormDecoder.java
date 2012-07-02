@@ -1,6 +1,7 @@
 package com.jaxws.json.codec.decode;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -27,7 +28,6 @@ import com.sun.xml.messaging.saaj.packaging.mime.internet.ParseException;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.message.Packet;
 import com.sun.xml.ws.encoding.ContentType;
-import com.sun.xml.ws.transport.Headers;
 
 /**
  * @author ssaminathan
@@ -163,17 +163,26 @@ public class FormDecoder {
 	 * @return
 	 */
 	private Message getFormData() {
-		ServletRequest request = (ServletRequest) this.packet.get(MessageContext.SERVLET_REQUEST);
-
-		@SuppressWarnings("unchecked")
-		Map<String,Object> parameter = request.getParameterMap();
 		Map<String,Object> jsonMap	= new HashMap<String, Object>();
-		if(parameter.isEmpty() && request.getContentLength() > 0){
-			processPostBody(jsonMap,request);
-		}else{
-			for(Entry<String, Object> paramEntry : parameter.entrySet()){
-				fillParameterMap(paramEntry.getKey(), request.getParameter(paramEntry.getKey()), jsonMap);
+		if(this.packet.supports(MessageContext.QUERY_STRING) && this.packet.get(MessageContext.QUERY_STRING) != null 
+				&& !this.packet.get(MessageContext.QUERY_STRING).toString().isEmpty()){
+			processString(jsonMap,this.packet.get(MessageContext.QUERY_STRING).toString());
+		}  
+		if(this.packet.supports(MessageContext.SERVLET_REQUEST)){
+			ServletRequest request = (ServletRequest) this.packet.get(MessageContext.SERVLET_REQUEST);
+			StringBuffer	buffer	= new StringBuffer(); 
+			try {
+				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(request.getInputStream()));
+				String 			line 	= bufferedReader.readLine();
+				while(line != null){
+					buffer.append(line);
+					line = bufferedReader.readLine();
+				}
+				bufferedReader.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
+			processString(jsonMap, buffer.toString().trim());
 		}
 		try {
 			if(jsonMap.size() == 1){
@@ -213,20 +222,7 @@ public class FormDecoder {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void processPostBody(Map<String,Object> jsonMap,ServletRequest request){
-		StringBuffer	buffer	= new StringBuffer(); 
-		try{
-			BufferedReader 	reader  = new BufferedReader(new InputStreamReader(request.getInputStream()));
-			String 			line 	= reader.readLine();
-			while(line != null){
-				buffer.append(line);
-				line = reader.readLine();
-			}
-			reader.close();
-		}catch(Throwable th){
-			th.printStackTrace();
-		}
-		String content = buffer.toString().trim();
+	private void processString(Map<String,Object> jsonMap,String content){
 		if(content.startsWith("{")){
 			// JSON
 			JSONReader 	reader = new JSONReader();
