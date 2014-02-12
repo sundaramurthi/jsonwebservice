@@ -484,9 +484,6 @@ public class JSONCodec implements EndpointAwareCodec, EndpointComponent {
 				&& packet.get(MessageContext.HTTP_REQUEST_HEADERS) instanceof Map 
 				&& ((Map<?,?>)packet.get(MessageContext.HTTP_REQUEST_HEADERS)).containsKey(XDEBUG_HEADER)) ? new DebugTrace() : null;
 		
-		
-
-		
 		if(traceLog != null){
 			// Add trace log if X-Debug or TRACE request.
 			packet.invocationProperties.put(TRACE, traceLog);
