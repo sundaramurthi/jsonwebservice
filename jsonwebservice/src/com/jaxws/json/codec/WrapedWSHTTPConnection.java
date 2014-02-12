@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.sun.xml.ws.api.server.WebServiceContextDelegate;
 import com.sun.xml.ws.transport.http.WSHTTPConnection;
@@ -123,6 +124,42 @@ public class WrapedWSHTTPConnection extends WSHTTPConnection {
 	@Override
 	public boolean supports(Object key) {
 		return this.wsHTTPConnection.supports(key);
+	}
+
+	@Override
+	public void setResponseHeader(String paramString, List<String> paramList) {
+		this.wsHTTPConnection.setResponseHeader(paramString, paramList);
+		
+	}
+
+	@Override
+	public Set<String> getRequestHeaderNames() {
+		return this.wsHTTPConnection.getRequestHeaderNames();
+	}
+
+	@Override
+	public List<String> getRequestHeaderValues(String paramString) {
+		return this.wsHTTPConnection.getRequestHeaderValues(paramString);
+	}
+
+	@Override
+	public String getRequestURI() {
+		return this.wsHTTPConnection.getRequestURI();
+	}
+
+	@Override
+	public String getRequestScheme() {
+		return this.wsHTTPConnection.getRequestScheme();
+	}
+
+	@Override
+	public String getServerName() {
+		return this.wsHTTPConnection.getServerName();
+	}
+
+	@Override
+	public int getServerPort() {
+		return this.wsHTTPConnection.getServerPort();
 	}
 	
 

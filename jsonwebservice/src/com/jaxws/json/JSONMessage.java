@@ -10,6 +10,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
+import javax.xml.ws.Holder;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -21,6 +22,10 @@ import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.ws.api.message.HeaderList;
 import com.sun.xml.ws.api.message.Message;
 import com.sun.xml.ws.api.model.wsdl.WSDLBoundOperation;
+import com.sun.xml.ws.model.ParameterImpl;
+import com.sun.xml.ws.model.WrapperParameter;
+import com.sun.xml.ws.spi.db.WrapperComposite;
+import com.sun.xml.ws.spi.db.XMLBridge;
 
 public class JSONMessage extends Message {
 
@@ -35,7 +40,7 @@ public class JSONMessage extends Message {
 
 	public JSONMessage(@Nullable HeaderList headers,WSDLBoundOperation operation,Map<String,Object>  operationParameters,
 			WSJSONPopulator 	jsonPopulator) {
-        this.headers 		= headers;
+		this.headers 		= headers;
         this.operation  	= operation;
         this.jsonPopulator 	= jsonPopulator;
         this.elements		= operationParameters;
@@ -63,8 +68,7 @@ public class JSONMessage extends Message {
 
 	@Override
 	public boolean hasPayload() {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
@@ -95,14 +99,17 @@ public class JSONMessage extends Message {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T readPayloadAsJAXB(Bridge<T> bridge) throws JAXBException {
+		return readPayloadAsJAXB((Class<?>)bridge.getTypeReference().type, bridge.getTypeReference().tagName.getLocalPart());
+	}
+	
+	private <T> T readPayloadAsJAXB(Class<?> parameterType, String localPart) throws JAXBException {
 		try {
-			Class<?> parameterType = (Class<?>)bridge.getTypeReference().type;
 			if(!WSJSONPopulator.isJSONPrimitive(parameterType)){
             	return (T) jsonPopulator.populateObject(jsonPopulator.getNewInstance(parameterType),
-	            		(Map<String,Object>)elements.get(bridge.getTypeReference().tagName.getLocalPart()),null, 
+	            		(Map<String,Object>)elements.get(localPart),null, 
 	            		null);
             } else {
-            	return (T) jsonPopulator.convert(parameterType, null, elements.get(bridge.getTypeReference().tagName.getLocalPart()),
+            	return (T) jsonPopulator.convert(parameterType, null, elements.get(localPart),
             			/*seiMethod != null ? seiMethod.getAnnotation(JSONWebService.class) :*/ null, null);
             }
 		} catch (Exception e) {
@@ -114,8 +121,7 @@ public class JSONMessage extends Message {
 
 	@Override
 	public XMLStreamReader readPayload() throws XMLStreamException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -130,17 +136,39 @@ public class JSONMessage extends Message {
 		System.out.println("");
 	}
 
-	@Override
 	public void writeTo(ContentHandler contentHandler, ErrorHandler errorHandler)
 			throws SAXException {
 		// TODO Auto-generated method stub
 
 	}
 
-	@Override
 	public Message copy() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	public <T> T readPayloadAsJAXB(XMLBridge<T> bridge) throws JAXBException {
+		if(bridge.getTypeInfo().type.equals(com.sun.xml.ws.spi.db.WrapperComposite.class)){
+			WrapperParameter p = ((WrapperParameter)(bridge.getTypeInfo().properties().get(com.sun.xml.ws.model.WrapperParameter.class.getName())));
+			WrapperComposite com = new WrapperComposite();
+			com.bridges = new XMLBridge[p.getWrapperChildren().size()];
+			com.values = new Object[p.getWrapperChildren().size()];
+			for(ParameterImpl child : p.getWrapperChildren()){
+				com.bridges[child.getIndex()] = child.getXMLBridge();
+				Object val = readPayloadAsJAXB((Class<?>)child.getTypeInfo().type, child.getTypeInfo().tagName.getLocalPart());
+				if(child.isINOUT()){
+					val = new Holder(val); 
+				}
+				com.values[child.getIndex()] = val;
+			}
+			if(p.getWrapperChildren().size() == 0){
+				return null;
+			}else if(p.getWrapperChildren().size() == 1){
+				return (T)com.values[0];
+			}else{
+				return (T)com;
+			}
+		}
+		return readPayloadAsJAXB((Class<?>)bridge.getTypeInfo().type, bridge.getTypeInfo().tagName.getLocalPart());
 	}
 
 }
