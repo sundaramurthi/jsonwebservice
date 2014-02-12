@@ -16,6 +16,7 @@ import org.xml.sax.SAXException;
 import com.sun.xml.bind.api.Bridge;
 import com.sun.xml.ws.api.message.HeaderList;
 import com.sun.xml.ws.api.message.Message;
+import com.sun.xml.ws.spi.db.XMLBridge;
 
 /**
  * @author ssaminathan
@@ -118,6 +119,11 @@ public class TrackedMessage extends Message {
 
 	public void setTrace(DebugTrace trace) {
 		this.trace = trace;
+	}
+
+	public <T> T readPayloadAsJAXB(XMLBridge<T> paramXMLBridge) throws JAXBException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }

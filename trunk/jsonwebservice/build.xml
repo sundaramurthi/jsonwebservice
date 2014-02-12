@@ -11,7 +11,7 @@
 	<property name="jarname" value="jsonwebservice-ri"/>
 	<property name="jarname_client_jquery" value="jsonwebservice-custom-docs-jquery"/>
 	<property name="jarname_client_yui" value="jsonwebservice-custom-docs-yui"/>
-	<property name="version" value="0.8"/>
+	<property name="version" value="0.9"/>
 	<property name="src" value="${basedir}/src"/>
 	<property name="src_client_jquery" value="${basedir}/src_client_jquery"/>
 	<property name="src_client_yui" value="${basedir}/src_client_yui"/>
@@ -23,8 +23,8 @@
 	<property name="user.name" value="Sundaramurthi"/>
 
 	<path id ="classpath">
-		<fileset dir="${lib}" includes="*.jar"/>
 		<pathelement location="${buildroot}/classes"/>
+		<fileset dir="${lib}" includes="*.jar"/>
 	</path>
 
 	
