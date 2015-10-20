@@ -1,0 +1,40 @@
+allprojects {
+	
+}
+subprojects {
+	apply plugin: 'java'
+	apply plugin: 'eclipse-wtp'
+	
+	if(project.name.startsWith("demo-")) { 
+    	apply plugin: 'war'
+    	apply plugin: 'jetty'
+    	jar.enabled = false
+    }
+    
+	repositories {
+    	mavenCentral()
+	}
+	
+	dependencies {
+    	compile 'org.glassfish.metro:webservices-rt:2.3.1',
+				'org.glassfish.metro:webservices-api:2.3.1',
+				'javax.servlet:javax.servlet-api:3.1.0'
+		if(!project.name.equals("ri")) { 
+			compile project(":ri")
+		}		
+		testCompile 'junit:junit:4.10'
+	}
+	
+	jar {
+        manifest.attributes provider: 'gradle'
+    }
+}
+
+task bundleJar(type: Jar) {
+    dependsOn subprojects.build
+}
+
+task release() {
+    dependsOn subprojects.build
+    dependsOn bundleJar
+}

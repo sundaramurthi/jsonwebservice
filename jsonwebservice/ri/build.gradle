@@ -1,0 +1,8 @@
+apply plugin: 'java'
+
+version = '1.0.0'
+group = 'com.googlecode.jsonwebservice'
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+archivesBaseName = 'jsonwebservice-ri'

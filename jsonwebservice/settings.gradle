@@ -1,0 +1,1 @@
+include "ri", "client-yui", "client-jquery", "client-angularjs", "itest", "demo-helloWorld", "demo-attachment", "demo-picasa"

@@ -1,5 +1,5 @@
 /bin/
-/gradle-app.setting
 /build/
+/.classpath
 /.project
 /.gradle/
