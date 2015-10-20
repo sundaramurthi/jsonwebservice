@@ -1,0 +1,48 @@
+apply plugin: 'war'
+apply plugin: 'jetty'
+
+jar.enabled = false
+
+httpPort = 8114
+stopPort = 9114
+stopKey = "stopKey"
+
+archivesBaseName = 'itest'
+
+configurations {
+    jaxws
+}
+
+dependencies {
+    jaxws 'com.sun.xml.ws:jaxws-tools:2.1.4'
+}
+
+task wsimport {
+    ext.destDir = file("${projectDir}/src/main/generated")
+    doLast {
+        ant {
+            sourceSets.main.output.classesDir.mkdirs()
+            destDir.mkdirs()
+            taskdef(name: 'wsimport',
+                    classname: 'com.sun.tools.ws.ant.WsImport',
+                    classpath: configurations.jaxws.asPath
+            )
+            wsimport(keep: true,
+                    destdir: sourceSets.main.output.classesDir,
+                    sourcedestdir: destDir,
+                    extension: "true",
+                    verbose: "false",
+                    quiet: "false",
+                    package: "com.test.jsonwebservice.rpc",
+                    xnocompile: "true",
+                    wsdl: 'itest/src/main/webapp/WEB-INF/wsdl/rpc.wsdl') {
+                xjcarg(value: "-XautoNameResolution")
+            }
+        }
+    }
+}
+
+compileJava {
+    dependsOn wsimport
+    source wsimport.destDir
+}

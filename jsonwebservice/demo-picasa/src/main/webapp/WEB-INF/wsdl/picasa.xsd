@@ -1,0 +1,108 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+		targetNamespace="http://www.w3.org/2005/Atom"
+		xmlns:dis="http://www.w3.org/2005/Atom"
+		xmlns:media="http://search.yahoo.com/mrss/"
+		xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+		xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+        jaxb:version="2.0" elementFormDefault="qualified">
+        <xsd:import schemaLocation="picasa2.xsd" namespace="http://search.yahoo.com/mrss/"></xsd:import>
+        
+        <xsd:complexType name="UIElement">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="name"/>
+				<xsd:element type="xsd:string" name="value"/>
+			</xsd:sequence>
+		</xsd:complexType>		
+        
+        <xsd:complexType name="UIElements">
+			<xsd:sequence>
+				<xsd:element name="elements" type="dis:UIElement" minOccurs="1" maxOccurs="unbounded"></xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>	
+        
+        <xsd:complexType name="LoginParameter">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="accountType"/>
+				<xsd:element type="xsd:string" name="Email"/>
+				<xsd:element type="xsd:string" name="Passwd"/>
+				<xsd:element type="xsd:string" name="service"/>
+				<xsd:element type="xsd:string" name="source"/>
+				<xsd:element type="xsd:string" name="logintoken"/>
+				<xsd:element type="xsd:string" name="logincaptcha"/>
+			</xsd:sequence>
+		</xsd:complexType>
+		
+		<xsd:complexType name="LoginResponse">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="Url"/>
+				<xsd:element type="xsd:string" name="Error"/>
+				<xsd:element type="xsd:string" name="CaptchaToken"/>
+				<xsd:element type="xsd:string" name="CaptchaUrl"/>
+			</xsd:sequence>
+		</xsd:complexType>
+		
+		<xsd:complexType name="LoginFault">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="errorCode"/>
+				<xsd:element type="xsd:string" name="description"/>
+			</xsd:sequence>
+		</xsd:complexType>
+		
+		<xsd:element name="fault" type="dis:LoginFault"></xsd:element>
+		
+		<xsd:complexType name="Crediential">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="username"/>
+				<xsd:element type="xsd:string" name="token" minOccurs="0" maxOccurs="1"/>
+			</xsd:sequence>
+		</xsd:complexType>
+		
+		<xsd:complexType name="LinkType" xmlns="http://www.w3.org/2005/Atom">
+			<xsd:attribute name="rel" type="xsd:string" />
+			<xsd:attribute name="type" type="xsd:string" />
+			<xsd:attribute name="href" type="xsd:string" />
+		</xsd:complexType>
+		
+			
+		<xsd:complexType name="EntryType" xmlns="http://www.w3.org/2005/Atom">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="id"/>
+				<xsd:element type="xsd:dateTime" name="published"/>
+				<xsd:element type="xsd:dateTime" name="updated"/>
+				<xsd:element type="xsd:string" name="title"/>
+				<xsd:element type="xsd:string" name="summary"/>
+				<xsd:element type="xsd:string" name="rights"/>
+				<xsd:element type="dis:LinkType" name="link" minOccurs="0" maxOccurs="5"></xsd:element>
+				<xsd:element type="media:MediaGroup" name="group" xmlns="http://search.yahoo.com/mrss/"/>
+			</xsd:sequence>
+		</xsd:complexType>
+		
+		<xsd:complexType name="FeedType" xmlns="http://www.w3.org/2005/Atom">
+			<xsd:sequence>
+				<xsd:element type="dis:EntryType" name="entry" minOccurs="0" maxOccurs="unbounded"/>
+			</xsd:sequence>
+		</xsd:complexType>
+		
+		<xsd:simpleType name="VideoStatus">
+			<xsd:restriction base="xsd:string">
+				<xsd:enumeration value="pending" />
+				<xsd:enumeration value="ready" />
+				<xsd:enumeration value="final" />
+				<xsd:enumeration value="failed" />
+			</xsd:restriction>
+		</xsd:simpleType>
+	
+		<xsd:complexType name="Photo" xmlns="http://www.w3.org/2005/Atom">
+			<xsd:sequence>
+				<xsd:element type="xsd:string" name="checksum"/>
+				<xsd:element type="xsd:int" name="commentCount"/>
+				<xsd:element type="xsd:int" name="height"/>
+				<xsd:element type="xsd:int" name="width"/>
+				<xsd:element type="xsd:int" name="rotation"/>
+				<xsd:element type="xsd:int" name="size"/>
+				<xsd:element type="xsd:int" name="timestamp"/>
+				<xsd:element type="dis:VideoStatus" name="videostatus"></xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+		<xsd:element name="feed" type="dis:FeedType"/>
+</xsd:schema>		

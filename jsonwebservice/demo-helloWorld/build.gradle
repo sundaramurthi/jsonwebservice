@@ -1,0 +1,5 @@
+httpPort = 8111
+stopPort = 9111
+stopKey = "stopKey"
+
+archivesBaseName = 'helloWorld'

@@ -1,0 +1,43 @@
+httpPort = 8113
+stopPort = 9113
+stopKey = "stopKey"
+
+archivesBaseName = 'picasa'
+
+configurations {
+    jaxws
+}
+
+dependencies {
+	jaxws 'com.sun.xml.ws:jaxws-tools:2.1.4'
+}
+
+task wsimport {
+    ext.destDir = file("${projectDir}/src/main/generated")
+    doLast {
+        ant {
+            sourceSets.main.output.classesDir.mkdirs()
+            destDir.mkdirs()
+            taskdef(name: 'wsimport',
+                    classname: 'com.sun.tools.ws.ant.WsImport',
+                    classpath: configurations.jaxws.asPath
+            )
+            wsimport(keep: true,
+                    destdir: sourceSets.main.output.classesDir,
+                    sourcedestdir: destDir,
+                    extension: "true",
+                    verbose: "false",
+                    quiet: "false",
+                    package: "com.album.dispatcher",
+                    xnocompile: "true",
+                    wsdl: 'demo-picasa/src/main/webapp/WEB-INF/wsdl/picasa.wsdl') {
+                xjcarg(value: "-XautoNameResolution")
+            }
+        }
+    }
+}
+
+compileJava {
+    dependsOn wsimport
+    source wsimport.destDir
+}

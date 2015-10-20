@@ -1,0 +1,297 @@
+<?xml version="1.0"?>
+
+<wsdl:definitions name="Attachment"
+  targetNamespace="http://jsonwebservice.googlecode.com/attachment"
+  xmlns:tns="http://jsonwebservice.googlecode.com/attachment" 
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:json="http://schemas.jsonsoap.org/wsdl/json/"
+  xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+
+    <!-- all type declarations are in a chunk of xsd -->
+    <xsd:schema elementFormDefault="qualified" targetNamespace="http://jsonwebservice.googlecode.com/attachment">
+    	<xsd:complexType name="Size">
+    		<xsd:sequence>
+    			<xsd:element name="zoomLevel" 		type="xsd:int" default="4"/>
+    			<xsd:element name="width" 	type="xsd:int" default="3000"/>
+    			<xsd:element name="height" type="xsd:int" default="2000"/>
+    		</xsd:sequence>
+    	</xsd:complexType>
+    	<xsd:complexType name="Colors">
+    		<xsd:sequence>
+    			<xsd:element name="bg" 					type="xsd:int" default="0xFFFFFF"/>
+    			<xsd:element name="border" 			type="xsd:int" default="0xE0E0E0"/>
+    			<xsd:element name="titleBg" 		type="xsd:int" default="0xF4F4F4"/>
+    			<xsd:element name="title" 			type="xsd:int" default="0x647FB0"/>
+    			<xsd:element name="value" 			type="xsd:int" default="0x6E6E6E"/>
+    			<xsd:element name="axisLabel" 	type="xsd:int" default="0x696969"/>
+    			<xsd:element name="tickLabel" 	type="xsd:int" default="0xC0C0C0"/>
+    			<xsd:element name="series" 			type="xsd:int" minOccurs="1" maxOccurs="unbounded" default="0x6A89ED,0x6AED89"/>
+    		</xsd:sequence>
+    	</xsd:complexType>	
+			
+			<xsd:simpleType name="PlotOrientation">
+		    <xsd:restriction base="xsd:string">
+		      <xsd:enumeration value="HORIZONTAL"/>
+		      <xsd:enumeration value="VERTICAL"/>
+		    </xsd:restriction>
+		  </xsd:simpleType> 
+		  													
+    	<xsd:complexType name="Visibility">
+    		<xsd:sequence>
+    			<xsd:element name="border" 					type="xsd:boolean" default="false"/>
+    			<xsd:element name="outline" 				type="xsd:boolean" default="false"/>
+    			<xsd:element name="tickMarks" 			type="xsd:boolean" default="false"/>
+    			<xsd:element name="minerTickMarks" 	type="xsd:boolean" default="false"/>
+    			<xsd:element name="rangeGridLines" 	type="xsd:boolean" default="false"/>
+    			<xsd:element name="rangeZeroBaseline" type="xsd:boolean" default="true"/>
+    			<xsd:element name="rangeCrosshair"	type="xsd:boolean" default="false"/>
+    			<xsd:element name="axisLine" 				type="xsd:boolean" default="false"/>
+    			
+    			<xsd:element name="pieOutlines" 		type="xsd:boolean" default="false"/>
+    			<xsd:element name="pieSimpleLabels" type="xsd:boolean" default="true"/>
+    			<xsd:element name="pieLabelLinks" 	type="xsd:boolean" default="true"/>
+    			
+    			<xsd:element name="urls" 						type="xsd:boolean" default="false"/>
+    			<xsd:element name="useCSS" 					type="xsd:boolean" default="false"/>
+    			
+    			<xsd:element name="title" 					type="xsd:boolean" default="true"/>
+    			<xsd:element name="legend" 					type="xsd:boolean" default="true"/>
+    			<xsd:element name="orientation"			type="tns:PlotOrientation" default="VERTICAL"/>
+    		</xsd:sequence>
+    	</xsd:complexType>
+    	
+    	<xsd:simpleType name="DataPart">
+		    <xsd:restriction base="xsd:string">
+		      <xsd:enumeration value="DATA"/>
+		      <xsd:enumeration value="STAT"/>
+		    </xsd:restriction>
+		  </xsd:simpleType> 
+    	
+    	<xsd:complexType name="DataSettings">
+    		<xsd:sequence>
+    			<xsd:element name="dataPart" type="tns:DataPart" default="DATA"/>
+    			<xsd:element name="rangeAxisIndex" type="xsd:int" nillable="true" minOccurs="0"  maxOccurs="unbounded"/>
+    			<xsd:element name="domainAxisIndex" type="xsd:int" nillable="true" minOccurs="0"  maxOccurs="unbounded"/>
+    			<xsd:element name="pieSectionLabel"	type="xsd:string" nillable="false" default="{1} ({2}) {0}"/><!-- Range data, Percentage, Domain label. -->
+    		</xsd:sequence>	
+    	</xsd:complexType>
+
+    	<xsd:complexType name="ChartConfig">
+    		<xsd:sequence>
+    			<xsd:element name="size" type="tns:Size"/>
+    			<xsd:element name="colors" type="tns:Colors"/>
+    			<xsd:element name="visibility" type="tns:Visibility"/>
+    			<xsd:element name="dataSettings" type="tns:DataSettings"/>
+    			<xsd:element name="preferedCharts" type="xsd:string" maxOccurs="unbounded" minOccurs="1" default="BAR,PIE"/>
+    		</xsd:sequence>
+    	</xsd:complexType>
+    	
+			 <xsd:complexType name="ChartInput">
+		    <xsd:sequence>
+		      <xsd:element name="chartConfig" type="tns:ChartConfig"/>
+		      <xsd:element name="xmlData" type="xsd:base64Binary" xmime:expectedContentTypes="text/xml" />
+		    </xsd:sequence>
+		  </xsd:complexType>
+		  
+		  <xsd:complexType name="ChartOutput">
+		    <xsd:sequence>
+		      <xsd:element name="outputFormates" type="xsd:string"/>
+		      <xsd:element name="svg" type="xsd:base64Binary" xmime:expectedContentTypes="image/svg+xml"/>
+			  <xsd:element name="image" type="xsd:base64Binary" xmime:expectedContentTypes="image/jpeg"/>
+		    </xsd:sequence>
+		  </xsd:complexType>
+		  
+		  <xsd:complexType name="TestInput">
+		  	<xsd:sequence>
+		      <xsd:element name="input" type="xsd:string"/>
+		    </xsd:sequence>  
+		  </xsd:complexType>
+		  
+		  <xsd:complexType name="HtmlStreamOutput">
+		    <xsd:sequence>
+		      <xsd:element name="outputFormates" type="xsd:string"/>
+		      <xsd:element name="html" type="xsd:base64Binary" xmime:expectedContentTypes="application/html"/>
+		    </xsd:sequence>
+		  </xsd:complexType>
+		  <xsd:complexType name="XMLStreamOutput">
+		    <xsd:sequence>
+		      <xsd:element name="outputFormates" type="xsd:string"/>
+		      <xsd:element name="xml" type="xsd:base64Binary" xmime:expectedContentTypes="application/xml"/>
+		    </xsd:sequence>
+		  </xsd:complexType>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="GetChartRequest">
+    <wsdl:part name="getChartInput" type="tns:ChartInput"/>
+  </wsdl:message>
+
+  <!-- response GetEndorsingBoarderResponse is of type GetEndorsingBoarderResponse -->
+  <wsdl:message name="GetChartResponse">
+    <wsdl:part name="getChartOutput" type="tns:ChartOutput"/>
+  </wsdl:message>
+  
+  <wsdl:message name="TestInputRequest">
+    <wsdl:part name="testInput" type="tns:TestInput"/>
+  </wsdl:message>
+  
+  <wsdl:message name="GetHtmlResponse">
+    <wsdl:part name="getChartOutput" type="tns:HtmlStreamOutput"/>
+  </wsdl:message>
+  
+  <wsdl:message name="GetXmlResponse">
+    <wsdl:part name="getChartOutput" type="tns:XMLStreamOutput"/>
+  </wsdl:message>
+  <!--
+  public static final String JPEG_IMAGE_MIME_TYPE = "image/jpeg"; java Image
+    //public static final String PNG_IMAGE_MIME_TYPE = "image/png";java Image
+    public static final String GIF_IMAGE_MIME_TYPE = "image/gif";java Image
+    public static final String TEXT_XML_MIME_TYPE = "text/xml"; Source
+    public static final String TEXT_HTML_MIME_TYPE = "text/html"; DataHandler
+    public static final String TEXT_PLAIN_MIME_TYPE = "text/plain"; String
+    public static final String APPLICATION_XML_MIME_TYPE = "application/xml"; Source
+    public static final String MULTIPART_MIME_TYPE = "multipart/*"; DataHandler
+   
+   -->
+
+  <!-- wsdl:portType describes messages in an operation -->
+  <wsdl:portType name="ChartPort">
+
+    <!-- the value of wsdl:operation eludes me -->
+    <wsdl:operation name="getChart">
+      <wsdl:input message="tns:GetChartRequest"/>
+      <wsdl:output message="tns:GetChartResponse"/>
+    </wsdl:operation>
+    
+    <wsdl:operation name="getHTMLStream">
+      <wsdl:input message="tns:TestInputRequest"/>
+      <wsdl:output message="tns:GetHtmlResponse"/>
+    </wsdl:operation>
+    
+    <wsdl:operation name="getXmlStream">
+      <wsdl:input message="tns:TestInputRequest"/>
+      <wsdl:output message="tns:GetXmlResponse"/>
+    </wsdl:operation>
+    
+  </wsdl:portType>
+
+	<wsdl:binding name="SOAPChartBinding" type="tns:ChartPort">
+		<soap:binding transport="http://schemas.xmlsoap.org/wsdl/soap/" style="rpc"/>
+		<wsdl:operation name="getChart">
+			<soap:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getChart"
+				style="rpc" />
+			<wsdl:input><soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/></wsdl:input>
+		  <wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="svgContent" type="image/svg+xml"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="imageJpeg" type="image/jpeg"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="getHTMLStream">
+			<soap:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getHTMLStream"
+				style="rpc" />
+			<wsdl:input><soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/></wsdl:input>
+		  <wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="html" type="image/jpeg"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="getXmlStream">
+			<soap:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getXmlStream"
+				style="rpc" />
+			<wsdl:input><soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/></wsdl:input>
+		  <wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<soap:body use="literal" namespace="http://jsonwebservice.googlecode.com/attachment"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="xml" type="application/xml"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		
+  </wsdl:binding>
+  
+	<wsdl:binding name="ChartBinding" type="tns:ChartPort">
+		<json:binding transport="http://jsonplugin.googlecode.com/json/" style="rpc"/>
+		<wsdl:operation name="getChart">
+			<json:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getChart"
+				style="rpc" />
+			<wsdl:input><json:body use="literal" namespace="http://code.google.com/json"/></wsdl:input>
+			<wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<json:body use="literal" namespace="http://code.google.com/json"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="svgContent" type="image/svg+xml"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="imageJpeg" type="image/jpeg"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="getHTMLStream">
+			<json:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getHTMLStream"
+				style="rpc" />
+			<wsdl:input><json:body use="literal" namespace="http://code.google.com/json"/></wsdl:input>
+			<wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<json:body use="literal" namespace="http://code.google.com/json"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="html" type="image/jpeg"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="getXmlStream">
+			<json:operation soapAction="http://jsonwebservice.googlecode.com/attachment/getXmlStream"
+				style="rpc" />
+			<wsdl:input><json:body use="literal" namespace="http://code.google.com/json"/></wsdl:input>
+			<wsdl:output>
+		  	<mime:multipartRelated>
+					<mime:part>
+						<json:body use="literal" namespace="http://code.google.com/json"/>
+					</mime:part>
+					<mime:part>
+						<mime:content part="xml" type="application/xml"/>
+					</mime:part>
+				</mime:multipartRelated>
+		  </wsdl:output>
+		</wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="ChartService">
+    <wsdl:port name="ChartPortType"
+               binding="tns:ChartBinding">
+      <json:address location="http://localhost:8080/attachment/ChartService.json"/>
+    </wsdl:port>
+    <wsdl:port name="SOAPChartPortType"
+               binding="tns:ChartBinding">
+      <soap:address location="http://localhost:8080/attachment/ChartService.soap"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

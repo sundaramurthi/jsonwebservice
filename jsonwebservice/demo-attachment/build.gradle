@@ -1,0 +1,47 @@
+httpPort = 8112
+stopPort = 9112
+stopKey = "stopKey"
+
+archivesBaseName = 'attachment'
+
+configurations {
+    jaxws
+}
+
+dependencies {
+	compile 'jfree:jfreechart:1.0.13',
+			'jfree:jcommon:1.0.16',
+			'org.codeartisans.thirdparties.swing:batik-all:1.8pre-r1084380'
+	
+    jaxws 'com.sun.xml.ws:jaxws-tools:2.1.4'
+}
+
+task wsimport {
+    ext.destDir = file("${projectDir}/src/main/generated")
+    doLast {
+        ant {
+            sourceSets.main.output.classesDir.mkdirs()
+            destDir.mkdirs()
+            taskdef(name: 'wsimport',
+                    classname: 'com.sun.tools.ws.ant.WsImport',
+                    classpath: configurations.jaxws.asPath
+            )
+            wsimport(keep: true,
+                    destdir: sourceSets.main.output.classesDir,
+                    sourcedestdir: destDir,
+                    extension: "true",
+                    verbose: "false",
+                    quiet: "false",
+                    package: "com.googlecode.jsonwebservice.attachment",
+                    xnocompile: "true",
+                    wsdl: 'demo-attachment/src/main/webapp/WEB-INF/wsdl/attachment.wsdl') {
+                xjcarg(value: "-XautoNameResolution")
+            }
+        }
+    }
+}
+
+compileJava {
+    dependsOn wsimport
+    source wsimport.destDir
+}
